@@ -9,6 +9,7 @@ function RegisterForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const jobId = searchParams.get('jobId') || ''
+  const lineUserId = searchParams.get('lineUserId') || ''
 
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -47,6 +48,18 @@ function RegisterForm() {
     if (result?.error) {
       setError('登録は完了しましたが、ログインに失敗しました。ログインページからお試しください。')
     } else {
+      // LINEユーザーとWebアカウントの自動紐づけ
+      if (lineUserId) {
+        try {
+          await fetch('/api/auth/link-line', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lineUserId }),
+          })
+        } catch {
+          // 紐づけ失敗はサイレント（メイン機能は継続）
+        }
+      }
       router.push('/my-lists')
       router.refresh()
     }

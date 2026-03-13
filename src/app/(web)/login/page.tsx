@@ -9,6 +9,7 @@ function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callbackUrl') || '/my-lists'
+  const lineUserId = searchParams.get('lineUserId') || ''
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -30,6 +31,18 @@ function LoginForm() {
     if (result?.error) {
       setError('メールアドレスまたはパスワードが正しくありません')
     } else {
+      // LINEユーザーとWebアカウントの自動紐づけ
+      if (lineUserId) {
+        try {
+          await fetch('/api/auth/link-line', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lineUserId }),
+          })
+        } catch {
+          // 紐づけ失敗はサイレント（メイン機能は継続）
+        }
+      }
       router.push(callbackUrl)
       router.refresh()
     }
@@ -87,7 +100,10 @@ function LoginForm() {
 
         <p className="mt-6 text-center text-sm text-gray-500">
           アカウントをお持ちでない方は{' '}
-          <Link href="/register" className="text-orange-400 hover:underline">
+          <Link
+            href={lineUserId ? `/register?lineUserId=${lineUserId}` : '/register'}
+            className="text-orange-400 hover:underline"
+          >
             アカウント登録
           </Link>
         </p>

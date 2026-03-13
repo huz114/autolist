@@ -79,20 +79,22 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
     });
 
     // LINE完了通知を送信
-    const shiryologUrl = process.env.SHIRYOLOG_API_URL || 'http://localhost:4002';
+    const autolistUrl = process.env.AUTOLIST_URL || 'http://localhost:3007';
     const targetCount = job.targetCount;
+    const lineUserId = job.user.lineUserId;
+    const loginUrl = `${autolistUrl}/login?lineUserId=${lineUserId}&callbackUrl=/my-lists`;
     const completionMessage = formCount >= targetCount
       ? `✅ リストが完成しました！
 📋 ${formCount}社のフォームあり企業リストを収集しました
 
-シリョログで確認・送信できます 🔗
-${shiryologUrl}/autolist/results/${job.id}`
+ログインしてリストを確認・送信できます 🔗
+${loginUrl}`
       : `✅ リストが完成しました！
 📋 ${formCount}社のフォームあり企業リストを収集しました
 （目標${targetCount}社に対し、条件に合う企業が${formCount}社でした）
 
-シリョログで確認・送信できます 🔗
-${shiryologUrl}/autolist/results/${job.id}`;
+ログインしてリストを確認・送信できます 🔗
+${loginUrl}`;
 
     await sendMessage(job.user.lineUserId, completionMessage);
 

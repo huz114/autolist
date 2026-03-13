@@ -64,12 +64,15 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
       },
     });
 
-    // ユーザーのmonthlyCountを更新
+    // ユーザーのmonthlyCountを更新 & クレジット消費
     await prisma.lineUser.update({
       where: { id: job.userId },
       data: {
         monthlyCount: {
           increment: totalFound,
+        },
+        credits: {
+          decrement: formCount,
         },
       },
     });

@@ -13,6 +13,8 @@ model LineUser {
   displayName  String?
   plan         String    @default("free")
   monthlyCount Int       @default(0)
+  credits      Int       @default(100)
+  state        String?
   createdAt    DateTime  @default(now())
   jobs         ListJob[]
 }

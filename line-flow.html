@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>オートリスト LINE コミュニケーションフロー</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0f;
+      --card: #16161f;
+      --card2: #1e1e2a;
+      --border: #2a2a3a;
+      --accent: #06c755; /* LINE green */
+      --accent2: #00b0ff;
+      --accent3: #ff6b6b;
+      --text: #e8e8f0;
+      --text-muted: #888899;
+      --bubble-bot: #1e1e2e;
+      --bubble-user: #1a3a1a;
+      --bubble-system: #1a1a2e;
+      --line-green: #06c755;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, 'Hiragino Sans', 'Yu Gothic', sans-serif;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #06c755 0%, #00a040 100%);
+      padding: 28px 24px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 70% 50%, rgba(255,255,255,0.08) 0%, transparent 60%);
+    }
+    header h1 {
+      font-size: clamp(1.4rem, 4vw, 2rem);
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.02em;
+      position: relative;
+    }
+    header p {
+      color: rgba(255,255,255,0.85);
+      font-size: 0.9rem;
+      margin-top: 6px;
+      position: relative;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 32px 20px 60px;
+    }
+
+    /* Section headers */
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+    }
+    .section-heading {
+      font-size: clamp(1.3rem, 3vw, 1.8rem);
+      font-weight: 700;
+      margin-bottom: 28px;
+      color: var(--text);
+    }
+    section {
+      margin-bottom: 72px;
+    }
+
+    /* ─── Section 1: Flowchart ─── */
+    .flow-container {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 36px 24px;
+      overflow-x: auto;
+    }
+
+    .flow-wrapper {
+      min-width: 700px;
+    }
+
+    /* Flow nodes */
+    .flow-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 0;
+    }
+    .flow-arrow-down {
+      display: flex;
+      justify-content: center;
+      margin: 4px 0;
+    }
+    .flow-arrow-down svg {
+      color: var(--text-muted);
+    }
+
+    .flow-node {
+      border-radius: 10px;
+      padding: 10px 20px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      text-align: center;
+      position: relative;
+      white-space: nowrap;
+    }
+    .node-start {
+      background: linear-gradient(135deg, #06c755, #00a040);
+      color: #fff;
+      border-radius: 24px;
+      padding: 10px 28px;
+    }
+    .node-event {
+      background: var(--card2);
+      border: 2px solid var(--accent);
+      color: var(--accent);
+    }
+    .node-action {
+      background: rgba(0,176,255,0.12);
+      border: 1.5px solid var(--accent2);
+      color: var(--accent2);
+    }
+    .node-branch {
+      background: rgba(255,165,0,0.1);
+      border: 1.5px solid #ffa500;
+      color: #ffa500;
+      border-radius: 8px;
+    }
+    .node-result {
+      background: rgba(6,199,85,0.1);
+      border: 1.5px solid var(--accent);
+      color: var(--accent);
+    }
+    .node-error {
+      background: rgba(255,107,107,0.1);
+      border: 1.5px solid var(--accent3);
+      color: var(--accent3);
+    }
+    .node-async {
+      background: rgba(150,80,255,0.12);
+      border: 1.5px solid #9650ff;
+      color: #9650ff;
+    }
+
+    /* Branch flow layout */
+    .branch-section {
+      margin: 8px 0;
+    }
+    .branch-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-align: center;
+      margin-bottom: 4px;
+    }
+
+    /* Full flow SVG */
+    .flow-svg-wrap {
+      display: flex;
+      justify-content: center;
+    }
+    svg.flow-svg {
+      max-width: 100%;
+      height: auto;
+    }
+
+    /* ─── Section 2: LINE Chat ─── */
+    .chat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 24px;
+    }
+    .chat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .chat-card-header {
+      background: var(--card2);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .chat-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #06c755, #00a040);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+    .chat-name {
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+    .chat-status {
+      font-size: 0.75rem;
+      color: var(--accent);
+    }
+    .chat-badge {
+      margin-left: auto;
+      font-size: 0.7rem;
+      background: rgba(6,199,85,0.15);
+      color: var(--accent);
+      border: 1px solid rgba(6,199,85,0.3);
+      border-radius: 12px;
+      padding: 2px 8px;
+    }
+
+    .chat-body {
+      padding: 16px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: #12121a;
+      min-height: 120px;
+    }
+
+    .bubble-row {
+      display: flex;
+      gap: 8px;
+    }
+    .bubble-row.user {
+      flex-direction: row-reverse;
+    }
+    .bubble-row.user .bubble {
+      background: var(--bubble-user);
+      border: 1px solid rgba(6,199,85,0.25);
+      border-radius: 16px 4px 16px 16px;
+      color: #c8f0c8;
+    }
+    .bubble-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #06c755, #00a040);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      flex-shrink: 0;
+      align-self: flex-end;
+    }
+
+    .bubble {
+      background: var(--bubble-bot);
+      border: 1px solid var(--border);
+      border-radius: 4px 16px 16px 16px;
+      padding: 10px 14px;
+      font-size: 0.82rem;
+      line-height: 1.6;
+      max-width: 82%;
+      white-space: pre-line;
+      color: var(--text);
+    }
+    .bubble a {
+      color: var(--accent2);
+      text-decoration: underline;
+    }
+    .bubble .bubble-hr {
+      border: none;
+      border-top: 1px solid rgba(255,255,255,0.12);
+      margin: 6px 0;
+    }
+    .bubble-time {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      align-self: flex-end;
+      margin-bottom: 2px;
+    }
+
+    .bubble-error {
+      background: rgba(255,107,107,0.08);
+      border-color: rgba(255,107,107,0.3);
+      color: #ffaaaa;
+    }
+
+    .chat-scenario-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 8px 14px 4px;
+      background: var(--card2);
+    }
+
+    /* Validation errors in one card */
+    .bubble-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    /* ─── Section 3: State diagram ─── */
+    .state-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 24px;
+      align-items: flex-start;
+    }
+    .state-diagram {
+      flex: 1;
+      min-width: 280px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+    }
+    .state-nodes {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .state-node {
+      border-radius: 12px;
+      padding: 16px 20px;
+      position: relative;
+    }
+    .state-node.null-state {
+      background: rgba(0,176,255,0.08);
+      border: 2px solid var(--accent2);
+    }
+    .state-node.charge-state {
+      background: rgba(255,165,0,0.08);
+      border: 2px solid #ffa500;
+    }
+    .state-label {
+      font-family: 'Courier New', monospace;
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .null-state .state-label { color: var(--accent2); }
+    .charge-state .state-label { color: #ffa500; }
+    .state-desc {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+    .state-transitions {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .state-transition {
+      font-size: 0.78rem;
+      background: rgba(255,255,255,0.04);
+      border-radius: 6px;
+      padding: 5px 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .trans-arrow { color: var(--accent); font-weight: 700; }
+    .trans-trigger { color: #ffa500; }
+    .trans-result { color: var(--accent); }
+
+    .state-arrow {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    /* State table */
+    .state-table-wrap {
+      flex: 1;
+      min-width: 280px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      font-size: 0.85rem;
+    }
+    th {
+      background: var(--card2);
+      color: var(--accent);
+      padding: 12px 16px;
+      text-align: left;
+      font-weight: 700;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    td {
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      vertical-align: top;
+    }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+    code {
+      font-family: 'Courier New', monospace;
+      background: rgba(0,176,255,0.1);
+      color: var(--accent2);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.85em;
+    }
+
+    /* ─── Section 4: Credits ─── */
+    .credits-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 20px;
+      margin-bottom: 28px;
+    }
+    .credit-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px;
+    }
+    .credit-card h3 {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 10px;
+    }
+    .credit-value {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--accent);
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .credit-value span {
+      font-size: 0.9rem;
+      font-weight: 400;
+      color: var(--text-muted);
+    }
+    .credit-desc {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .calc-example {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+    }
+    .calc-example h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 18px;
+      color: var(--text);
+    }
+    .calc-step {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .calc-step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(6,199,85,0.15);
+      border: 1.5px solid var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+    .calc-step-text {
+      font-size: 0.88rem;
+      color: var(--text);
+    }
+    .calc-step-text strong {
+      color: var(--accent2);
+    }
+    .calc-arrow-connector {
+      width: 1.5px;
+      height: 14px;
+      background: var(--border);
+      margin-left: 13px;
+    }
+
+    /* Plans table */
+    .plans-table-wrap {
+      margin-top: 28px;
+    }
+    .plans-title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 14px;
+      color: var(--text);
+    }
+    .plan-badge {
+      display: inline-block;
+      background: rgba(255,165,0,0.15);
+      color: #ffa500;
+      border: 1px solid rgba(255,165,0,0.3);
+      border-radius: 10px;
+      font-size: 0.7rem;
+      padding: 1px 7px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 600px) {
+      .flow-container { padding: 20px 12px; }
+      .chat-grid { grid-template-columns: 1fr; }
+      .credits-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>📋 オートリスト — LINE コミュニケーションフロー</h1>
+  <p>LINEボットのメッセージ設計・状態遷移・クレジットロジック 可視化ドキュメント</p>
+</header>
+
+<div class="container">
+
+  <!-- ═══════════════════════════════════════════
+       Section 1: フロー全体図
+  ═══════════════════════════════════════════ -->
+  <section id="flow">
+    <div class="section-title">Section 1</div>
+    <div class="section-heading">ユーザーフロー全体図</div>
+
+    <div class="flow-container">
+      <div class="flow-svg-wrap">
+        <svg class="flow-svg" viewBox="0 0 760 1220" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:760px;font-family:system-ui,-apple-system,sans-serif;">
+          <defs>
+            <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L8,3 z" fill="#555566"/>
+            </marker>
+            <marker id="arr-green" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L8,3 z" fill="#06c755"/>
+            </marker>
+            <marker id="arr-red" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L8,3 z" fill="#ff6b6b"/>
+            </marker>
+            <marker id="arr-orange" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L8,3 z" fill="#ffa500"/>
+            </marker>
+            <marker id="arr-blue" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L8,3 z" fill="#00b0ff"/>
+            </marker>
+          </defs>
+
+          <!-- ── START ── -->
+          <rect x="280" y="16" width="200" height="40" rx="20" fill="#06c755"/>
+          <text x="380" y="41" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">新規ユーザー</text>
+
+          <line x1="380" y1="56" x2="380" y2="82" stroke="#555566" stroke-width="1.5" marker-end="url(#arr)"/>
+          <text x="395" y="73" fill="#888899" font-size="11">友達追加</text>
+
+          <!-- FOLLOW EVENT -->
+          <rect x="250" y="86" width="260" height="36" rx="8" fill="#1e1e2a" stroke="#06c755" stroke-width="1.5"/>
+          <text x="380" y="109" text-anchor="middle" fill="#06c755" font-size="13" font-weight="600">[follow] ウェルカムメッセージ送信</text>
+
+          <line x1="380" y1="122" x2="380" y2="150" stroke="#555566" stroke-width="1.5" marker-end="url(#arr)"/>
+
+          <!-- TEXT INPUT -->
+          <rect x="240" y="154" width="280" height="36" rx="8" fill="#1e1e2a" stroke="#00b0ff" stroke-width="1.5"/>
+          <text x="380" y="177" text-anchor="middle" fill="#00b0ff" font-size="13" font-weight="600">ユーザーがテキスト送信</text>
+
+          <line x1="380" y1="190" x2="380" y2="218" stroke="#555566" stroke-width="1.5" marker-end="url(#arr)"/>
+
+          <!-- BRANCH LABEL -->
+          <text x="380" y="212" text-anchor="middle" fill="#888899" font-size="10">分岐処理</text>
+
+          <!-- BRANCH BOX START -->
+          <rect x="30" y="222" width="700" height="470" rx="12" fill="rgba(255,255,255,0.02)" stroke="#2a2a3a" stroke-width="1.5"/>
+          <text x="50" y="240" fill="#555566" font-size="10" font-weight="600">BRANCH</text>
+
+          <!-- Branch 1: ヘルプ -->
+          <rect x="46" y="248" width="124" height="30" rx="6" fill="rgba(255,165,0,0.1)" stroke="#ffa500" stroke-width="1.2"/>
+          <text x="108" y="268" text-anchor="middle" fill="#ffa500" font-size="11">分岐1: ヘルプ？</text>
+
+          <line x1="170" y1="263" x2="200" y2="263" stroke="#ffa500" stroke-width="1.2" marker-end="url(#arr-orange)"/>
+          <rect x="200" y="248" width="140" height="30" rx="6" fill="rgba(6,199,85,0.1)" stroke="#06c755" stroke-width="1.2"/>
+          <text x="270" y="268" text-anchor="middle" fill="#06c755" font-size="11">ヘルプメッセージ送信</text>
+
+          <!-- Branch 2: 新規ユーザー -->
+          <rect x="46" y="296" width="124" height="30" rx="6" fill="rgba(255,165,0,0.1)" stroke="#ffa500" stroke-width="1.2"/>
+          <text x="108" y="316" text-anchor="middle" fill="#ffa500" font-size="11">分岐2: 新規ユーザー？</text>
+
+          <line x1="170" y1="311" x2="200" y2="311" stroke="#ffa500" stroke-width="1.2" marker-end="url(#arr-orange)"/>
+          <rect x="200" y="296" width="190" height="30" rx="6" fill="rgba(0,176,255,0.1)" stroke="#00b0ff" stroke-width="1.2"/>
+          <text x="295" y="316" text-anchor="middle" fill="#00b0ff" font-size="11">ユーザー作成 (credits:100, state:null)</text>
+
+          <!-- Branch 3: awaiting_charge -->
+          <rect x="46" y="344" width="124" height="30" rx="6" fill="rgba(255,165,0,0.1)" stroke="#ffa500" stroke-width="1.2"/>
+          <text x="108" y="364" text-anchor="middle" fill="#ffa500" font-size="11">分岐3: awaiting_charge?</text>
+
+          <line x1="170" y1="359" x2="200" y2="359" stroke="#ffa500" stroke-width="1.2" marker-end="url(#arr-orange)"/>
+          <rect x="200" y="344" width="155" height="30" rx="6" fill="rgba(255,165,0,0.1)" stroke="#ffa500" stroke-width="1.2"/>
+          <text x="277" y="364" text-anchor="middle" fill="#ffa500" font-size="11">1〜4入力待機 → チャージフロー</text>
+
+          <!-- Branch 4: credits <= 0 -->
+          <rect x="46" y="392" width="124" height="30" rx="6" fill="rgba(255,107,107,0.1)" stroke="#ff6b6b" stroke-width="1.2"/>
+          <text x="108" y="412" text-anchor="middle" fill="#ff6b6b" font-size="11">分岐4: credits &lt;= 0？</text>
+
+          <line x1="170" y1="407" x2="200" y2="407" stroke="#ff6b6b" stroke-width="1.2" marker-end="url(#arr-red)"/>
+          <rect x="200" y="392" width="190" height="30" rx="6" fill="rgba(255,107,107,0.1)" stroke="#ff6b6b" stroke-width="1.2"/>
+          <text x="295" y="412" text-anchor="middle" fill="#ff6b6b" font-size="11">state='awaiting_charge' + CHARGE_MSG送信</text>
+
+          <!-- Branch 5: Gemini -->
+          <rect x="46" y="440" width="124" height="30" rx="6" fill="rgba(150,80,255,0.1)" stroke="#9650ff" stroke-width="1.2"/>
+          <text x="108" y="460" text-anchor="middle" fill="#9650ff" font-size="11">分岐5: クエリ解析</text>
+
+          <line x1="170" y1="455" x2="200" y2="455" stroke="#9650ff" stroke-width="1.2" marker-end="url(#arr)"/>
+          <rect x="200" y="440" width="155" height="30" rx="6" fill="rgba(150,80,255,0.1)" stroke="#9650ff" stroke-width="1.2"/>
+          <text x="277" y="460" text-anchor="middle" fill="#9650ff" font-size="11">Gemini 2.5 Flash で解析</text>
+
+          <!-- Branch 6: Validation -->
+          <rect x="46" y="488" width="124" height="30" rx="6" fill="rgba(255,107,107,0.1)" stroke="#ff6b6b" stroke-width="1.2"/>
+          <text x="108" y="508" text-anchor="middle" fill="#ff6b6b" font-size="11">分岐6: バリデーション</text>
+
+          <line x1="170" y1="503" x2="200" y2="503" stroke="#ff6b6b" stroke-width="1.2" marker-end="url(#arr-red)"/>
+          <rect x="200" y="488" width="215" height="30" rx="6" fill="rgba(255,107,107,0.1)" stroke="#ff6b6b" stroke-width="1.2"/>
+          <text x="307" y="508" text-anchor="middle" fill="#ff6b6b" font-size="11">10件未満 / 10件単位NG / 500件超 → エラー</text>
+
+          <!-- Branch 7: credits不足 -->
+          <rect x="46" y="536" width="124" height="30" rx="6" fill="rgba(255,107,107,0.1)" stroke="#ff6b6b" stroke-width="1.2"/>
+          <text x="108" y="556" text-anchor="middle" fill="#ff6b6b" font-size="11">分岐7: credits不足？</text>
+
+          <line x1="170" y1="551" x2="200" y2="551" stroke="#ff6b6b" stroke-width="1.2" marker-end="url(#arr-red)"/>
+          <rect x="200" y="536" width="130" height="30" rx="6" fill="rgba(255,107,107,0.1)" stroke="#ff6b6b" stroke-width="1.2"/>
+          <text x="265" y="556" text-anchor="middle" fill="#ff6b6b" font-size="11">不足警告メッセージ送信</text>
+
+          <!-- Branch 8: ジョブ作成 -->
+          <rect x="46" y="584" width="124" height="30" rx="6" fill="rgba(6,199,85,0.1)" stroke="#06c755" stroke-width="1.2"/>
+          <text x="108" y="604" text-anchor="middle" fill="#06c755" font-size="11">分岐8: ジョブ作成</text>
+
+          <line x1="170" y1="599" x2="200" y2="599" stroke="#06c755" stroke-width="1.2" marker-end="url(#arr-green)"/>
+          <rect x="200" y="584" width="215" height="30" rx="6" fill="rgba(6,199,85,0.1)" stroke="#06c755" stroke-width="1.2"/>
+          <text x="307" y="604" text-anchor="middle" fill="#06c755" font-size="11">ジョブ作成 → 受付メッセージ → 処理開始</text>
+
+          <!-- BRANCH BOX END line -->
+          <line x1="380" y1="692" x2="380" y2="720" stroke="#555566" stroke-width="1.5" marker-end="url(#arr)"/>
+          <text x="400" y="712" fill="#888899" font-size="10">非同期完了</text>
+
+          <!-- ASYNC COMPLETE -->
+          <rect x="150" y="724" width="460" height="36" rx="8" fill="rgba(150,80,255,0.12)" stroke="#9650ff" stroke-width="1.5"/>
+          <text x="380" y="747" text-anchor="middle" fill="#9650ff" font-size="13" font-weight="600">ジョブ完了（非同期 / バックグラウンド処理）</text>
+
+          <line x1="280" y1="760" x2="200" y2="790" stroke="#555566" stroke-width="1.3" marker-end="url(#arr)"/>
+          <line x1="480" y1="760" x2="560" y2="790" stroke="#555566" stroke-width="1.3" marker-end="url(#arr)"/>
+
+          <!-- Complete A -->
+          <rect x="60" y="792" width="280" height="44" rx="8" fill="rgba(6,199,85,0.1)" stroke="#06c755" stroke-width="1.5"/>
+          <text x="200" y="810" text-anchor="middle" fill="#06c755" font-size="12" font-weight="600">完了A: 目標達成</text>
+          <text x="200" y="828" text-anchor="middle" fill="#06c755" font-size="11">「{N}社のリスト完成！」</text>
+
+          <!-- Complete B -->
+          <rect x="420" y="792" width="280" height="44" rx="8" fill="rgba(0,176,255,0.1)" stroke="#00b0ff" stroke-width="1.5"/>
+          <text x="560" y="810" text-anchor="middle" fill="#00b0ff" font-size="12" font-weight="600">完了B: 目標未達</text>
+          <text x="560" y="828" text-anchor="middle" fill="#00b0ff" font-size="11">「{N}社（目標{M}社）のリスト完成！」</text>
+
+          <!-- CHARGE FLOW -->
+          <line x1="380" y1="836" x2="380" y2="862" stroke="#555566" stroke-width="1.2"/>
+          <line x1="380" y1="862" x2="380" y2="890" stroke="#555566" stroke-width="1.5" marker-end="url(#arr)"/>
+
+          <rect x="150" y="894" width="460" height="36" rx="8" fill="rgba(255,165,0,0.1)" stroke="#ffa500" stroke-width="1.5"/>
+          <text x="380" y="917" text-anchor="middle" fill="#ffa500" font-size="13" font-weight="600">チャージフロー（state = awaiting_charge）</text>
+
+          <line x1="380" y1="930" x2="380" y2="958" stroke="#555566" stroke-width="1.5" marker-end="url(#arr)"/>
+
+          <rect x="220" y="960" width="320" height="36" rx="8" fill="rgba(0,176,255,0.1)" stroke="#00b0ff" stroke-width="1.5"/>
+          <text x="380" y="983" text-anchor="middle" fill="#00b0ff" font-size="13">1〜4入力 → Stripe Payment Link 生成 → 送信</text>
+
+          <line x1="380" y1="996" x2="380" y2="1024" stroke="#555566" stroke-width="1.5" marker-end="url(#arr)"/>
+
+          <rect x="220" y="1026" width="320" height="36" rx="8" fill="rgba(6,199,85,0.1)" stroke="#06c755" stroke-width="1.5"/>
+          <text x="380" y="1049" text-anchor="middle" fill="#06c755" font-size="13">決済完了 → credits付与 → LINE通知</text>
+
+          <line x1="380" y1="1062" x2="380" y2="1090" stroke="#06c755" stroke-width="1.5" marker-end="url(#arr-green)"/>
+
+          <rect x="270" y="1092" width="220" height="36" rx="8" fill="rgba(6,199,85,0.15)" stroke="#06c755" stroke-width="2"/>
+          <text x="380" y="1115" text-anchor="middle" fill="#06c755" font-size="13" font-weight="700">state = null（通常状態に戻る）</text>
+
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       Section 2: メッセージプレビュー
+  ═══════════════════════════════════════════ -->
+  <section id="messages">
+    <div class="section-title">Section 2</div>
+    <div class="section-heading">メッセージプレビュー（LINE チャット風）</div>
+
+    <div class="chat-grid">
+
+      <!-- 1. ウェルカム -->
+      <div class="chat-card">
+        <div class="chat-scenario-label">1. ウェルカムメッセージ（友達追加時）</div>
+        <div class="chat-card-header">
+          <div class="chat-avatar">📋</div>
+          <div>
+            <div class="chat-name">オートリスト</div>
+            <div class="chat-status">● オンライン</div>
+          </div>
+          <div class="chat-badge">follow</div>
+        </div>
+        <div class="chat-body">
+          <div class="bubble-row bot">
+            <div class="bubble-avatar">📋</div>
+            <div>
+              <div class="bubble">👋 友達登録ありがとうございます！
+
+フォーム付き企業リストをLINEで
+依頼するだけで自動収集します📋
+
+🎁 最初の100件は無料でご利用いただけます。
+<hr class="bubble-hr">
+📌 さっそく試してみてください！
+↓こんな感じで送るだけ↓
+
+「IT企業 東京 30社」
+「美容サロン 大阪 20社」</div>
+              <div class="bubble-time">オートリスト ✓✓</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. ヘルプ -->
+      <div class="chat-card">
+        <div class="chat-scenario-label">2. ヘルプメッセージ</div>
+        <div class="chat-card-header">
+          <div class="chat-avatar">📋</div>
+          <div>
+            <div class="chat-name">オートリスト</div>
+            <div class="chat-status">● オンライン</div>
+          </div>
+          <div class="chat-badge">help</div>
+        </div>
+        <div class="chat-body">
+          <div class="bubble-row user">
+            <div class="bubble" style="border-radius:16px 4px 16px 16px;background:rgba(6,199,85,0.1);border-color:rgba(6,199,85,0.25);color:#c8f0c8;">ヘルプ</div>
+            <div class="bubble-time">既読</div>
+          </div>
+          <div class="bubble-row bot">
+            <div class="bubble-avatar">📋</div>
+            <div>
+              <div class="bubble">📋 オートリスト の使い方
+
+メッセージ例:
+・「IT企業 東京 100社」
+・「飲食店 大阪 50社リストして」
+・「製造業 愛知県 200社お願い」
+
+業種・地域・件数を自由に指定できます。
+収集完了後、シリョログでフォーム送信できます。
+
+🎁 新規登録: 100件無料</div>
+              <div class="bubble-time">オートリスト ✓✓</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. バリデーションエラー -->
+      <div class="chat-card">
+        <div class="chat-scenario-label">3. バリデーションエラー（3種類）</div>
+        <div class="chat-card-header">
+          <div class="chat-avatar">📋</div>
+          <div>
+            <div class="chat-name">オートリスト</div>
+            <div class="chat-status">● オンライン</div>
+          </div>
+          <div class="chat-badge">validation</div>
+        </div>
+        <div class="chat-body">
+          <div class="bubble-row bot">
+            <div class="bubble-avatar">⚠️</div>
+            <div class="bubble-group">
+              <div class="bubble bubble-error">❌ 10件以上からご利用いただけます。件数を10件以上で指定してください。</div>
+              <div class="bubble bubble-error">❌ 件数は10件単位でご指定ください。
+例: 10, 20, 30... 100社</div>
+              <div class="bubble bubble-error">❌ 一度に依頼できるのは最大500社までです。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. ジョブ受付 -->
+      <div class="chat-card">
+        <div class="chat-scenario-label">4. ジョブ受付メッセージ</div>
+        <div class="chat-card-header">
+          <div class="chat-avatar">📋</div>
+          <div>
+            <div class="chat-name">オートリスト</div>
+            <div class="chat-status">● オンライン</div>
+          </div>
+          <div class="chat-badge">accepted</div>
+        </div>
+        <div class="chat-body">
+          <div class="bubble-row user">
+            <div class="bubble" style="border-radius:16px 4px 16px 16px;background:rgba(6,199,85,0.1);border-color:rgba(6,199,85,0.25);color:#c8f0c8;">IT企業 東京 30社</div>
+            <div class="bubble-time">既読</div>
+          </div>
+          <div class="bubble-row bot">
+            <div class="bubble-avatar">📋</div>
+            <div>
+              <div class="bubble">✅ リスト収集を開始します！
+
+条件:
+・業種: IT・情報通信
+・地域: 東京都
+・件数: 30社
+
+💳 残クレジット: 100件 → 完了後約70件
+<hr class="bubble-hr">
+各企業サイトのクロールとフォームの有無確認を行うため、完了まで1〜2時間ほどかかります。
+完了したらLINEでお知らせします。</div>
+              <div class="bubble-time">オートリスト ✓✓</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. CHARGE_MESSAGE -->
+      <div class="chat-card">
+        <div class="chat-scenario-label">5. CHARGE_MESSAGE（無料枠切れ）</div>
+        <div class="chat-card-header">
+          <div class="chat-avatar">📋</div>
+          <div>
+            <div class="chat-name">オートリスト</div>
+            <div class="chat-status">● オンライン</div>
+          </div>
+          <div class="chat-badge">charge</div>
+        </div>
+        <div class="chat-body">
+          <div class="bubble-row bot">
+            <div class="bubble-avatar">💳</div>
+            <div>
+              <div class="bubble">💳 無料枠（100件）を使い切りました。
+続けてご利用いただくにはチャージが必要です。
+
+チャージするプランを選んでください：
+<hr class="bubble-hr">
+1️⃣ ¥1,000 → 100件（10円/件）
+2️⃣ ¥2,500 → 300件（8.3円/件）★人気
+3️⃣ ¥5,000 → 700件（7.1円/件）
+4️⃣ ¥10,000 → 1,500件（6.7円/件）
+<hr class="bubble-hr">
+番号を送信してください。</div>
+              <div class="bubble-time">オートリスト ✓✓</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. Payment Link -->
+      <div class="chat-card">
+        <div class="chat-scenario-label">6. Payment Link 送信（プラン2選択例）</div>
+        <div class="chat-card-header">
+          <div class="chat-avatar">📋</div>
+          <div>
+            <div class="chat-name">オートリスト</div>
+            <div class="chat-status">● オンライン</div>
+          </div>
+          <div class="chat-badge">payment</div>
+        </div>
+        <div class="chat-body">
+          <div class="bubble-row user">
+            <div class="bubble" style="border-radius:16px 4px 16px 16px;background:rgba(6,199,85,0.1);border-color:rgba(6,199,85,0.25);color:#c8f0c8;">2</div>
+            <div class="bubble-time">既読</div>
+          </div>
+          <div class="bubble-row bot">
+            <div class="bubble-avatar">💳</div>
+            <div>
+              <div class="bubble">✅ ¥2,500 → 300件 を選択しました。
+
+以下のリンクからお支払いください：
+<a href="#">https://buy.stripe.com/xxx...</a>
+
+お支払い完了後、自動的にクレジットが
+付与されます。</div>
+              <div class="bubble-time">オートリスト ✓✓</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 7. 完了A -->
+      <div class="chat-card">
+        <div class="chat-scenario-label">7. 完了メッセージA（目標達成）</div>
+        <div class="chat-card-header">
+          <div class="chat-avatar">📋</div>
+          <div>
+            <div class="chat-name">オートリスト</div>
+            <div class="chat-status">● オンライン</div>
+          </div>
+          <div class="chat-badge">✅ 達成</div>
+        </div>
+        <div class="chat-body">
+          <div class="bubble-row bot">
+            <div class="bubble-avatar">✅</div>
+            <div>
+              <div class="bubble">✅ リストが完成しました！
+📋 30社のフォームあり企業リストを収集しました
+
+シリョログで確認・送信できます 🔗
+<a href="#">https://shiryolog.com/target-list</a></div>
+              <div class="bubble-time">オートリスト ✓✓</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 8. 完了B -->
+      <div class="chat-card">
+        <div class="chat-scenario-label">8. 完了メッセージB（目標未達）</div>
+        <div class="chat-card-header">
+          <div class="chat-avatar">📋</div>
+          <div>
+            <div class="chat-name">オートリスト</div>
+            <div class="chat-status">● オンライン</div>
+          </div>
+          <div class="chat-badge">⚠ 未達</div>
+        </div>
+        <div class="chat-body">
+          <div class="bubble-row bot">
+            <div class="bubble-avatar">✅</div>
+            <div>
+              <div class="bubble">✅ リストが完成しました！
+📋 22社のフォームあり企業リストを収集しました
+（目標30社に対し、条件に合う企業が22社でした）
+
+シリョログで確認・送信できます 🔗
+<a href="#">https://shiryolog.com/target-list</a></div>
+              <div class="bubble-time">オートリスト ✓✓</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 9. 決済完了通知 -->
+      <div class="chat-card">
+        <div class="chat-scenario-label">9. 決済完了通知</div>
+        <div class="chat-card-header">
+          <div class="chat-avatar">📋</div>
+          <div>
+            <div class="chat-name">オートリスト</div>
+            <div class="chat-status">● オンライン</div>
+          </div>
+          <div class="chat-badge">Stripe Webhook</div>
+        </div>
+        <div class="chat-body">
+          <div class="bubble-row bot">
+            <div class="bubble-avatar">🎉</div>
+            <div>
+              <div class="bubble">🎉 チャージ完了！
+
+300件のクレジットが付与されました。
+引き続きオートリストをご利用ください！</div>
+              <div class="bubble-time">オートリスト ✓✓</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       Section 3: State 遷移図
+  ═══════════════════════════════════════════ -->
+  <section id="states">
+    <div class="section-title">Section 3</div>
+    <div class="section-heading">State 遷移図</div>
+
+    <div class="state-wrap">
+      <!-- Visual diagram -->
+      <div class="state-diagram">
+        <div class="state-nodes">
+
+          <div class="state-node null-state">
+            <div class="state-label">state: null</div>
+            <div class="state-desc">通常状態。新規ユーザーおよびチャージ完了後の状態。</div>
+            <div class="state-transitions">
+              <div class="state-transition">
+                <span class="trans-trigger">credits &lt;= 0</span>
+                <span class="trans-arrow">→</span>
+                <span class="trans-result">awaiting_charge へ遷移</span>
+              </div>
+              <div class="state-transition">
+                <span class="trans-trigger">テキスト受信（通常）</span>
+                <span class="trans-arrow">→</span>
+                <span class="trans-result">クエリ解析 → ジョブ作成</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="state-arrow">
+            <span>↑ Stripe Webhook で credits 付与後</span>
+            &nbsp;&nbsp;&nbsp;&nbsp;
+            <span>credits &lt;= 0 で ↓</span>
+          </div>
+
+          <div class="state-node charge-state">
+            <div class="state-label">state: "awaiting_charge"</div>
+            <div class="state-desc">チャージプラン選択待ち状態。1〜4の数字のみ受け付ける。</div>
+            <div class="state-transitions">
+              <div class="state-transition">
+                <span class="trans-trigger">1〜4 入力</span>
+                <span class="trans-arrow">→</span>
+                <span class="trans-result">Stripe Payment Link を生成・送信</span>
+              </div>
+              <div class="state-transition">
+                <span class="trans-trigger">Stripe Webhook (checkout.completed)</span>
+                <span class="trans-arrow">→</span>
+                <span class="trans-result">credits 付与 + state = null</span>
+              </div>
+              <div class="state-transition">
+                <span class="trans-trigger">その他入力</span>
+                <span class="trans-arrow">→</span>
+                <span class="trans-result">プラン番号（1〜4）を促すメッセージ</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="state-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>State</th>
+              <th>意味</th>
+              <th>次の遷移</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>null</code></td>
+              <td>通常状態<br><small style="color:var(--text-muted)">新規作成・チャージ完了後</small></td>
+              <td>
+                credits &lt;= 0 → <code>awaiting_charge</code><br>
+                通常テキスト → クエリ解析
+              </td>
+            </tr>
+            <tr>
+              <td><code>"awaiting_charge"</code></td>
+              <td>チャージ待ち<br><small style="color:var(--text-muted)">CHARGE_MSG送信後</small></td>
+              <td>
+                1〜4入力 → Payment Link<br>
+                決済完了 → <code>null</code>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- State flow mini SVG -->
+        <div style="margin-top:20px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;">
+          <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:12px;font-weight:600;">STATE MACHINE</div>
+          <svg viewBox="0 0 360 120" xmlns="http://www.w3.org/2000/svg" style="width:100%;font-family:system-ui,sans-serif;">
+            <defs>
+              <marker id="sm-arr" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto">
+                <path d="M0,0 L0,6 L7,3 z" fill="#888899"/>
+              </marker>
+            </defs>
+            <!-- null state -->
+            <rect x="20" y="40" width="110" height="40" rx="10" fill="rgba(0,176,255,0.1)" stroke="#00b0ff" stroke-width="1.5"/>
+            <text x="75" y="57" text-anchor="middle" fill="#00b0ff" font-size="11" font-weight="700">state: null</text>
+            <text x="75" y="72" text-anchor="middle" fill="#00b0ff" font-size="9">通常状態</text>
+
+            <!-- awaiting_charge state -->
+            <rect x="230" y="40" width="120" height="40" rx="10" fill="rgba(255,165,0,0.1)" stroke="#ffa500" stroke-width="1.5"/>
+            <text x="290" y="57" text-anchor="middle" fill="#ffa500" font-size="10" font-weight="700">awaiting_charge</text>
+            <text x="290" y="72" text-anchor="middle" fill="#ffa500" font-size="9">チャージ待ち</text>
+
+            <!-- null → awaiting (top) -->
+            <path d="M 130,50 Q 180,20 230,50" fill="none" stroke="#888899" stroke-width="1.2" marker-end="url(#sm-arr)"/>
+            <text x="180" y="26" text-anchor="middle" fill="#888899" font-size="9">credits≤0</text>
+
+            <!-- awaiting → null (bottom) -->
+            <path d="M 230,70 Q 180,100 130,70" fill="none" stroke="#06c755" stroke-width="1.2" marker-end="url(#sm-arr)"/>
+            <text x="180" y="112" text-anchor="middle" fill="#06c755" font-size="9">Stripe決済完了</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       Section 4: クレジット計算ロジック
+  ═══════════════════════════════════════════ -->
+  <section id="credits">
+    <div class="section-title">Section 4</div>
+    <div class="section-heading">クレジット計算ロジック</div>
+
+    <div class="credits-grid">
+      <div class="credit-card">
+        <h3>初期クレジット</h3>
+        <div class="credit-value">100 <span>件</span></div>
+        <div class="credit-desc">新規ユーザー登録時に自動付与される無料クレジット</div>
+      </div>
+      <div class="credit-card">
+        <h3>消費タイミング</h3>
+        <div class="credit-value" style="font-size:1.4rem;">ジョブ完了時</div>
+        <div class="credit-desc">フォームあり企業数（formCount）のみ消費。依頼件数ではない。</div>
+      </div>
+      <div class="credit-card">
+        <h3>消費量</h3>
+        <div class="credit-value">formCount <span>件</span></div>
+        <div class="credit-desc">実際にフォームが確認できた企業数のみカウント</div>
+      </div>
+    </div>
+
+    <!-- Calc example -->
+    <div class="calc-example">
+      <h3>計算例: IT企業 東京 30社 を依頼した場合</h3>
+
+      <div class="calc-step">
+        <div class="calc-step-num">1</div>
+        <div class="calc-step-text">ユーザーが <strong>「IT企業 東京 30社」</strong> と送信</div>
+      </div>
+      <div class="calc-arrow-connector"></div>
+      <div class="calc-step">
+        <div class="calc-step-num">2</div>
+        <div class="calc-step-text">事前チェック: credits (100) &gt;= targetCount (30) → OK</div>
+      </div>
+      <div class="calc-arrow-connector"></div>
+      <div class="calc-step">
+        <div class="calc-step-num">3</div>
+        <div class="calc-step-text">バックグラウンドで30社分のクロール・フォーム判定を実行</div>
+      </div>
+      <div class="calc-arrow-connector"></div>
+      <div class="calc-step">
+        <div class="calc-step-num">4</div>
+        <div class="calc-step-text">結果: 30社中 <strong>22社にフォームあり</strong> → formCount = 22</div>
+      </div>
+      <div class="calc-arrow-connector"></div>
+      <div class="calc-step">
+        <div class="calc-step-num">5</div>
+        <div class="calc-step-text">credits = 100 - <strong>22</strong> = <strong>78</strong>件 に更新</div>
+      </div>
+      <div class="calc-arrow-connector"></div>
+      <div class="calc-step">
+        <div class="calc-step-num">6</div>
+        <div class="calc-step-text">完了B メッセージ送信: 「22社（目標30社）のリスト完成！」</div>
+      </div>
+    </div>
+
+    <!-- Plans -->
+    <div class="plans-table-wrap">
+      <div class="plans-title">チャージプラン一覧</div>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>金額</th>
+            <th>件数</th>
+            <th>単価</th>
+            <th>備考</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1️⃣</td>
+            <td>¥1,000</td>
+            <td>100件</td>
+            <td>10円/件</td>
+            <td style="color:var(--text-muted)">お試し向け</td>
+          </tr>
+          <tr>
+            <td>2️⃣</td>
+            <td>¥2,500</td>
+            <td>300件</td>
+            <td>8.3円/件</td>
+            <td>人気 <span class="plan-badge">★ 人気</span></td>
+          </tr>
+          <tr>
+            <td>3️⃣</td>
+            <td>¥5,000</td>
+            <td>700件</td>
+            <td>7.1円/件</td>
+            <td style="color:var(--text-muted)">まとめ買い向け</td>
+          </tr>
+          <tr>
+            <td>4️⃣</td>
+            <td>¥10,000</td>
+            <td>1,500件</td>
+            <td>6.7円/件</td>
+            <td style="color:var(--text-muted)">大量利用向け</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </section>
+
+</div><!-- /container -->
+
+</body>
+</html>

@@ -2,6 +2,7 @@ import { prisma } from './prisma';
 import { collectUrlsWithQueries } from './collect-urls';
 import { sendMessage } from './line';
 import { analyzeQuery } from './analyze-query';
+import { importJobToShiryolog } from './import-to-shiryolog';
 
 /**
  * pendingのジョブを1件取得して処理する
@@ -85,15 +86,24 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
 📋 ${formCount}社のフォームあり企業リストを収集しました
 
 シリョログで確認・送信できます 🔗
-${shiryologUrl}/target-list`
+${shiryologUrl}/autolist/results/${job.id}`
       : `✅ リストが完成しました！
 📋 ${formCount}社のフォームあり企業リストを収集しました
 （目標${targetCount}社に対し、条件に合う企業が${formCount}社でした）
 
 シリョログで確認・送信できます 🔗
-${shiryologUrl}/target-list`;
+${shiryologUrl}/autolist/results/${job.id}`;
 
     await sendMessage(job.user.lineUserId, completionMessage);
+
+    // シリョログの Company テーブルに自動インポート
+    try {
+      const imported = await importJobToShiryolog(job.id);
+      console.log(`Imported ${imported} companies to Shiryolog from job ${job.id}`);
+    } catch (e) {
+      console.error('Failed to import to Shiryolog:', e);
+      // エラーでもジョブ完了処理は止めない
+    }
 
     console.log(`Job ${job.id} completed. Found ${totalFound} URLs.`);
 

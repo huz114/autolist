@@ -88,12 +88,12 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
       }
 
       // ユーザーを取得または作成
-      let user = await prisma.user.findUnique({
+      let user = await prisma.lineUser.findUnique({
         where: { lineUserId },
       });
 
       if (!user) {
-        user = await prisma.user.create({
+        user = await prisma.lineUser.create({
           data: {
             lineUserId,
             displayName: null,
@@ -138,7 +138,7 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
 ・件数: ${analyzed.targetCount}社
 
 各企業サイトのクロールとフォームの有無確認を行うため、完了まで1〜2時間ほどかかります。
-完了したらLINEでお知らせしますので、他の作業をしていてください！`;
+完了したらLINEでお知らせします。`;
 
       if (replyToken) {
         await replyMessage(replyToken, acceptanceMessage);

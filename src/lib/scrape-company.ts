@@ -119,7 +119,7 @@ async function extractInfoWithGemini(
   textContent: string
 ): Promise<GeminiExtractedInfo> {
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   const prompt = `以下のHTMLから企業情報を抽出してJSONで返してください。
 見つからない項目はnullにしてください。

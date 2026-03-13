@@ -65,7 +65,7 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
     });
 
     // ユーザーのmonthlyCountを更新
-    await prisma.user.update({
+    await prisma.lineUser.update({
       where: { id: job.userId },
       data: {
         monthlyCount: {
@@ -76,17 +76,18 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
 
     // LINE完了通知を送信
     const shiryologUrl = process.env.SHIRYOLOG_API_URL || 'http://localhost:4002';
-    const completionMessage = `✅ リストが完成しました！
+    const targetCount = job.targetCount;
+    const completionMessage = formCount >= targetCount
+      ? `✅ リストが完成しました！
+📋 ${formCount}社のフォームあり企業リストを収集しました
 
-📊 ${totalFound}社のフォームあり企業リストを収集しました
+シリョログで確認・送信できます 🔗
+${shiryologUrl}/target-list`
+      : `✅ リストが完成しました！
+📋 ${formCount}社のフォームあり企業リストを収集しました
+（目標${targetCount}社に対し、条件に合う企業が${formCount}社でした）
 
-取得情報:
-・会社名 ・フォームURL
-・業種・所在地
-・従業員数・資本金・電話番号・代表者名
-（取得できた項目のみ）
-
-シリョログで確認・送信できます👇
+シリョログで確認・送信できます 🔗
 ${shiryologUrl}/target-list`;
 
     await sendMessage(job.user.lineUserId, completionMessage);

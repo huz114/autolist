@@ -7,47 +7,47 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id            String   @id @default(cuid())
-  lineUserId    String   @unique
-  displayName   String?
-  plan          String   @default("free") // free, starter, pro
-  monthlyCount  Int      @default(0)
-  createdAt     DateTime @default(now())
-  jobs          ListJob[]
+model LineUser {
+  id           String    @id @default(cuid())
+  lineUserId   String    @unique
+  displayName  String?
+  plan         String    @default("free")
+  monthlyCount Int       @default(0)
+  createdAt    DateTime  @default(now())
+  jobs         ListJob[]
 }
 
 model ListJob {
-  id           String   @id @default(cuid())
-  userId       String
-  user         User     @relation(fields: [userId], references: [id])
-  keyword      String   // 元のリクエスト文
-  industry     String?  // 解析された業種
-  location     String?  // 解析された地域
-  targetCount  Int      @default(100)
-  status       String   @default("pending") // pending, running, completed, failed
-  progress     Int      @default(0)
-  totalFound   Int      @default(0)
-  createdAt    DateTime @default(now())
-  completedAt  DateTime?
-  urls         CollectedUrl[]
+  id          String         @id @default(cuid())
+  userId      String
+  keyword     String
+  industry    String?
+  location    String?
+  targetCount Int            @default(100)
+  status      String         @default("pending")
+  progress    Int            @default(0)
+  totalFound  Int            @default(0)
+  createdAt   DateTime       @default(now())
+  completedAt DateTime?
+  urls        CollectedUrl[]
+  user        LineUser       @relation(fields: [userId], references: [id])
 }
 
 model CollectedUrl {
-  id                  String   @id @default(cuid())
-  jobId               String
-  job                 ListJob  @relation(fields: [jobId], references: [id])
-  url                 String
-  domain              String
-  companyName         String?
-  industry            String?
-  location            String?
-  employeeCount       String?
-  capitalAmount       String?
-  phoneNumber         String?
-  representativeName  String?
-  hasForm             Boolean  @default(false)
-  formUrl             String?
-  status              String   @default("collected") // collected, exported
-  createdAt           DateTime @default(now())
+  id                 String   @id @default(cuid())
+  jobId              String
+  url                String
+  domain             String
+  companyName        String?
+  industry           String?
+  location           String?
+  employeeCount      String?
+  capitalAmount      String?
+  phoneNumber        String?
+  representativeName String?
+  hasForm            Boolean  @default(false)
+  formUrl            String?
+  status             String   @default("collected")
+  createdAt          DateTime @default(now())
+  job                ListJob  @relation(fields: [jobId], references: [id])
 }

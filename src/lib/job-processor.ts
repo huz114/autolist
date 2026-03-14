@@ -3,6 +3,7 @@ import { collectUrlsWithQueries } from './collect-urls';
 import { sendMessage } from './line';
 import { analyzeQuery } from './analyze-query';
 import { importJobToShiryolog } from './import-to-shiryolog';
+import { sendJobCompletedEmail } from './mailer';
 
 /**
  * pendingのジョブを1件取得して処理する
@@ -47,7 +48,9 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
       job.id,
       analyzed.searchQueries,
       job.targetCount,
-      job.userId
+      job.userId,
+      job.industry ?? null,
+      job.location ?? null
     );
 
     // フォームありの件数を取得
@@ -92,16 +95,43 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
         });
       }
 
-      // LINE通知（キャンセル完了）
+      // キャンセル完了通知（シリョログ登録済みならメール、未登録はLINE）
       const remainingCredits = job.user.credits - chargedCount;
-      await sendMessage(job.user.lineUserId,
-        `❌ リスト収集をキャンセルしました。\n\n` +
-        `収集済み: ${actualCount}社\n` +
-        `課金: ${chargedCount}件分\n` +
-        `💳 残クレジット: ${remainingCredits}件\n\n` +
-        `収集済みのリストはこちらから確認できます 🔗\n` +
-        loginUrl
-      );
+
+      const lineUser = await prisma.lineUser.findUnique({
+        where: { id: job.userId },
+        select: { lineUserId: true, displayName: true, userId: true },
+      });
+
+      if (lineUser?.userId) {
+        // シリョログ登録済み → メール通知
+        const shiryologUser = await prisma.$queryRaw<Array<{email: string, name: string | null}>>`
+          SELECT email, name FROM "public"."User" WHERE id = ${lineUser.userId} LIMIT 1
+        `;
+        if (shiryologUser.length > 0) {
+          const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3007';
+          await sendJobCompletedEmail({
+            to: shiryologUser[0].email,
+            userName: shiryologUser[0].name || lineUser.displayName || 'お客様',
+            keyword: job.keyword,
+            industry: job.industry,
+            location: job.location,
+            totalFound: actualCount,
+            myListsUrl: `${appUrl}/my-lists`,
+          });
+        }
+      } else {
+        // 未登録 → LINE Push通知
+        await sendMessage(job.user.lineUserId,
+          `❌ リスト収集をキャンセルしました。\n\n` +
+          `収集済み: ${actualCount}社\n` +
+          `課金: ${chargedCount}件分\n` +
+          `💳 残クレジット: ${remainingCredits}件\n\n` +
+          `収集済みのリストはこちらから確認できます 🔗\n` +
+          loginUrl + '\n\n' +
+          `📧 シリョログに登録するとメールで完了通知が届きます`
+        );
+      }
 
       console.log(`Job ${job.id} cancelled. Found ${actualCount} URLs, charged ${chargedCount} credits.`);
 
@@ -126,21 +156,50 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
         },
       });
 
-      // LINE完了通知を送信
-      const completionMessage = formCount >= targetCount
-        ? `✅ リストが完成しました！
+      // 完了通知（シリョログ登録済みならメール、未登録はLINE）
+      const lineUserForNotification = await prisma.lineUser.findUnique({
+        where: { id: job.userId },
+        select: { lineUserId: true, displayName: true, userId: true },
+      });
+
+      if (lineUserForNotification?.userId) {
+        // シリョログ登録済み → メール通知
+        const shiryologUser = await prisma.$queryRaw<Array<{email: string, name: string | null}>>`
+          SELECT email, name FROM "public"."User" WHERE id = ${lineUserForNotification.userId} LIMIT 1
+        `;
+        if (shiryologUser.length > 0) {
+          const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3007';
+          await sendJobCompletedEmail({
+            to: shiryologUser[0].email,
+            userName: shiryologUser[0].name || lineUserForNotification.displayName || 'お客様',
+            keyword: job.keyword,
+            industry: job.industry,
+            location: job.location,
+            totalFound: formCount,
+            myListsUrl: `${appUrl}/my-lists`,
+          });
+        }
+      } else {
+        // 未登録 → LINE Push通知
+        const completionMessage = formCount >= targetCount
+          ? `✅ リストが完成しました！
 📋 ${formCount}社のフォームあり企業リストを収集しました
 
 ログインしてリストを確認・送信できます 🔗
-${loginUrl}`
-        : `✅ リストが完成しました！
+${loginUrl}
+
+📧 シリョログに登録するとメールで完了通知が届きます`
+          : `✅ リストが完成しました！
 📋 ${formCount}社のフォームあり企業リストを収集しました
 （目標${targetCount}社に対し、条件に合う企業が${formCount}社でした）
 
 ログインしてリストを確認・送信できます 🔗
-${loginUrl}`;
+${loginUrl}
 
-      await sendMessage(job.user.lineUserId, completionMessage);
+📧 シリョログに登録するとメールで完了通知が届きます`;
+
+        await sendMessage(job.user.lineUserId, completionMessage);
+      }
 
       // シリョログの Company テーブルに自動インポート
       try {

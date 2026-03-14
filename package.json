@@ -18,11 +18,13 @@
     "@prisma/client": "^6.0.0",
     "@types/cheerio": "^0.22.35",
     "bcryptjs": "^3.0.3",
+    "canvas": "^3.2.1",
     "cheerio": "^1.2.0",
     "next": "14.2.0",
     "next-auth": "^5.0.0-beta.30",
     "react": "^18",
     "react-dom": "^18",
+    "resend": "^6.9.3",
     "stripe": "^20.4.1"
   },
   "devDependencies": {

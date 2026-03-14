@@ -284,12 +284,18 @@ async function scrapeAndSave(
  * 無限ループ防止:
  * - 検索ラウンドの上限: MAX_SEARCH_ROUNDS = targetCount * 3 / 10 (切り上げ)
  * - 処理済み URL 上限: targetCount * 3
+ *
+ * キャッシュ機能:
+ * - 同じ industry + location の過去1年以内のジョブから CollectedUrl を再利用
+ * - キャッシュで足りれば Google 検索をスキップして即返す
  */
 export async function collectUrlsWithQueries(
   jobId: string,
   searchQueries: string[],
   targetCount: number,
-  userId: string
+  userId: string,
+  industry: string | null,
+  location: string | null
 ): Promise<number> {
   const job = await prisma.listJob.findUnique({
     where: { id: jobId },
@@ -299,10 +305,6 @@ export async function collectUrlsWithQueries(
   if (!job) {
     throw new Error(`Job not found: ${jobId}`);
   }
-
-  // 無限ループ防止の上限値
-  const MAX_SCRAPED_URLS = targetCount * 3;       // スクレイピングするURL総数の上限
-  const MAX_SEARCH_ROUNDS = Math.ceil(MAX_SCRAPED_URLS / 10) + searchQueries.length;
 
   // ユーザーが過去に収集したdomain一覧を取得（重複排除用）
   const pastJobs = await prisma.listJob.findMany({
@@ -327,14 +329,138 @@ export async function collectUrlsWithQueries(
 
   console.log(`[Job ${jobId}] 除外ドメイン数: ${excludedDomains.size}`);
 
-  // 既収集ドメインの初期化
-  const collectedDomains = new Set<string>(job.urls.map(u => u.domain));
+  // ─── キャッシュ検索（他ユーザーの1年以内の同条件データ） ───
+  if (industry && location) {
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+    const cachedJobs = await prisma.listJob.findMany({
+      where: {
+        id: { not: jobId },
+        status: { in: ['completed', 'cancelled'] },
+        industry: industry,
+        location: location,
+        createdAt: { gte: oneYearAgo },
+      },
+      select: { id: true },
+    });
+
+    console.log(`[Job ${jobId}] キャッシュ候補ジョブ数: ${cachedJobs.length}`);
+
+    let cachedUrls: Array<{
+      id: string;
+      jobId: string;
+      url: string;
+      domain: string;
+      companyName: string | null;
+      industry: string | null;
+      location: string | null;
+      employeeCount: string | null;
+      capitalAmount: string | null;
+      phoneNumber: string | null;
+      representativeName: string | null;
+      hasForm: boolean;
+      formUrl: string | null;
+      status: string;
+      createdAt: Date;
+    }> = [];
+
+    if (cachedJobs.length > 0) {
+      cachedUrls = await prisma.collectedUrl.findMany({
+        where: {
+          jobId: { in: cachedJobs.map(j => j.id) },
+          domain: { notIn: Array.from(excludedDomains) },
+          hasForm: true,
+        },
+      });
+      // ランダムシャッフル
+      cachedUrls = cachedUrls.sort(() => Math.random() - 0.5);
+      console.log(`[Job ${jobId}] キャッシュURL数（重複排除済み）: ${cachedUrls.length}`);
+    }
+
+    if (cachedUrls.length >= targetCount) {
+      // キャッシュで十分: targetCount 件を選んで現在のジョブに紐付けてコピー保存
+      const selected = cachedUrls.slice(0, targetCount);
+      const now = new Date();
+      await prisma.collectedUrl.createMany({
+        data: selected.map(u => ({
+          id: undefined, // createMany では id 省略で自動生成
+          jobId,
+          url: u.url,
+          domain: u.domain,
+          companyName: u.companyName,
+          industry: u.industry,
+          location: u.location,
+          employeeCount: u.employeeCount,
+          capitalAmount: u.capitalAmount,
+          phoneNumber: u.phoneNumber,
+          representativeName: u.representativeName,
+          hasForm: u.hasForm,
+          formUrl: u.formUrl,
+          status: u.status,
+          createdAt: now,
+        })),
+      });
+
+      console.log(`[Job ${jobId}] キャッシュから ${targetCount} 件を保存して早期完了`);
+
+      await prisma.listJob.update({
+        where: { id: jobId },
+        data: {
+          totalFound: targetCount,
+          progress: 90,
+        },
+      });
+
+      return targetCount;
+    } else if (cachedUrls.length > 0) {
+      // キャッシュが不足: キャッシュ分を先に保存
+      const now = new Date();
+      await prisma.collectedUrl.createMany({
+        data: cachedUrls.map(u => ({
+          jobId,
+          url: u.url,
+          domain: u.domain,
+          companyName: u.companyName,
+          industry: u.industry,
+          location: u.location,
+          employeeCount: u.employeeCount,
+          capitalAmount: u.capitalAmount,
+          phoneNumber: u.phoneNumber,
+          representativeName: u.representativeName,
+          hasForm: u.hasForm,
+          formUrl: u.formUrl,
+          status: u.status,
+          createdAt: now,
+        })),
+      });
+      // キャッシュのドメインを excludedDomains に追加（Google 収集時の重複防止）
+      cachedUrls.forEach(u => excludedDomains.add(u.domain));
+      console.log(`[Job ${jobId}] キャッシュから ${cachedUrls.length} 件を保存。残り ${targetCount - cachedUrls.length} 件をGoogle収集`);
+    }
+  }
+  // ─────────────────────────────────────────────────────────────
+
+  // 無限ループ防止の上限値
+  const MAX_SCRAPED_URLS = targetCount * 3;       // スクレイピングするURL総数の上限
+  const MAX_SEARCH_ROUNDS = Math.ceil(MAX_SCRAPED_URLS / 10) + searchQueries.length;
+
+  // DB から現在のジョブの収集済み URL を再取得（キャッシュコピー分を含む）
+  const savedUrlsAfterCache = await prisma.collectedUrl.findMany({
+    where: { jobId },
+    select: { domain: true, hasForm: true },
+  });
+
+  // 既収集ドメインの初期化（キャッシュで追加されたドメインも含む）
+  const collectedDomains = new Set<string>(savedUrlsAfterCache.map(u => u.domain));
+  // excludedDomains にも追加（Google 収集時の重複防止）
+  savedUrlsAfterCache.forEach(u => excludedDomains.add(u.domain));
 
   // 処理待ちキュー（検索結果のURL）
   const pendingQueue: CollectedUrlData[] = [];
 
-  // 統計
-  let savedCount = job.urls.filter(u => u.hasForm).length; // 既存のフォームあり件数
+  // 統計（キャッシュで既に保存された分を初期値に）
+  let savedCount = savedUrlsAfterCache.filter(u => u.hasForm).length; // 既存のフォームあり件数
   let scrapedTotal = 0;     // スクレイピング済みURL数
   let searchRound = 0;      // 実行した検索ラウンド数
 

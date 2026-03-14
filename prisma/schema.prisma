@@ -8,32 +8,57 @@ datasource db {
 }
 
 model LineUser {
-  id           String    @id @default(cuid())
-  lineUserId   String    @unique
+  id           String     @id @default(cuid())
+  lineUserId   String     @unique
   displayName  String?
-  plan         String    @default("free")
-  monthlyCount Int       @default(0)
-  credits      Int       @default(100)
+  plan         String     @default("free")
+  monthlyCount Int        @default(0)
+  credits      Int        @default(100)
   state        String?
-  createdAt    DateTime  @default(now())
-  userId       String?   // シリョログのUser.idを参照（外部キー制約なし）
+  createdAt    DateTime   @default(now())
+  userId       String?    // シリョログのUser.idを参照（外部キー制約なし）
   jobs         ListJob[]
+  purchases    Purchase[]
+}
+
+model Purchase {
+  id        String   @id @default(cuid())
+  userId    String
+  amount    Int      // 課金額（円）
+  credits   Int      // 付与クレジット数
+  stripeId  String?  // Stripe Payment Intent ID or Session ID
+  createdAt DateTime @default(now())
+  user      LineUser @relation(fields: [userId], references: [id])
+}
+
+model AdMetrics {
+  id          String   @id @default(cuid())
+  date        DateTime // 集計日
+  campaign    String   // キャンペーン名
+  impressions Int      @default(0)
+  clicks      Int      @default(0)
+  spend       Int      @default(0) // 広告費（円）
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([date, campaign])
 }
 
 model ListJob {
-  id          String         @id @default(cuid())
-  userId      String
-  keyword     String
-  industry    String?
-  location    String?
-  targetCount Int            @default(100)
-  status      String         @default("pending")
-  progress    Int            @default(0)
-  totalFound  Int            @default(0)
-  createdAt   DateTime       @default(now())
-  completedAt DateTime?
-  urls        CollectedUrl[]
-  user        LineUser       @relation(fields: [userId], references: [id])
+  id              String         @id @default(cuid())
+  userId          String
+  keyword         String
+  industry        String?
+  location        String?
+  targetCount     Int            @default(100)
+  status          String         @default("pending")
+  progress        Int            @default(0)
+  totalFound      Int            @default(0)
+  originalMessage String?        // LINEで送られた元のメッセージ
+  createdAt       DateTime       @default(now())
+  completedAt     DateTime?
+  urls            CollectedUrl[]
+  user            LineUser       @relation(fields: [userId], references: [id])
 }
 
 model CollectedUrl {

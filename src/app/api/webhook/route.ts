@@ -15,6 +15,9 @@ interface LineEvent {
     type: string;
     text: string;
   };
+  postback?: {
+    data: string;
+  };
 }
 
 interface LineWebhookBody {
@@ -58,6 +61,25 @@ const CHARGE_PLANS = [
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2026-02-25.clover',
 });
+
+const ADMIN_LINE_USER_ID = 'Udf97fe475b4c6e2bcdf987599cf80b14';
+
+/**
+ * LINEプッシュメッセージを送信する
+ */
+async function pushMessage(to: string, text: string): Promise<void> {
+  await fetch('https://api.line.me/v2/bot/message/push', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${process.env.LINE_CHANNEL_ACCESS_TOKEN}`,
+    },
+    body: JSON.stringify({
+      to,
+      messages: [{ type: 'text', text }],
+    }),
+  });
+}
 
 /**
  * Stripe Payment Linkを動的に生成する
@@ -158,6 +180,76 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
     if (event.type === 'follow') {
       if (event.replyToken) {
         await replyMessage(event.replyToken, WELCOME_MESSAGE);
+      }
+      continue;
+    }
+
+    // postbackイベントの処理
+    if (event.type === 'postback') {
+      const lineUserId = event.source.userId;
+      const replyToken = event.replyToken;
+      const data = new URLSearchParams(event.postback?.data || '');
+      const action = data.get('action');
+
+      // ユーザーを取得または作成
+      let pbUser = await prisma.lineUser.findUnique({ where: { lineUserId } });
+      if (!pbUser) {
+        pbUser = await prisma.lineUser.create({
+          data: {
+            lineUserId,
+            displayName: null,
+            plan: 'free',
+            monthlyCount: 0,
+            credits: 100,
+            state: null,
+          },
+        });
+      }
+
+      switch (action) {
+        case 'new_request':
+          if (replyToken) {
+            await replyMessage(replyToken, '業種と地域を送ってください。\n例：「東京の歯科医院100件」');
+          }
+          break;
+
+        case 'check_credits':
+          if (replyToken) {
+            await replyMessage(replyToken, `💳 残クレジット: ${pbUser.credits}件`);
+          }
+          break;
+
+        case 'charge':
+          // stateをawaiting_chargeに更新してチャージ案内
+          await prisma.lineUser.update({
+            where: { id: pbUser.id },
+            data: { state: 'awaiting_charge' },
+          });
+          if (replyToken) {
+            await replyMessage(replyToken, CHARGE_MESSAGE);
+          }
+          break;
+
+        case 'help':
+          if (replyToken) {
+            await replyMessage(replyToken, `📋 オートリストの使い方\n\n1️⃣ 業種と地域をLINEに送る\n例：「東京の歯科医院100件」\n\n2️⃣ 確認メッセージが届く\n\n3️⃣「はい」で収集開始\n\n4️⃣ 完了したらLINEに通知\n\n❓ 困ったことがあれば「問い合わせ」ボタンへ`);
+          }
+          break;
+
+        case 'contact':
+          if (replyToken) {
+            await replyMessage(replyToken, '📞 問い合わせを受け付けました。\nスタッフより折り返しご連絡いたします。');
+          }
+          await pushMessage(
+            ADMIN_LINE_USER_ID,
+            `🔔 問い合わせが来ました！\n\nユーザー: ${pbUser.displayName || '未設定'}\nLINE ID: ${pbUser.lineUserId}\n\nLINEで返信してください。`
+          );
+          break;
+
+        default:
+          if (replyToken) {
+            await replyMessage(replyToken, 'メニューから操作してください。');
+          }
       }
       continue;
     }
@@ -294,6 +386,7 @@ ${paymentUrl}
                 location: pendingState.location,
                 targetCount: pendingState.targetCount,
                 status: 'pending',
+                originalMessage: pendingState.originalMessage,
               },
             });
 
@@ -317,7 +410,21 @@ ${paymentUrl}
             });
 
             const remainingAfterConfirm = user.credits - pendingState.targetCount;
-            const acceptanceMessage = `✅ リスト収集を開始します！
+            const isShiryologUser = !!user.userId;
+            const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3007';
+            const acceptanceMessage = isShiryologUser
+              ? `✅ リスト収集を開始します！
+
+条件:
+・業種: ${pendingState.industry || '指定なし'}
+・地域: ${pendingState.location || '指定なし'}
+・件数: ${pendingState.targetCount}社
+
+💳 残クレジット: ${user.credits}件 → ${remainingAfterConfirm}件
+
+完了後はこちらでご確認ください👇
+${appUrl}/my-lists`
+              : `✅ リスト収集を開始します！
 
 条件:
 ・業種: ${pendingState.industry || '指定なし'}
@@ -335,8 +442,8 @@ ${paymentUrl}
             console.log(`Job created: ${job.id} for user: ${lineUserId}`);
 
             // ジョブ処理起動
-            const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3007';
-            fetch(`${appUrl}/api/process-jobs`, {
+            const processJobsUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3007';
+            fetch(`${processJobsUrl}/api/process-jobs`, {
               method: 'GET',
             }).catch(error => {
               console.error('Failed to trigger job processing:', error);
@@ -487,6 +594,7 @@ ${paymentUrl}
         industry: analyzed.industry,
         location: analyzed.location,
         targetCount: analyzed.targetCount,
+        originalMessage: messageText,
       });
 
       await prisma.lineUser.update({

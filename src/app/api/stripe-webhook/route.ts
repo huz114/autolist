@@ -65,6 +65,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
       }
 
+      // Purchaseレコードを作成
+      const amount = session.amount_total ?? 0;
+      await prisma.purchase.create({
+        data: {
+          userId: user.id,
+          amount,
+          credits: creditsToAdd,
+          stripeId: session.id,
+        },
+      });
+
       // クレジットを加算 & stateをリセット
       const updatedUser = await prisma.lineUser.update({
         where: { lineUserId },

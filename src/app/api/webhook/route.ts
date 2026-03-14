@@ -197,6 +197,44 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
         });
       }
 
+      // --- 実行中キャンセルコマンドの処理 ---
+      // awaiting_confirmation / awaiting_charge 以外の状態でキャンセルが送信された場合
+      if (
+        (messageText.trim() === 'キャンセル' || messageText.trim() === 'cancel') &&
+        !user.state?.startsWith('{') &&
+        user.state !== 'awaiting_charge'
+      ) {
+        // 処理中のジョブを探す
+        const runningJob = await prisma.listJob.findFirst({
+          where: {
+            userId: user.id,
+            status: 'running',
+          },
+          orderBy: { createdAt: 'desc' },
+        });
+
+        if (runningJob) {
+          // キャンセルフラグをセット
+          await prisma.listJob.update({
+            where: { id: runningJob.id },
+            data: { status: 'cancelled' },
+          });
+
+          if (replyToken) {
+            await replyMessage(replyToken,
+              `⏳ キャンセルを受け付けました。\n\n処理を中断中です。完了したらお知らせします。\n（収集済み分のみ課金されます）`
+            );
+          }
+        } else {
+          if (replyToken) {
+            await replyMessage(replyToken,
+              `現在実行中のリスト収集はありません。`
+            );
+          }
+        }
+        continue;
+      }
+
       // --- チャージ待ち状態の処理 ---
       if (user.state === 'awaiting_charge') {
         const planNumber = parseInt(messageText.trim(), 10);
@@ -231,6 +269,161 @@ ${paymentUrl}
           }
         }
         continue;
+      }
+
+      // --- 確認待ち状態の処理 ---
+      if (user.state?.startsWith('{')) {
+        const pendingState = JSON.parse(user.state);
+
+        if (pendingState.status === 'awaiting_confirmation') {
+          const answer = messageText.trim();
+
+          if (answer === 'はい' || answer === 'yes' || answer === 'YES' || answer === 'ハイ') {
+            // state をクリア
+            await prisma.lineUser.update({
+              where: { id: user.id },
+              data: { state: null },
+            });
+
+            // ジョブ作成
+            const job = await prisma.listJob.create({
+              data: {
+                userId: user.id,
+                keyword: pendingState.keyword,
+                industry: pendingState.industry,
+                location: pendingState.location,
+                targetCount: pendingState.targetCount,
+                status: 'pending',
+              },
+            });
+
+            // SearchLog記録
+            await prisma.searchLog.create({
+              data: {
+                userId: user.id,
+                lineUserId: lineUserId,
+                keyword: pendingState.keyword,
+                industry: pendingState.industry,
+                location: pendingState.location,
+                targetCount: pendingState.targetCount,
+                jobId: job.id,
+              },
+            });
+
+            // クレジット消費
+            await prisma.lineUser.update({
+              where: { id: user.id },
+              data: { credits: { decrement: pendingState.targetCount } },
+            });
+
+            const remainingAfterConfirm = user.credits - pendingState.targetCount;
+            const acceptanceMessage = `✅ リスト収集を開始します！
+
+条件:
+・業種: ${pendingState.industry || '指定なし'}
+・地域: ${pendingState.location || '指定なし'}
+・件数: ${pendingState.targetCount}社
+
+💳 残クレジット: ${user.credits}件 → ${remainingAfterConfirm}件
+
+完了したらLINEでお知らせします。`;
+
+            if (replyToken) {
+              await replyMessage(replyToken, acceptanceMessage);
+            }
+
+            console.log(`Job created: ${job.id} for user: ${lineUserId}`);
+
+            // ジョブ処理起動
+            const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3007';
+            fetch(`${appUrl}/api/process-jobs`, {
+              method: 'GET',
+            }).catch(error => {
+              console.error('Failed to trigger job processing:', error);
+            });
+
+          } else if (
+            answer === 'いいえ' || answer === 'no' || answer === 'NO' ||
+            answer === 'キャンセル' || answer === 'cancel' || answer === 'CANCEL'
+          ) {
+            // キャンセル
+            await prisma.lineUser.update({
+              where: { id: user.id },
+              data: { state: null },
+            });
+
+            if (replyToken) {
+              await replyMessage(replyToken, `❌ キャンセルしました。
+
+別の条件で試す場合は、改めてメッセージを送ってください。
+例: 「東京の歯科医院を100件」`);
+            }
+
+          } else {
+            // 件数変更の検出
+            const countMatch = answer.match(/^(\d+)件?(?:に変更)?$/);
+            if (countMatch) {
+              const newCount = parseInt(countMatch[1], 10);
+
+              // バリデーション（10件単位、10〜500件）
+              if (newCount < 10 || newCount % 10 !== 0 || newCount > 500) {
+                if (replyToken) {
+                  await replyMessage(replyToken, `❌ 件数は10〜500件の範囲で、10件単位で指定してください。\n\n例: 「50件に変更」`);
+                }
+                continue;
+              }
+
+              // クレジット残量チェック
+              if (user.credits < newCount) {
+                if (replyToken) {
+                  await replyMessage(replyToken, `⚠️ クレジットが不足しています。\n残クレジット: ${user.credits}件\n\nチャージ後に再度お試しください。`);
+                }
+                continue;
+              }
+
+              // state の targetCount を更新して保存
+              const updatedState = JSON.stringify({
+                ...pendingState,
+                targetCount: newCount,
+              });
+              await prisma.lineUser.update({
+                where: { id: user.id },
+                data: { state: updatedState },
+              });
+
+              // 更新した確認メッセージを再送
+              const remainingAfter = user.credits - newCount;
+              const updatedConfirmMessage = `📋 件数を変更しました！
+
+【収集条件】
+・業種: ${pendingState.industry || '指定なし'}
+・地域: ${pendingState.location || '指定なし'}
+・件数: ${newCount}社（変更後）
+
+💳 消費クレジット: ${newCount}件
+残り: ${user.credits}件 → ${remainingAfter}件
+
+✅ 収集開始 → 「はい」と送信
+❌ キャンセル → 「いいえ」と送信`;
+
+              if (replyToken) {
+                await replyMessage(replyToken, updatedConfirmMessage);
+              }
+              continue;
+            }
+
+            // 「はい」「いいえ」以外
+            if (replyToken) {
+              await replyMessage(replyToken, `「はい」または「いいえ」と送信してください。
+
+✅ 収集開始 → 「はい」
+❌ キャンセル → 「いいえ」
+🔢 件数変更 → 「50件に変更」`);
+            }
+          }
+
+          continue;
+        }
       }
 
       // --- クレジット残量チェック ---
@@ -287,58 +480,37 @@ ${paymentUrl}
         continue;
       }
 
-      // ジョブを作成
-      const job = await prisma.listJob.create({
-        data: {
-          userId: user.id,
-          keyword: messageText,
-          industry: analyzed.industry,
-          location: analyzed.location,
-          targetCount: analyzed.targetCount,
-          status: 'pending',
-        },
+      // 確認メッセージ送信 + state保存
+      const confirmationState = JSON.stringify({
+        status: 'awaiting_confirmation',
+        keyword: messageText,
+        industry: analyzed.industry,
+        location: analyzed.location,
+        targetCount: analyzed.targetCount,
       });
 
-      // 検索動向ログを記録
-      await prisma.searchLog.create({
-        data: {
-          userId: user.id,
-          lineUserId: lineUserId,
-          keyword: messageText,
-          industry: analyzed.industry,
-          location: analyzed.location,
-          targetCount: analyzed.targetCount,
-          jobId: job.id,
-        },
+      await prisma.lineUser.update({
+        where: { id: user.id },
+        data: { state: confirmationState },
       });
 
-      // 受付メッセージを送信（残クレジット表示付き）
       const remainingAfter = user.credits - analyzed.targetCount;
-      const acceptanceMessage = `✅ リスト収集を開始します！
+      const confirmMessage = `📋 リスト収集の確認
 
-条件:
-・業種: ${analyzed.industry}
-・地域: ${analyzed.location}
+【収集条件】
+・業種: ${analyzed.industry || '指定なし'}
+・地域: ${analyzed.location || '指定なし'}
 ・件数: ${analyzed.targetCount}社
 
-💳 残クレジット: ${user.credits}件 → 完了後約${remainingAfter}件
+💳 消費クレジット: ${analyzed.targetCount}件
+残り: ${user.credits}件 → ${remainingAfter}件
 
-各企業サイトのクロールとフォームの有無確認を行うため、完了まで1〜2時間ほどかかります。
-完了したらLINEでお知らせします。`;
+✅ 収集開始 → 「はい」と送信
+❌ キャンセル → 「いいえ」と送信`;
 
       if (replyToken) {
-        await replyMessage(replyToken, acceptanceMessage);
+        await replyMessage(replyToken, confirmMessage);
       }
-
-      console.log(`Job created: ${job.id} for user: ${lineUserId}`);
-
-      // バックグラウンドでジョブ処理APIを呼び出す
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3007';
-      fetch(`${appUrl}/api/process-jobs`, {
-        method: 'GET',
-      }).catch(error => {
-        console.error('Failed to trigger job processing:', error);
-      });
     } catch (error) {
       console.error(`Error processing message from ${lineUserId}:`, error);
 

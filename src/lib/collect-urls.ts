@@ -288,7 +288,8 @@ async function scrapeAndSave(
 export async function collectUrlsWithQueries(
   jobId: string,
   searchQueries: string[],
-  targetCount: number
+  targetCount: number,
+  userId: string
 ): Promise<number> {
   const job = await prisma.listJob.findUnique({
     where: { id: jobId },
@@ -302,6 +303,29 @@ export async function collectUrlsWithQueries(
   // 無限ループ防止の上限値
   const MAX_SCRAPED_URLS = targetCount * 3;       // スクレイピングするURL総数の上限
   const MAX_SEARCH_ROUNDS = Math.ceil(MAX_SCRAPED_URLS / 10) + searchQueries.length;
+
+  // ユーザーが過去に収集したdomain一覧を取得（重複排除用）
+  const pastJobs = await prisma.listJob.findMany({
+    where: {
+      userId: userId,
+      status: { in: ['completed', 'cancelled'] },
+      id: { not: jobId },
+    },
+    select: { id: true },
+  });
+
+  const excludedDomains = new Set<string>();
+  if (pastJobs.length > 0) {
+    const pastUrls = await prisma.collectedUrl.findMany({
+      where: {
+        jobId: { in: pastJobs.map(j => j.id) },
+      },
+      select: { domain: true },
+    });
+    pastUrls.forEach(u => excludedDomains.add(u.domain));
+  }
+
+  console.log(`[Job ${jobId}] 除外ドメイン数: ${excludedDomains.size}`);
 
   // 既収集ドメインの初期化
   const collectedDomains = new Set<string>(job.urls.map(u => u.domain));
@@ -377,6 +401,22 @@ export async function collectUrlsWithQueries(
       where: { id: jobId },
       data: { progress },
     });
+
+    // キャンセルチェック: DBのstatusを確認して中断判断
+    const currentJob = await prisma.listJob.findUnique({
+      where: { id: jobId },
+      select: { status: true },
+    });
+    if (currentJob?.status === 'cancelled') {
+      console.log(`[Job ${jobId}] キャンセルを検出。処理を中断します。`);
+      break;
+    }
+
+    // ユーザー単位の重複排除: 過去ジョブで収集済みのドメインはスキップ
+    if (excludedDomains.has(urlData.domain)) {
+      console.log(`  -> [重複スキップ] ${urlData.domain} は過去に収集済み`);
+      continue;
+    }
 
     console.log(
       `Scraping: ${urlData.url} ` +

@@ -41,18 +41,18 @@ const CHARGE_MESSAGE = `💳 無料枠（100件）を使い切りました。
 
 チャージするプランを選んでください：
 
-1️⃣ ¥1,000 → 100件（10円/件）
-2️⃣ ¥2,500 → 300件（8.3円/件）★人気
-3️⃣ ¥5,000 → 700件（7.1円/件）
-4️⃣ ¥10,000 → 1,500件（6.7円/件）
+1️⃣ ¥2,000 → 100件（20円/件）
+2️⃣ ¥5,000 → 300件（17円/件）★人気
+3️⃣ ¥10,000 → 700件（14円/件）
+4️⃣ ¥15,000 → 1,500件（10円/件）
 
 番号を送信してください。`;
 
 const CHARGE_PLANS = [
-  { amount: 1000, credits: 100, label: '¥1,000 → 100件' },
-  { amount: 2500, credits: 300, label: '¥2,500 → 300件' },
-  { amount: 5000, credits: 700, label: '¥5,000 → 700件' },
-  { amount: 10000, credits: 1500, label: '¥10,000 → 1,500件' },
+  { amount: 2000, credits: 100, label: '¥2,000 → 100件' },
+  { amount: 5000, credits: 300, label: '¥5,000 → 300件' },
+  { amount: 10000, credits: 700, label: '¥10,000 → 700件' },
+  { amount: 15000, credits: 1500, label: '¥15,000 → 1,500件' },
 ];
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
@@ -296,6 +296,19 @@ ${paymentUrl}
           location: analyzed.location,
           targetCount: analyzed.targetCount,
           status: 'pending',
+        },
+      });
+
+      // 検索動向ログを記録
+      await prisma.searchLog.create({
+        data: {
+          userId: user.id,
+          lineUserId: lineUserId,
+          keyword: messageText,
+          industry: analyzed.industry,
+          location: analyzed.location,
+          targetCount: analyzed.targetCount,
+          jobId: job.id,
         },
       });
 

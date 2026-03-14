@@ -54,3 +54,15 @@ model CollectedUrl {
   createdAt          DateTime @default(now())
   job                ListJob  @relation(fields: [jobId], references: [id])
 }
+
+model SearchLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  lineUserId  String?
+  keyword     String?
+  industry    String?
+  location    String?
+  targetCount Int
+  jobId       String?
+  createdAt   DateTime @default(now())
+}

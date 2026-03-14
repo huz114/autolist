@@ -54,24 +54,39 @@ export async function verifySignature(body: string, signature: string): Promise<
   return digest === signature;
 }
 
+type LineMessageObject = {
+  type: string;
+  text?: string;
+  quickReply?: {
+    items: Array<{
+      type: string;
+      action: {
+        type: string;
+        label: string;
+        text?: string;
+        uri?: string;
+      };
+    }>;
+  };
+};
+
 /**
  * LINE ReplyTokenでメッセージを返信する
+ * message には文字列またはメッセージオブジェクトを渡せる
  */
-export async function replyMessage(replyToken: string, message: string): Promise<void> {
+export async function replyMessage(replyToken: string, message: string | LineMessageObject): Promise<void> {
   const accessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
 
   if (!accessToken) {
     throw new Error('LINE_CHANNEL_ACCESS_TOKEN is not set');
   }
 
+  const messageObj: LineMessageObject =
+    typeof message === 'string' ? { type: 'text', text: message } : message;
+
   const body = JSON.stringify({
     replyToken,
-    messages: [
-      {
-        type: 'text',
-        text: message,
-      },
-    ],
+    messages: [messageObj],
   });
 
   const response = await fetch('https://api.line.me/v2/bot/message/reply', {

@@ -515,21 +515,33 @@ ${appUrl}/my-lists`
 
               // 更新した確認メッセージを再送
               const remainingAfter = user.credits - newCount;
-              const updatedConfirmMessage = `📋 件数を変更しました！
-
-【収集条件】
-・業種: ${pendingState.industry || '指定なし'}
-・地域: ${pendingState.location || '指定なし'}
-・件数: ${newCount}社（変更後）
-
-💳 消費クレジット: ${newCount}件
-残り: ${user.credits}件 → ${remainingAfter}件
-
-✅ 収集開始 → 「はい」と送信
-❌ キャンセル → 「いいえ」と送信`;
+              const updatedConfirmMessageObj = {
+                type: 'text',
+                text: `📋 件数を変更しました！\n\n【収集条件】\n・業種: ${pendingState.industry || '指定なし'}\n・地域: ${pendingState.location || '指定なし'}\n・件数: ${newCount}社（変更後）\n\n💳 消費クレジット: ${newCount}件\n残り: ${user.credits}件 → ${remainingAfter}件`,
+                quickReply: {
+                  items: [
+                    {
+                      type: 'action',
+                      action: {
+                        type: 'message',
+                        label: '✅ はい',
+                        text: 'はい',
+                      },
+                    },
+                    {
+                      type: 'action',
+                      action: {
+                        type: 'message',
+                        label: '❌ いいえ',
+                        text: 'いいえ',
+                      },
+                    },
+                  ],
+                },
+              };
 
               if (replyToken) {
-                await replyMessage(replyToken, updatedConfirmMessage);
+                await replyMessage(replyToken, updatedConfirmMessageObj);
               }
               continue;
             }
@@ -618,21 +630,33 @@ ${appUrl}/my-lists`
       });
 
       const remainingAfter = user.credits - analyzed.targetCount;
-      const confirmMessage = `📋 リスト収集の確認
-
-【収集条件】
-・業種: ${analyzed.industry || '指定なし'}
-・地域: ${analyzed.location || '指定なし'}
-・件数: ${analyzed.targetCount}社
-
-💳 消費クレジット: ${analyzed.targetCount}件
-残り: ${user.credits}件 → ${remainingAfter}件
-
-✅ 収集開始 → 「はい」と送信
-❌ キャンセル → 「いいえ」と送信`;
+      const confirmMessageObj = {
+        type: 'text',
+        text: `📋 リスト収集の確認\n\n【収集条件】\n・業種: ${analyzed.industry || '指定なし'}\n・地域: ${analyzed.location || '指定なし'}\n・件数: ${analyzed.targetCount}社\n\n💳 消費クレジット: ${analyzed.targetCount}件\n残り: ${user.credits}件 → ${remainingAfter}件`,
+        quickReply: {
+          items: [
+            {
+              type: 'action',
+              action: {
+                type: 'message',
+                label: '✅ はい',
+                text: 'はい',
+              },
+            },
+            {
+              type: 'action',
+              action: {
+                type: 'message',
+                label: '❌ いいえ',
+                text: 'いいえ',
+              },
+            },
+          ],
+        },
+      };
 
       if (replyToken) {
-        await replyMessage(replyToken, confirmMessage);
+        await replyMessage(replyToken, confirmMessageObj);
       }
     } catch (error) {
       console.error(`Error processing message from ${lineUserId}:`, error);

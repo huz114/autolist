@@ -379,6 +379,7 @@ ${paymentUrl}
       }
 
       // --- 確認待ち状態の処理 ---
+      let skipConfirmationBlock = false;
       if (user.state?.startsWith('{')) {
         const pendingState = JSON.parse(user.state);
 
@@ -546,17 +547,18 @@ ${appUrl}/my-lists`
               continue;
             }
 
-            // 「はい」「いいえ」以外
-            if (replyToken) {
-              await replyMessage(replyToken, `「はい」または「いいえ」と送信してください。
-
-✅ 収集開始 → 「はい」
-❌ キャンセル → 「いいえ」
-🔢 件数変更 → 「50件に変更」`);
-            }
+            // 「はい」「いいえ」以外 → 新しい依頼として処理する
+            await prisma.lineUser.update({
+              where: { id: user.id },
+              data: { state: null },
+            });
+            user.state = null;
+            skipConfirmationBlock = true;
           }
 
-          continue;
+          if (!skipConfirmationBlock) {
+            continue;
+          }
         }
       }
 

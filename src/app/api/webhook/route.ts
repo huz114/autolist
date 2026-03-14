@@ -219,16 +219,22 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
           }
           break;
 
-        case 'charge':
+        case 'charge': {
           // stateをawaiting_chargeに更新してチャージ案内
           await prisma.lineUser.update({
             where: { id: pbUser.id },
             data: { state: 'awaiting_charge' },
           });
+          const credits = pbUser.credits ?? 0;
+          const pricingMessage = `チャージするプランを選んでください：\n\n1️⃣ ¥2,000 → 100件（20円/件）\n2️⃣ ¥5,000 → 300件（17円/件）★人気\n3️⃣ ¥10,000 → 700件（14円/件）\n4️⃣ ¥15,000 → 1,500件（10円/件）\n\n番号を送信してください。`;
+          const chargeReplyText = credits <= 0
+            ? `💳 無料枠（100件）を使い切りました。\n続けてご利用いただくにはチャージが必要です。\n\n${pricingMessage}`
+            : `💳 現在の残クレジット: ${credits}件\n\nさらにチャージすることもできます。\n\n${pricingMessage}`;
           if (replyToken) {
-            await replyMessage(replyToken, CHARGE_MESSAGE);
+            await replyMessage(replyToken, chargeReplyText);
           }
           break;
+        }
 
         case 'help':
           if (replyToken) {

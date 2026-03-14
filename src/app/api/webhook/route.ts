@@ -518,14 +518,14 @@ ${appUrl}/my-lists`
               const remainingAfter = user.credits - newCount;
               const updatedConfirmMessageObj = {
                 type: 'text',
-                text: `📋 件数を変更しました！\n\n【収集条件】\n・業種: ${pendingState.industry || '指定なし'}\n・地域: ${pendingState.location || '指定なし'}\n・件数: ${newCount}社（変更後）\n\n💳 消費クレジット: ${newCount}件\n残り: ${user.credits}件 → ${remainingAfter}件`,
+                text: `以下の条件でリストを収集してよいですか？\n\n🏢 業種：${pendingState.industry || '指定なし'}\n📍 地域：${pendingState.location || '指定なし'}\n📊 件数：${newCount}社\n\n💳 ${newCount}クレジット消費（残り${remainingAfter}件）`,
                 quickReply: {
                   items: [
                     {
                       type: 'action',
                       action: {
                         type: 'message',
-                        label: '✅ はい',
+                        label: '🚀 収集スタート',
                         text: 'はい',
                       },
                     },
@@ -533,7 +533,7 @@ ${appUrl}/my-lists`
                       type: 'action',
                       action: {
                         type: 'message',
-                        label: '❌ いいえ',
+                        label: 'キャンセル',
                         text: 'いいえ',
                       },
                     },
@@ -634,14 +634,14 @@ ${appUrl}/my-lists`
       const remainingAfter = user.credits - analyzed.targetCount;
       const confirmMessageObj = {
         type: 'text',
-        text: `📋 リスト収集の確認\n\n【収集条件】\n・業種: ${analyzed.industry || '指定なし'}\n・地域: ${analyzed.location || '指定なし'}\n・件数: ${analyzed.targetCount}社\n\n💳 消費クレジット: ${analyzed.targetCount}件\n残り: ${user.credits}件 → ${remainingAfter}件`,
+        text: `以下の条件でリストを収集してよいですか？\n\n🏢 業種：${analyzed.industry || '指定なし'}\n📍 地域：${analyzed.location || '指定なし'}\n📊 件数：${analyzed.targetCount}社\n\n💳 ${analyzed.targetCount}クレジット消費（残り${remainingAfter}件）`,
         quickReply: {
           items: [
             {
               type: 'action',
               action: {
                 type: 'message',
-                label: '✅ はい',
+                label: '🚀 収集スタート',
                 text: 'はい',
               },
             },
@@ -649,7 +649,7 @@ ${appUrl}/my-lists`
               type: 'action',
               action: {
                 type: 'message',
-                label: '❌ いいえ',
+                label: 'キャンセル',
                 text: 'いいえ',
               },
             },

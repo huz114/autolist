@@ -43,6 +43,8 @@ export async function importJobToShiryolog(jobId: string): Promise<number> {
           contactType,
           status: 'DISCOVERED',
           source: 'autolist',
+          // TODO: シリョログ側で teamId カラムのマイグレーション完了後に有効化する
+          // teamId: null, // 将来的にはジョブのチームIDを渡す（現時点は個人利用のみ）
         },
         update: {
           // 既存レコードは情報があれば上書き
@@ -54,6 +56,7 @@ export async function importJobToShiryolog(jobId: string): Promise<number> {
           contactUrl: url.formUrl ?? undefined,
           contactType,
           source: 'autolist',
+          // teamId は update 時は変更しない（既存のチーム所属を上書きしない）
         },
       })
 

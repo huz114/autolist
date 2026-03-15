@@ -295,7 +295,8 @@ export async function collectUrlsWithQueries(
   targetCount: number,
   userId: string,
   industry: string | null,
-  location: string | null
+  location: string | null,
+  industryKeywords: string[] = []
 ): Promise<number> {
   const job = await prisma.listJob.findUnique({
     where: { id: jobId },
@@ -334,18 +335,30 @@ export async function collectUrlsWithQueries(
     const oneYearAgo = new Date();
     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
 
-    const cachedJobs = await prisma.listJob.findMany({
+    // industryKeywordsがある場合は配列オーバーラップ検索、なければ完全一致
+    const cachedJobsRaw = await prisma.listJob.findMany({
       where: {
         id: { not: jobId },
         status: { in: ['completed', 'cancelled'] },
-        industry: industry,
         location: location,
         createdAt: { gte: oneYearAgo },
+        ...(industryKeywords.length > 0
+          ? { industryKeywords: { hasSome: industryKeywords } }
+          : { industry: industry }),
       },
-      select: { id: true },
+      select: { id: true, industryKeywords: true },
     });
 
-    console.log(`[Job ${jobId}] キャッシュ候補ジョブ数: ${cachedJobs.length}`);
+    // 一致率50%以上のジョブのみ使用
+    const cachedJobs = industryKeywords.length > 0
+      ? cachedJobsRaw.filter(job => {
+          const threshold = Math.ceil(industryKeywords.length * 0.5);
+          const overlap = job.industryKeywords.filter(k => industryKeywords.includes(k)).length;
+          return overlap >= threshold;
+        })
+      : cachedJobsRaw;
+
+    console.log(`[Job ${jobId}] キャッシュ候補ジョブ数: ${cachedJobsRaw.length} → フィルタ後: ${cachedJobs.length}`);
 
     let cachedUrls: Array<{
       id: string;

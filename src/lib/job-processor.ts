@@ -39,9 +39,16 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
         data: {
           industry: analyzed.industry,
           location: analyzed.location,
+          industryKeywords: analyzed.industryKeywords || [],
         },
       });
     }
+
+    // industryKeywordsを確定（DBに保存済みのものを優先、なければanalyzedから）
+    const industryKeywords =
+      job.industryKeywords.length > 0
+        ? job.industryKeywords
+        : analyzed.industryKeywords || [];
 
     // URL収集を実行
     const totalFound = await collectUrlsWithQueries(
@@ -50,7 +57,8 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
       job.targetCount,
       job.userId,
       job.industry ?? null,
-      job.location ?? null
+      job.location ?? null,
+      industryKeywords
     );
 
     // フォームありの件数を取得

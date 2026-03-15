@@ -4,6 +4,7 @@ export interface AnalyzedQuery {
   industry: string;
   location: string;
   targetCount: number;
+  industryKeywords: string[];
   searchQueries: string[];
 }
 
@@ -23,15 +24,20 @@ export async function analyzeQuery(userMessage: string): Promise<AnalyzedQuery> 
 1. industry: ユーザーが指定したビジネスタイプをできるだけそのまま抽出（例: "新築専門不動産会社", "ラーメン専門店", "訪問介護事業所", "税理士事務所", "Web制作会社"）。大カテゴリに丸めず、ユーザーの具体的な指定を尊重すること。
 2. location: 地域（例: "東京", "大阪府", "愛知県名古屋市"）
 3. targetCount: 収集したい企業数（数字のみ、デフォルト100）
-4. searchQueries: Google検索クエリの配列（3〜5個、日本語と英語混在で多様な角度から）
+4. industryKeywords: industryを構成する重要キーワードの配列（2〜5個）。
+   例: "新築専門不動産会社" → ["新築", "不動産", "会社"]
+       "訪問介護事業所" → ["訪問介護", "介護", "事業所"]
+       "ラーメン専門店" → ["ラーメン", "専門店", "飲食"]
+   日本語の意味単位で分割し、検索に有効なキーワードのみ残すこと。
+5. searchQueries: Google検索クエリの配列（4〜6個）
 
 searchQueriesの生成ルール:
-- ユーザーが指定した具体的なキーワード（industryの値）をそのまま使うこと。大カテゴリに置き換えない。
-- "{具体的な業種キーワード} {地域} お問い合わせ" パターン
-- "{具体的な業種キーワード} {地域} 会社概要" パターン
-- "{具体的な業種キーワード} {地域} 企業一覧" パターン
-- "{具体的な業種キーワード} {地域} contact" パターン（英語）
-- ユーザーの具体的なキーワードを含む別角度のパターン
+- industryの完全な表現を使ったクエリ（1〜2個）
+  例: "新築専門不動産会社 東京 お問い合わせ"
+- industryKeywordsを組み合わせたクエリ（2〜3個）
+  例: "新築 不動産会社 東京 企業一覧", "新築住宅 不動産 東京"
+- 英語混在クエリ（1個）
+  例: "新築 不動産 東京 contact"
 
 必ずJSON形式のみで返してください。他のテキストは不要です。
 
@@ -41,12 +47,13 @@ searchQueriesの生成ルール:
   "industry": "新築専門不動産会社",
   "location": "東京",
   "targetCount": 100,
+  "industryKeywords": ["新築", "不動産", "会社"],
   "searchQueries": [
     "新築専門不動産会社 東京 お問い合わせ",
     "新築専門不動産会社 東京 会社概要",
-    "新築不動産 東京 企業一覧",
-    "新築専門不動産会社 東京 contact",
-    "新築住宅販売会社 東京"
+    "新築 不動産会社 東京 企業一覧",
+    "新築住宅 不動産 東京",
+    "新築 不動産 東京 contact"
   ]
 }
 
@@ -68,6 +75,9 @@ searchQueriesの生成ルール:
     if (!parsed.industry) parsed.industry = '一般企業';
     if (!parsed.location) parsed.location = '日本';
     if (!parsed.targetCount || parsed.targetCount <= 0) parsed.targetCount = 100;
+    if (!parsed.industryKeywords || parsed.industryKeywords.length === 0) {
+      parsed.industryKeywords = [parsed.industry];
+    }
     if (!parsed.searchQueries || parsed.searchQueries.length === 0) {
       parsed.searchQueries = [
         `${parsed.industry} ${parsed.location} お問い合わせ`,

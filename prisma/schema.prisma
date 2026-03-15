@@ -45,20 +45,21 @@ model AdMetrics {
 }
 
 model ListJob {
-  id              String         @id @default(cuid())
-  userId          String
-  keyword         String
-  industry        String?
-  location        String?
-  targetCount     Int            @default(100)
-  status          String         @default("pending")
-  progress        Int            @default(0)
-  totalFound      Int            @default(0)
-  originalMessage String?        // LINEで送られた元のメッセージ
-  createdAt       DateTime       @default(now())
-  completedAt     DateTime?
-  urls            CollectedUrl[]
-  user            LineUser       @relation(fields: [userId], references: [id])
+  id               String         @id @default(cuid())
+  userId           String
+  keyword          String
+  industry         String?
+  location         String?
+  targetCount      Int            @default(100)
+  status           String         @default("pending")
+  progress         Int            @default(0)
+  totalFound       Int            @default(0)
+  originalMessage  String?        // LINEで送られた元のメッセージ
+  industryKeywords String[]       // 業種キーワード配列（キャッシュ検索・多様化クエリ用）
+  createdAt        DateTime       @default(now())
+  completedAt      DateTime?
+  urls             CollectedUrl[]
+  user             LineUser       @relation(fields: [userId], references: [id])
 }
 
 model CollectedUrl {

@@ -403,6 +403,7 @@ ${paymentUrl}
                 targetCount: pendingState.targetCount,
                 status: 'pending',
                 originalMessage: pendingState.originalMessage,
+                industryKeywords: pendingState.industryKeywords || [],
               },
             });
 
@@ -624,6 +625,7 @@ ${appUrl}/my-lists`
         location: analyzed.location,
         targetCount: analyzed.targetCount,
         originalMessage: messageText,
+        industryKeywords: analyzed.industryKeywords || [],
       });
 
       await prisma.lineUser.update({

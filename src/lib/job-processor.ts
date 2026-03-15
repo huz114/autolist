@@ -150,7 +150,7 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
         data: {
           status: 'completed',
           progress: 100,
-          totalFound,
+          totalFound: formCount,
           completedAt: new Date(),
         },
       });
@@ -159,7 +159,7 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
       await prisma.lineUser.update({
         where: { id: job.userId },
         data: {
-          monthlyCount: { increment: totalFound },
+          monthlyCount: { increment: formCount },
           credits: { decrement: formCount },
         },
       });

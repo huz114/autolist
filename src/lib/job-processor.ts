@@ -4,6 +4,7 @@ import { sendMessage } from './line';
 import { analyzeQuery } from './analyze-query';
 import { importJobToShiryolog } from './import-to-shiryolog';
 import { sendJobCompletedEmail } from './mailer';
+import { getAdjacentPrefectures } from './adjacent-prefectures';
 
 /**
  * pendingのジョブを1件取得して処理する
@@ -51,7 +52,7 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
         : analyzed.industryKeywords || [];
 
     // URL収集を実行
-    const totalFound = await collectUrlsWithQueries(
+    const { totalFound, scrapedCount } = await collectUrlsWithQueries(
       job.id,
       analyzed.searchQueries,
       job.targetCount,
@@ -156,21 +157,20 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
       });
 
       // ユーザーのmonthlyCountを更新 & クレジット消費
-      await prisma.lineUser.update({
+      const updatedLineUser = await prisma.lineUser.update({
         where: { id: job.userId },
         data: {
           monthlyCount: { increment: formCount },
           credits: { decrement: formCount },
         },
+        select: { credits: true, lineUserId: true, displayName: true, userId: true },
       });
+      const remainingCreditsAfterCompletion = updatedLineUser.credits;
 
       // 完了通知（シリョログ登録済みならメール、未登録はLINE）
-      const lineUserForNotification = await prisma.lineUser.findUnique({
-        where: { id: job.userId },
-        select: { lineUserId: true, displayName: true, userId: true },
-      });
+      const lineUserForNotification = updatedLineUser;
 
-      if (lineUserForNotification?.userId) {
+      if (lineUserForNotification.userId) {
         // シリョログ登録済み → メール通知
         const shiryologUser = await prisma.$queryRaw<Array<{email: string, name: string | null}>>`
           SELECT email, name FROM "public"."User" WHERE id = ${lineUserForNotification.userId} LIMIT 1
@@ -193,18 +193,36 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
           ? `✅ リストが完成しました！
 📋 ${formCount}社のフォームあり企業リストを収集しました
 
+💳 ${formCount}クレジット使用 → 残り${remainingCreditsAfterCompletion}クレジット
+
 ログインしてリストを確認・送信できます 🔗
 ${loginUrl}
 
 📧 シリョログに登録するとメールで完了通知が届きます`
-          : `✅ リストが完成しました！
-📋 ${formCount}社のフォームあり企業リストを収集しました
-（目標${targetCount}社に対し、条件に合う企業が${formCount}社でした）
+          : (() => {
+            // 近隣地域提案を生成（未達時のみ）
+            const location = job.location ?? analyzed.location ?? '';
+            const industry = job.industry ?? analyzed.industry ?? '';
+            const adjacentPrefectures = location ? getAdjacentPrefectures(location) : [];
+            const suggestions = adjacentPrefectures.slice(0, 3);
 
+            const suggestionBlock = suggestions.length > 0
+              ? `\n📍 近隣の地域でも試してみませんか？\n` +
+                suggestions.map(pref => `・「${industry} ${pref} ${targetCount}社」`).join('\n') +
+                '\n'
+              : '';
+
+            return `✅ リストが完成しました！
+📋 ${formCount}社のフォームあり企業リストを収集しました
+（目標${targetCount}社に対し、Google検索${scrapedCount}件分のURLを調べましたが、フォームのある企業が${formCount}社でした）
+
+💳 ${formCount}クレジット使用 → 残り${remainingCreditsAfterCompletion}クレジット
+${suggestionBlock}
 ログインしてリストを確認・送信できます 🔗
 ${loginUrl}
 
 📧 シリョログに登録するとメールで完了通知が届きます`;
+          })();
 
         await sendMessage(job.user.lineUserId, completionMessage);
       }

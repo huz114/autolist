@@ -3,16 +3,19 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
 
+export const maxDuration = 60
+
 export async function POST(req: NextRequest) {
-  const { jobId, companyInfo } = await req.json()
+  try {
+    const { jobId, companyInfo } = await req.json()
 
-  if (!jobId || !companyInfo) {
-    return NextResponse.json({ error: 'パラメータが不足しています' }, { status: 400 })
-  }
+    if (!jobId || !companyInfo) {
+      return NextResponse.json({ error: 'パラメータが不足しています' }, { status: 400 })
+    }
 
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-preview-04-17' })
 
-  const prompt = `以下の会社情報をもとに、営業フォーム送信用のメール文を3パターン作成してください。
+    const prompt = `以下の会社情報をもとに、営業フォーム送信用のメール文を3パターン作成してください。
 
 会社情報:
 ${companyInfo}
@@ -30,16 +33,23 @@ ${companyInfo}
   { "type": "C", "title": "丁寧・課題解決型", "subject": "...", "body": "..." }
 ]`
 
-  const result = await model.generateContent(prompt)
-  const text = result.response.text()
+    const result = await model.generateContent(prompt)
+    const text = result.response.text()
 
-  // JSONを抽出（コードブロック対応）
-  const jsonMatch = text.match(/\[[\s\S]*\]/)
-  if (!jsonMatch) {
-    return NextResponse.json({ error: 'AI出力の解析に失敗しました' }, { status: 500 })
+    // JSONを抽出（コードブロック対応）
+    const jsonMatch = text.match(/\[[\s\S]*\]/)
+    if (!jsonMatch) {
+      return NextResponse.json({ error: 'AI出力の解析に失敗しました' }, { status: 500 })
+    }
+
+    const patterns = JSON.parse(jsonMatch[0])
+
+    return NextResponse.json({ patterns })
+  } catch (error) {
+    console.error('[compose] Error:', error)
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'サーバーエラーが発生しました' },
+      { status: 500 }
+    )
   }
-
-  const patterns = JSON.parse(jsonMatch[0])
-
-  return NextResponse.json({ patterns })
 }

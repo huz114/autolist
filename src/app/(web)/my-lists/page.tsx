@@ -40,7 +40,7 @@ export default async function MyListsPage() {
     <div className="max-w-5xl mx-auto px-4 py-10">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-white mb-1">マイリスト</h1>
-        <p className="text-sm text-gray-400">LINEで依頼した営業リストの一覧です</p>
+        <p className="text-sm text-gray-400">LINEで依頼したフォーム営業リストの一覧です</p>
       </div>
 
       {jobs.length === 0 ? (
@@ -75,7 +75,6 @@ export default async function MyListsPage() {
                     {job.industry && <span>{job.industry}</span>}
                     {job.location && <span>{job.location}</span>}
                     <span>収集: <span className="text-white">{job.totalFound}件</span></span>
-                    <span>フォームあり: <span className="text-orange-400">{formCount}件</span></span>
                   </div>
                   {job.completedAt && (
                     <p className="text-xs text-gray-600 mt-1">

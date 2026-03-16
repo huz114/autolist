@@ -1,12 +1,10 @@
 import NextAuth from 'next-auth'
-import { PrismaAdapter } from '@auth/prisma-adapter'
 import Credentials from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
 import { prismaShiryolog } from '@/lib/prisma-shiryolog'
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  adapter: PrismaAdapter(prismaShiryolog as any),
+  trustHost: true,
   session: { strategy: 'jwt' },
   providers: [
     Credentials({

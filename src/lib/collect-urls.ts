@@ -282,8 +282,9 @@ async function scrapeAndSave(
  * スクレイピング済み件数が不足している間は追加 Serper 検索を繰り返す。
  *
  * 無限ループ防止:
- * - 検索ラウンドの上限: MAX_SEARCH_ROUNDS = targetCount * 3 / 10 (切り上げ)
- * - 処理済み URL 上限: targetCount * 3
+ * - 検索ラウンドの上限: MAX_SEARCH_ROUNDS = ceil(MAX_SCRAPED_URLS / 10) + searchQueries.length
+ * - 処理済み URL 上限: MAX_SCRAPED_URLS = max(targetCount * 10, 100)
+ *   （フォーム検出率が低くても targetCount を達成できるよう広めに設定）
  *
  * キャッシュ機能:
  * - 同じ industry + location の過去1年以内のジョブから CollectedUrl を再利用
@@ -297,7 +298,7 @@ export async function collectUrlsWithQueries(
   industry: string | null,
   location: string | null,
   industryKeywords: string[] = []
-): Promise<number> {
+): Promise<{ totalFound: number; scrapedCount: number }> {
   const job = await prisma.listJob.findUnique({
     where: { id: jobId },
     include: { urls: true },
@@ -425,7 +426,7 @@ export async function collectUrlsWithQueries(
         },
       });
 
-      return targetCount;
+      return { totalFound: targetCount, scrapedCount: 0 };
     } else if (cachedUrls.length > 0) {
       // キャッシュが不足: キャッシュ分を先に保存
       const now = new Date();
@@ -455,7 +456,9 @@ export async function collectUrlsWithQueries(
   // ─────────────────────────────────────────────────────────────
 
   // 無限ループ防止の上限値
-  const MAX_SCRAPED_URLS = targetCount * 3;       // スクレイピングするURL総数の上限
+  // フォーム検出率が低い場合でも targetCount に到達できるよう、
+  // 候補URL数の上限を targetCount * 10 に拡大（最低でも 100 件）
+  const MAX_SCRAPED_URLS = Math.max(targetCount * 10, 100);  // スクレイピングするURL総数の上限
   const MAX_SEARCH_ROUNDS = Math.ceil(MAX_SCRAPED_URLS / 10) + searchQueries.length;
 
   // DB から現在のジョブの収集済み URL を再取得（キャッシュコピー分を含む）
@@ -592,5 +595,5 @@ export async function collectUrlsWithQueries(
     `scrapedTotal=${scrapedTotal}, searchRounds=${searchRound}`
   );
 
-  return totalFound;
+  return { totalFound, scrapedCount: scrapedTotal };
 }

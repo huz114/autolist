@@ -82,7 +82,7 @@ export default function ComposePage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-10">
+    <div className="max-w-5xl mx-auto px-4 py-10">
       <h1 className="text-2xl font-bold text-white mb-1">メール文を作成</h1>
       <p className="text-sm text-gray-400 mb-8">
         自社情報を入力して、AIが3パターンのメール文を生成します
@@ -143,9 +143,9 @@ export default function ComposePage() {
           <textarea
             value={companyInfo}
             onChange={(e) => setCompanyInfo(e.target.value)}
-            rows={6}
+            rows={16}
             placeholder="会社名、事業内容、サービス・商品、実績・強み、ターゲット顧客などを記入してください"
-            className="w-full bg-[#0a0a0f] border border-white/10 text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-orange-500/50 transition-colors placeholder:text-gray-600 resize-none"
+            className="w-full bg-[#0a0a0f] border border-white/10 text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-orange-500/50 transition-colors placeholder:text-gray-600 resize-none min-h-[400px]"
           />
         </div>
 
@@ -228,8 +228,8 @@ export default function ComposePage() {
               <textarea
                 value={editedBody}
                 onChange={(e) => setEditedBody(e.target.value)}
-                rows={8}
-                className="w-full bg-[#0a0a0f] border border-white/10 text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-orange-500/50 transition-colors resize-none"
+                rows={20}
+                className="w-full bg-[#0a0a0f] border border-white/10 text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-orange-500/50 transition-colors resize-none min-h-[480px]"
               />
             </div>
             <a

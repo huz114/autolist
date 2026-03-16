@@ -116,13 +116,7 @@ async function handleStuckJobs() {
         data: { status: 'failed' },
       });
 
-      // クレジット返却（targetCount分を戻す）
-      await prisma.lineUser.update({
-        where: { id: job.userId },
-        data: {
-          credits: { increment: job.targetCount },
-        },
-      });
+      // B案: 完了時実績ベース課金のため、スタック時のクレジット返却は不要
 
       // LINE通知
       try {
@@ -130,14 +124,14 @@ async function handleStuckJobs() {
           job.user.lineUserId,
           `⚠️ 収集中にエラーが発生しました。\n\n` +
           `依頼: ${job.keyword}\n` +
-          `クレジットは${job.targetCount}件分返却されました。\n\n` +
+          `クレジットは消費されていません。\n\n` +
           `お手数ですが再度依頼してください。`
         );
       } catch (lineError) {
         console.error(`[JobPoller] Failed to send LINE notification for job ${job.id}:`, lineError);
       }
 
-      console.log(`[JobPoller] Stuck job ${job.id} marked as failed, ${job.targetCount} credits returned to user ${job.userId}`);
+      console.log(`[JobPoller] Stuck job ${job.id} marked as failed (no credits charged, B案)`);
     } catch (error) {
       console.error(`[JobPoller] Error handling stuck job ${job.id}:`, error);
     }

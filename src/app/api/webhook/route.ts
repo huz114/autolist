@@ -420,13 +420,8 @@ ${paymentUrl}
               },
             });
 
-            // クレジット消費
-            await prisma.lineUser.update({
-              where: { id: user.id },
-              data: { credits: { decrement: pendingState.targetCount } },
-            });
+            // クレジットは完了時に実績ベースで課金（ここでは消費しない）
 
-            const remainingAfterConfirm = user.credits - pendingState.targetCount;
             const isShiryologUser = !!user.userId;
             const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3007';
             const acceptanceMessage = isShiryologUser
@@ -437,7 +432,7 @@ ${paymentUrl}
 ・地域: ${pendingState.location || '指定なし'}
 ・件数: ${pendingState.targetCount}社
 
-💳 残クレジット: ${user.credits}件 → ${remainingAfterConfirm}件
+💳 残クレジット: ${user.credits}件（完了時に実績分が課金されます）
 
 完了後はこちらでご確認ください👇
 ${appUrl}/my-lists`
@@ -448,7 +443,7 @@ ${appUrl}/my-lists`
 ・地域: ${pendingState.location || '指定なし'}
 ・件数: ${pendingState.targetCount}社
 
-💳 残クレジット: ${user.credits}件 → ${remainingAfterConfirm}件
+💳 残クレジット: ${user.credits}件（完了時に実績分が課金されます）
 
 完了したらLINEでお知らせします。`;
 

@@ -4,6 +4,167 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { detectContactForm } from "./form-detector";
 
+/** 法人格キーワード */
+const CORPORATION_KEYWORDS = [
+  "株式会社",
+  "合同会社",
+  "有限会社",
+  "一般社団法人",
+  "一般財団法人",
+  "特定非営利活動法人",
+  "NPO法人",
+  "医療法人",
+  "学校法人",
+  "社会福祉法人",
+];
+
+/** 法人格キーワードが含まれるか確認 */
+function hasCorporationKeyword(name: string): boolean {
+  return CORPORATION_KEYWORDS.some((kw) => name.includes(kw));
+}
+
+/**
+ * HTMLから法人名を抽出する（ルールベース）
+ * 優先順位: JSON-LD → og:site_name → フッター著作権
+ */
+function extractCompanyNameFromHtml(html: string): string | null {
+  // 1. JSON-LD の Organization.name
+  const scriptMatches = Array.from(
+    html.matchAll(
+      /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi
+    )
+  );
+  for (const match of scriptMatches) {
+    try {
+      const json = JSON.parse(match[1]);
+      const items = Array.isArray(json) ? json : [json];
+      for (const item of items) {
+        if (
+          item["@type"] === "Organization" &&
+          typeof item.name === "string"
+        ) {
+          const name = item.name.trim();
+          if (hasCorporationKeyword(name)) {
+            return name;
+          }
+        }
+      }
+    } catch {
+      // JSON parse失敗は無視
+    }
+  }
+
+  // 2. og:site_name
+  const ogMatch = html.match(
+    /<meta[^>]+property=["']og:site_name["'][^>]+content=["']([^"']+)["']/i
+  );
+  if (ogMatch) {
+    const name = ogMatch[1].trim();
+    if (hasCorporationKeyword(name)) {
+      return name;
+    }
+  }
+  // property と content の順序が逆の場合
+  const ogMatchReverse = html.match(
+    /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:site_name["']/i
+  );
+  if (ogMatchReverse) {
+    const name = ogMatchReverse[1].trim();
+    if (hasCorporationKeyword(name)) {
+      return name;
+    }
+  }
+
+  // 3. フッター著作権表記
+  const copyrightMatch = html.match(
+    /(?:©|&copy;|Copyright)\s*(?:\d{4}[-–]\d{4}|\d{4})?\s*([^\n<|–\-]{2,60})/i
+  );
+  if (copyrightMatch) {
+    const name = copyrightMatch[1].trim().replace(/\s+/g, " ");
+    if (hasCorporationKeyword(name)) {
+      return name;
+    }
+  }
+
+  return null;
+}
+
+/** 法人名クロール用の追加パス */
+const COMPANY_NAME_PATHS = [
+  "/company",
+  "/company/",
+  "/about",
+  "/about/",
+  "/about-us",
+  "/about-us/",
+  "/company/about",
+  "/company/about/",
+];
+
+/**
+ * ルートドメインをクロールして法人名を取得する
+ * 3回リトライ、取得できなければ null を返す
+ */
+export async function fetchCompanyName(url: string): Promise<string | null> {
+  let domain: string;
+  try {
+    const urlObj = new URL(url);
+    domain = urlObj.hostname;
+  } catch {
+    return null;
+  }
+  const rootUrl = `https://${domain}`;
+
+  // 試みるURLリスト（ルート + 会社概要ページ候補）
+  const candidates = [rootUrl, ...COMPANY_NAME_PATHS.map((p) => `${rootUrl}${p}`)];
+
+  for (const candidate of candidates) {
+    // 最大3回リトライ
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+        const response = await fetch(candidate, {
+          headers: {
+            "User-Agent": USER_AGENT,
+            Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "ja,en;q=0.5",
+          },
+          signal: controller.signal,
+          redirect: "follow",
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) break; // 4xx/5xx はリトライ不要
+
+        const contentType = response.headers.get("content-type") || "";
+        if (
+          !contentType.includes("text/html") &&
+          !contentType.includes("application/xhtml")
+        ) {
+          break;
+        }
+
+        const html = await response.text();
+        const name = extractCompanyNameFromHtml(html);
+        if (name) {
+          return name;
+        }
+
+        break; // 取得できたが法人名なし → 次の候補へ
+      } catch {
+        if (attempt < 3) {
+          await new Promise((r) => setTimeout(r, 1000));
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
 export interface CompanyInfo {
   companyName?: string;       // 会社名
   industry?: string;          // 業種

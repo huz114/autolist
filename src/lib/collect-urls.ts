@@ -1,5 +1,5 @@
 import { prisma } from './prisma';
-import { scrapeCompanyInfo } from './scrape-company';
+import { scrapeCompanyInfo, fetchCompanyName } from './scrape-company';
 
 // ─── ドメインブラックリスト（修正1） ───────────────────────────────────────
 // ディレクトリ・ポータル・SNS・政府機関など、個社サイトではないドメインを除外する
@@ -390,6 +390,8 @@ export async function collectUrls(jobId: string): Promise<number> {
 
 /**
  * スクレイピング結果を保存するヘルパー関数
+ * hasForm=true の場合は法人名クロールを実行して companyVerified を設定する
+ * companyVerified=true の件数が targetCount に達したら true を返す
  */
 async function scrapeAndSave(
   jobId: string,
@@ -399,12 +401,23 @@ async function scrapeAndSave(
     const companyInfo = await scrapeCompanyInfo(urlData.url);
 
     if (companyInfo.hasForm) {
+      // 法人名クロール
+      const fetchedName = await fetchCompanyName(urlData.url);
+      const companyVerified = fetchedName !== null;
+      const companyName = fetchedName ?? companyInfo.companyName ?? urlData.companyName;
+
+      if (companyVerified) {
+        console.log(`  -> hasForm: true, companyVerified: true (${fetchedName}), saved`);
+      } else {
+        console.log(`  -> hasForm: true, companyVerified: false (法人名取得失敗), saved`);
+      }
+
       await prisma.collectedUrl.create({
         data: {
           jobId,
           url: urlData.url,
           domain: urlData.domain,
-          companyName: companyInfo.companyName ?? urlData.companyName,
+          companyName,
           industry: companyInfo.industry ?? null,
           location: companyInfo.location ?? null,
           employeeCount: companyInfo.employeeCount ?? null,
@@ -413,11 +426,11 @@ async function scrapeAndSave(
           representativeName: companyInfo.representativeName ?? null,
           hasForm: true,
           formUrl: companyInfo.formUrl ?? null,
+          companyVerified,
           status: 'collected',
         },
       });
-      console.log(`  -> hasForm: true, saved`);
-      return true;
+      return companyVerified; // verified件数カウントに companyVerified=true のみ
     } else {
       console.log(`  -> hasForm: false, skipped`);
       return false;
@@ -528,6 +541,7 @@ export async function collectUrlsWithQueries(
       representativeName: string | null;
       hasForm: boolean;
       formUrl: string | null;
+      companyVerified: boolean;
       status: string;
       createdAt: Date;
     }> = [];
@@ -564,6 +578,7 @@ export async function collectUrlsWithQueries(
           representativeName: u.representativeName,
           hasForm: u.hasForm,
           formUrl: u.formUrl,
+          companyVerified: u.companyVerified,
           status: u.status,
           createdAt: now,
         })),
@@ -597,6 +612,7 @@ export async function collectUrlsWithQueries(
           representativeName: u.representativeName,
           hasForm: u.hasForm,
           formUrl: u.formUrl,
+          companyVerified: u.companyVerified,
           status: u.status,
           createdAt: now,
         })),
@@ -617,7 +633,7 @@ export async function collectUrlsWithQueries(
   // DB から現在のジョブの収集済み URL を再取得（キャッシュコピー分を含む）
   const savedUrlsAfterCache = await prisma.collectedUrl.findMany({
     where: { jobId },
-    select: { domain: true, hasForm: true },
+    select: { domain: true, hasForm: true, companyVerified: true },
   });
 
   // 既収集ドメインの初期化（キャッシュで追加されたドメインも含む）
@@ -629,7 +645,8 @@ export async function collectUrlsWithQueries(
   const pendingQueue: CollectedUrlData[] = [];
 
   // 統計（キャッシュで既に保存された分を初期値に）
-  let savedCount = savedUrlsAfterCache.filter(u => u.hasForm).length; // 既存のフォームあり件数
+  // savedCount = companyVerified=true の件数（目標件数カウント基準）
+  let savedCount = savedUrlsAfterCache.filter(u => u.companyVerified).length;
   let scrapedTotal = 0;     // スクレイピング済みURL数
   let searchRound = 0;      // 実行した検索ラウンド数
 

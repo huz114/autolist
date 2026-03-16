@@ -76,6 +76,7 @@ model CollectedUrl {
   representativeName String?
   hasForm            Boolean  @default(false)
   formUrl            String?
+  companyVerified    Boolean  @default(false)
   status             String   @default("collected")
   createdAt          DateTime @default(now())
   job                ListJob  @relation(fields: [jobId], references: [id])

@@ -62,9 +62,9 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
       industryKeywords
     );
 
-    // フォームありの件数を取得
+    // 法人名確認済み（companyVerified=true）の件数を取得（顧客提出用件数）
     const formCount = await prisma.collectedUrl.count({
-      where: { jobId: job.id, hasForm: true },
+      where: { jobId: job.id, hasForm: true, companyVerified: true },
     });
 
     // 完了後のstatus確認（キャンセルされた場合は按分課金）

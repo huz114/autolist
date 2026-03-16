@@ -20,7 +20,7 @@ export default async function AutolistResultsPage({ params }: { params: { jobId:
     },
     include: {
       urls: {
-        where: { hasForm: true },
+        where: { hasForm: true, companyVerified: true },
         orderBy: { createdAt: 'asc' },
         select: {
           id: true,

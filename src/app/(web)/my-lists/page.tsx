@@ -84,10 +84,10 @@ export default async function MyListsPage() {
                 </div>
                 {job.status === 'completed' && formCount > 0 && (
                   <Link
-                    href={`/compose/${job.id}`}
+                    href={`/autolist-results/${job.id}`}
                     className="shrink-0 bg-orange-500 hover:bg-orange-400 text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors whitespace-nowrap"
                   >
-                    フォーム送信へ →
+                    リストを見る →
                   </Link>
                 )}
               </div>

@@ -43,6 +43,82 @@ const CONTACT_LINK_KEYWORDS = [
   "お見積",
 ];
 
+// ─── フォーム判定強化用定数（修正3） ─────────────────────────────────────────
+
+/**
+ * 問い合わせフォームとして有効と判断するための input name 属性キーワード
+ * （メール・電話・氏名・会社名・本文などを示す名前）
+ */
+const VALID_INPUT_NAME_KEYWORDS: ReadonlyArray<string> = [
+  'name', 'company', 'message', 'content', 'body', 'inquiry',
+  'お名前', '会社', 'メッセージ', 'mail', 'email', 'tel', 'phone',
+  'subject', 'comment', 'question',
+];
+
+/**
+ * action 属性に含まれている場合「検索フォーム」とみなすキーワード
+ */
+const SEARCH_ACTION_KEYWORDS: ReadonlyArray<string> = [
+  'search', 'find', 'query',
+];
+
+/**
+ * <form> 要素が問い合わせ・申し込みフォームとして有効かどうかを判定する。
+ *
+ * 条件A: <form> 内に type="email" / type="tel" / <textarea> /
+ *         または name 属性が VALID_INPUT_NAME_KEYWORDS に合致する <input> が存在する
+ * 条件B: action 属性が存在しない、または action が検索フォームっぽくない
+ *         （action に "search" / "find" / "query" を含まない）
+ *         さらに action に "?q=" を含まない
+ *
+ * 両条件を満たす <form> が 1 つ以上存在すれば true を返す。
+ */
+function hasValidContactForm($: ReturnType<typeof import("cheerio").load>): boolean {
+  const forms = $('form');
+  let found = false;
+
+  forms.each((_i, formEl) => {
+    if (found) return; // 既に発見済みならスキップ
+
+    const $form = $(formEl);
+    const action = ($form.attr('action') || '').toLowerCase();
+
+    // 条件B: 検索フォームっぽい action を持つ場合は除外
+    const isSearchForm =
+      SEARCH_ACTION_KEYWORDS.some(kw => action.includes(kw)) ||
+      action.includes('?q=');
+    if (isSearchForm) return;
+
+    // 条件A: 有効な入力フィールドの確認
+    // type="email"
+    if ($form.find('input[type="email"]').length > 0) {
+      found = true;
+      return;
+    }
+    // type="tel"
+    if ($form.find('input[type="tel"]').length > 0) {
+      found = true;
+      return;
+    }
+    // <textarea>
+    if ($form.find('textarea').length > 0) {
+      found = true;
+      return;
+    }
+    // name 属性キーワード一致の <input>
+    $form.find('input[name], select[name], textarea[name]').each((_j, inputEl) => {
+      if (found) return;
+      const nameAttr = ($(inputEl).attr('name') || '').toLowerCase();
+      if (VALID_INPUT_NAME_KEYWORDS.some(kw => nameAttr.includes(kw.toLowerCase()))) {
+        found = true;
+      }
+    });
+  });
+
+  return found;
+}
+// ──────────────────────────────────────────────────────────────────────────────
+
 /** フォーム種別判定キーワード */
 const FORM_TYPE_KEYWORDS: Array<{
   type: FormDetectionResult["form_type"];
@@ -198,7 +274,8 @@ export async function detectContactForm(
     const html = await fetchHtml(linkedUrl);
     if (html) {
       const $ = cheerio.load(html);
-      if ($("form").length > 0) {
+      // 厳密なフォーム判定（修正3: 条件A + 条件B）
+      if (hasValidContactForm($)) {
         return {
           has_form: true,
           form_url: linkedUrl,
@@ -216,7 +293,8 @@ export async function detectContactForm(
       const html = await fetchHtml(url);
       if (html) {
         const $ = cheerio.load(html);
-        if ($("form").length > 0) {
+        // 厳密なフォーム判定（修正3: 条件A + 条件B）
+        if (hasValidContactForm($)) {
           return {
             has_form: true,
             form_url: url,
@@ -234,13 +312,14 @@ export async function detectContactForm(
     }
   }
 
-  // ステップ3: 概要ページ自体に <form> があるか確認
+  // ステップ3: 概要ページ自体に有効な <form> があるか確認
+  // form_url は null ではなくトップページURL（baseUrl）を返す（修正3: 補足修正）
   {
     const $ = cheerio.load(overviewHtml);
-    if ($("form").length > 0) {
+    if (hasValidContactForm($)) {
       return {
         has_form: true,
-        form_url: null,
+        form_url: baseUrl,
         form_type: classifyFormType(overviewHtml, baseUrl),
       };
     }

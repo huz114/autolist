@@ -13,10 +13,10 @@ model LineUser {
   displayName  String?
   plan         String     @default("free")
   monthlyCount Int        @default(0)
+  createdAt    DateTime   @default(now())
   credits      Int        @default(100)
   state        String?
-  createdAt    DateTime   @default(now())
-  userId       String?    // シリョログのUser.idを参照（外部キー制約なし）
+  userId       String?
   jobs         ListJob[]
   purchases    Purchase[]
 }
@@ -24,20 +24,20 @@ model LineUser {
 model Purchase {
   id        String   @id @default(cuid())
   userId    String
-  amount    Int      // 課金額（円）
-  credits   Int      // 付与クレジット数
-  stripeId  String?  // Stripe Payment Intent ID or Session ID
+  amount    Int
+  credits   Int
+  stripeId  String?
   createdAt DateTime @default(now())
   user      LineUser @relation(fields: [userId], references: [id])
 }
 
 model AdMetrics {
   id          String   @id @default(cuid())
-  date        DateTime // 集計日
-  campaign    String   // キャンペーン名
+  date        DateTime
+  campaign    String
   impressions Int      @default(0)
   clicks      Int      @default(0)
-  spend       Int      @default(0) // 広告費（円）
+  spend       Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -54,10 +54,10 @@ model ListJob {
   status           String         @default("pending")
   progress         Int            @default(0)
   totalFound       Int            @default(0)
-  originalMessage  String?        // LINEで送られた元のメッセージ
-  industryKeywords String[]       // 業種キーワード配列（キャッシュ検索・多様化クエリ用）
   createdAt        DateTime       @default(now())
   completedAt      DateTime?
+  originalMessage  String?
+  industryKeywords String[]
   urls             CollectedUrl[]
   user             LineUser       @relation(fields: [userId], references: [id])
 }

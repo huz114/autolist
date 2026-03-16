@@ -1,6 +1,148 @@
 import { prisma } from './prisma';
 import { scrapeCompanyInfo } from './scrape-company';
 
+// ─── ドメインブラックリスト（修正1） ───────────────────────────────────────
+// ディレクトリ・ポータル・SNS・政府機関など、個社サイトではないドメインを除外する
+const DOMAIN_BLACKLIST: ReadonlySet<string> = new Set([
+  // 地図・グルメ・求人ポータル
+  'mapion.co.jp',
+  'biz.ne.jp',
+  'tabelog.com',
+  'hotpepper.jp',
+  'townwork.net',
+  // 就職・転職
+  'indeed.com',
+  'mynavi.jp',
+  'rikunabi.com',
+  'recruit.co.jp',
+  'doda.jp',
+  'bizreach.jp',
+  'en-japan.com',
+  'wantedly.com',
+  'linkedin.com',
+  // SNS
+  'facebook.com',
+  'twitter.com',
+  'instagram.com',
+  'youtube.com',
+  // 百科事典・大手EC・検索
+  'wikipedia.org',
+  'amazon.co.jp',
+  'rakuten.co.jp',
+  'yahoo.co.jp',
+  'google.com',
+  'apple.com',
+  'microsoft.com',
+  // レビュー・口コミ
+  'yelp.com',
+  'foursquare.com',
+  'tripadvisor.jp',
+  // 政府機関
+  'nta.go.jp',
+  'mlit.go.jp',
+  'meti.go.jp',
+  'pref.tokyo.lg.jp',
+  'city.tokyo.lg.jp',
+  // タウンページ・電話帳・生活情報
+  'itp.ne.jp',
+  'townpage.net',
+  'ekiten.jp',
+  'lifemedia.jp',
+  // ナビ・検索
+  'navitime.co.jp',
+  'goo.ne.jp',
+  'bing.com',
+  // ニュース・通信社
+  'nikkei.com',
+  'kyodo.co.jp',
+]);
+
+// ─── パスブラックリスト（修正3） ────────────────────────────────────────────
+// 記事・ブログ系（他サイトがその会社を紹介しているページ）や
+// ディレクトリ・検索系（まとめサイト・比較サイトのリストページ）を除外する
+const PATH_BLACKLIST: ReadonlyArray<string> = [
+  // 記事・ブログ系
+  '/blog/',
+  '/article/',
+  '/articles/',
+  '/news/',
+  '/column/',
+  '/columns/',
+  '/media/',
+  '/magazine/',
+  '/topics/',
+  '/post/',
+  '/posts/',
+  '/knowledge/',
+  '/info/',
+  '/case/',
+  '/cases/',
+  '/report/',
+  '/reports/',
+  // ディレクトリ・検索系
+  '/search/',
+  '/list/',
+  '/lists/',
+  '/find/',
+  '/ranking/',
+  '/rankings/',
+  '/directory/',
+  '/catalog/',
+  '/compare/',
+  '/companylist/',
+  '/industry_s/',
+  '/phonebook/',
+  '/kaishalchiran/',
+];
+
+/**
+ * URLのパスがブラックリストに該当するか確認する
+ */
+function isBlockedPath(url: string): boolean {
+  try {
+    const urlObj = new URL(url);
+    const path = urlObj.pathname.toLowerCase();
+    for (const blocked of PATH_BLACKLIST) {
+      if (path.includes(blocked)) return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+// ─── 除外TLDリスト（修正2） ────────────────────────────────────────────────
+// 協同組合・官公庁・学校など、営業先として不適切なTLDを除外する
+const EXCLUDED_TLD_PATTERNS: ReadonlyArray<RegExp> = [
+  /\.or\.jp$/,   // 協同組合・業界団体
+  /\.go\.jp$/,   // 官公庁
+  /\.ac\.jp$/,   // 大学・学校
+  /\.ed\.jp$/,   // 教育機関
+];
+
+/**
+ * ドメインがブラックリストまたは除外TLDに該当するか確認する
+ */
+function isBlockedDomain(domain: string): boolean {
+  // ブラックリストチェック（www.なしの正規化済みドメインで照合）
+  if (DOMAIN_BLACKLIST.has(domain)) return true;
+
+  // サブドメインを持つ場合もベースドメインで照合（例: jobs.tabelog.com → tabelog.com）
+  const parts = domain.split('.');
+  for (let i = 1; i < parts.length - 1; i++) {
+    const parent = parts.slice(i).join('.');
+    if (DOMAIN_BLACKLIST.has(parent)) return true;
+  }
+
+  // TLDパターンチェック
+  for (const pattern of EXCLUDED_TLD_PATTERNS) {
+    if (pattern.test(domain)) return true;
+  }
+
+  return false;
+}
+// ──────────────────────────────────────────────────────────────────────────────
+
 interface SerperResult {
   organic?: Array<{
     title: string;
@@ -104,6 +246,17 @@ async function searchWithSerper(query: string, page: number = 1): Promise<Collec
   if (data.organic) {
     for (const item of data.organic) {
       const domain = extractDomain(item.link);
+
+      // ブラックリスト・除外TLD・ブロックパスのURLはスキップ
+      if (isBlockedDomain(domain)) {
+        console.log(`  [BLOCKED domain] ${domain}`);
+        continue;
+      }
+      if (isBlockedPath(item.link)) {
+        console.log(`  [BLOCKED path] ${item.link}`);
+        continue;
+      }
+
       const companyName = guessCompanyName(domain, item.title);
 
       results.push({

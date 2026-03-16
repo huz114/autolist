@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 
 type Job = {
   id: string
@@ -150,6 +151,12 @@ export default function ComposeClient({ job, userEmail }: { job: Job; userEmail:
 
       {/* ヘッダー */}
       <div className="mb-8">
+        <Link
+          href={`/autolist-results/${job.id}`}
+          className="inline-flex items-center text-sm text-gray-400 hover:text-white transition-colors mb-4"
+        >
+          ← リストに戻る
+        </Link>
         <h1 className="text-2xl font-bold text-white mb-1">フォーム送信の準備</h1>
         <p className="text-sm text-gray-400">送信者情報とメッセージを設定してください</p>
       </div>

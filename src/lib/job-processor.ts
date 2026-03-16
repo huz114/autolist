@@ -227,14 +227,14 @@ ${loginUrl}
         await sendMessage(job.user.lineUserId, completionMessage);
       }
 
-      // シリョログの Company テーブルに自動インポート
-      try {
-        const imported = await importJobToShiryolog(job.id);
-        console.log(`Imported ${imported} companies to Shiryolog from job ${job.id}`);
-      } catch (e) {
-        console.error('Failed to import to Shiryolog:', e);
-        // エラーでもジョブ完了処理は止めない
-      }
+      // シリョログの Company テーブルへの自動インポート（一時無効化）
+      // TODO: データ品質改善後に再有効化する
+      // try {
+      //   const imported = await importJobToShiryolog(job.id);
+      //   console.log(`Imported ${imported} companies to Shiryolog from job ${job.id}`);
+      // } catch (e) {
+      //   console.error('Failed to import to Shiryolog:', e);
+      // }
 
       console.log(`Job ${job.id} completed. Found ${totalFound} URLs.`);
     }

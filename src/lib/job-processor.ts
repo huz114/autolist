@@ -156,15 +156,13 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
         },
       });
 
-      // ユーザーのmonthlyCountを更新 & クレジット消費
-      const updatedLineUser = await prisma.lineUser.update({
+      // クレジット消費は確定ボタン押下時に実行（/api/confirm-list/[jobId]）
+      // ここでは消費しない
+      const updatedLineUser = await prisma.lineUser.findUnique({
         where: { id: job.userId },
-        data: {
-          monthlyCount: { increment: formCount },
-          credits: { decrement: formCount },
-        },
         select: { credits: true, lineUserId: true, displayName: true, userId: true },
       });
+      if (!updatedLineUser) throw new Error('User not found');
       const remainingCreditsAfterCompletion = updatedLineUser.credits;
 
       // 完了通知（シリョログ登録済みならメール、未登録はLINE）

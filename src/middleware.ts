@@ -4,7 +4,9 @@ import { NextResponse } from 'next/server'
 export default auth((req) => {
   const isLoggedIn = !!req.auth
   const isAuthPage = req.nextUrl.pathname.startsWith('/login') ||
-                     req.nextUrl.pathname.startsWith('/register')
+                     req.nextUrl.pathname.startsWith('/register') ||
+                     req.nextUrl.pathname.startsWith('/forgot-password') ||
+                     req.nextUrl.pathname.startsWith('/reset-password')
   const isPublicPage = req.nextUrl.pathname === '/' ||
                        req.nextUrl.pathname.startsWith('/autolist/results') ||
                        req.nextUrl.pathname.startsWith('/api/')

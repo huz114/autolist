@@ -104,6 +104,7 @@ function compressHtml(html: string): string {
 
 interface GeminiExtractedInfo {
   isCompanySite: boolean;
+  isRelevantIndustry: boolean;
   companyName: string | null;
   industry: string | null;
   location: string | null;
@@ -117,10 +118,15 @@ interface GeminiExtractedInfo {
  * GeminiにHTMLテキストを渡して企業情報を抽出する
  */
 async function extractInfoWithGemini(
-  textContent: string
+  textContent: string,
+  requestedIndustry?: string
 ): Promise<GeminiExtractedInfo> {
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+  const industryCheckInstruction = requestedIndustry
+    ? `\n\n【業種一致チェック】依頼された業種: 「${requestedIndustry}」\nこの企業が上記の業種に該当するかを判定してください。\n- isRelevantIndustry: true → 依頼業種に該当する（例: 「歯科クリニック」で歯科医院ならtrue）\n- isRelevantIndustry: false → 依頼業種に該当しない（例: 「歯科クリニック」で不用品回収業ならfalse）\n関連性が曖昧な場合はtrueにしてください。`
+    : "";
 
   const prompt = `このWebページが法人・事業者の公式サイトかどうか判定し、企業情報を抽出してJSONで返してください。
 
@@ -132,13 +138,13 @@ isCompanySite: false の場合、他の項目は null で構いません。
 isCompanySite: true の場合、以下の情報を抽出してください（見つからない項目はnullにしてください）:
 会社名、業種、所在地（都道府県・市区町村）、従業員数、資本金、電話番号、代表者名
 
-【会社名の重要ルール】法人格（株式会社・有限会社・合同会社・一般社団法人・医療法人等）を必ず含めること。ページ内に法人格が記載されている場合は必ず付与する。英語名の場合も Co., Ltd. や Inc. 等を含めること。例: ×「山田商事」→ ○「株式会社山田商事」
+【会社名の重要ルール】法人格（株式会社・有限会社・合同会社・一般社団法人・医療法人等）を必ず含めること。ページ内に法人格が記載されている場合は必ず付与する。英語名の場合も Co., Ltd. や Inc. 等を含めること。例: ×「山田商事」→ ○「株式会社山田商事」${industryCheckInstruction}
 
 テキスト:
 ${textContent}
 
 JSONのみ返してください：
-{"isCompanySite": true, "companyName": "", "industry": "", "location": "", "employeeCount": "", "capitalAmount": "", "phoneNumber": "", "representativeName": ""}`;
+{"isCompanySite": true, "isRelevantIndustry": true, "companyName": "", "industry": "", "location": "", "employeeCount": "", "capitalAmount": "", "phoneNumber": "", "representativeName": ""}`;
 
   try {
     const result = await model.generateContent(prompt);
@@ -149,6 +155,7 @@ JSONのみ返してください：
     if (!jsonMatch) {
       return {
         isCompanySite: false,
+        isRelevantIndustry: true,
         companyName: null,
         industry: null,
         location: null,
@@ -163,6 +170,7 @@ JSONのみ返してください：
 
     return {
       isCompanySite: parsed.isCompanySite === true,
+      isRelevantIndustry: parsed.isRelevantIndustry !== false, // 未指定時はtrue扱い
       companyName: parsed.companyName || null,
       industry: parsed.industry || null,
       location: parsed.location || null,
@@ -174,6 +182,7 @@ JSONのみ返してください：
   } catch {
     return {
       isCompanySite: false,
+      isRelevantIndustry: true,
       companyName: null,
       industry: null,
       location: null,
@@ -188,7 +197,7 @@ JSONのみ返してください：
 /**
  * 企業サイトにアクセスして企業情報を取得する
  */
-export async function scrapeCompanyInfo(url: string): Promise<CompanyInfo> {
+export async function scrapeCompanyInfo(url: string, requestedIndustry?: string): Promise<CompanyInfo> {
   const domain = extractDomain(url);
   const baseUrl = `https://${domain}`;
 
@@ -217,11 +226,17 @@ export async function scrapeCompanyInfo(url: string): Promise<CompanyInfo> {
     // HTMLを圧縮してテキスト化
     const textContent = compressHtml(htmlForExtraction);
 
-    // Geminiで企業情報を抽出
-    const extracted = await extractInfoWithGemini(textContent);
+    // Geminiで企業情報を抽出（依頼業種を渡して一致チェック）
+    const extracted = await extractInfoWithGemini(textContent, requestedIndustry);
 
     // 企業公式サイトでない場合はhasForm: falseで早期リターン
     if (!extracted.isCompanySite) {
+      return { hasForm: false };
+    }
+
+    // 業種不一致の場合はスキップ
+    if (!extracted.isRelevantIndustry) {
+      console.log(`  -> isRelevantIndustry: false, skipped (requested: ${requestedIndustry})`);
       return { hasForm: false };
     }
 

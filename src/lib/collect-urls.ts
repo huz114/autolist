@@ -76,6 +76,8 @@ const DOMAIN_BLACKLIST: ReadonlySet<string> = new Set([
   'haisha-yoyaku.jp',
   'fdoc.jp',
   'medinew.jp',
+  // スパム・低品質
+  'papapa.net',
 ]);
 
 // ─── パスブラックリスト（修正3） ────────────────────────────────────────────
@@ -359,7 +361,7 @@ export async function collectUrls(jobId: string): Promise<number> {
 
     try {
       console.log(`Scraping: ${urlData.url} (${processed}/${totalCandidates})`);
-      const companyInfo = await scrapeCompanyInfo(urlData.url);
+      const companyInfo = await scrapeCompanyInfo(urlData.url, job.industry ?? undefined);
 
       // hasForm: true のURLのみ保存
       if (companyInfo.hasForm) {
@@ -416,10 +418,11 @@ export async function collectUrls(jobId: string): Promise<number> {
  */
 async function scrapeAndSave(
   jobId: string,
-  urlData: CollectedUrlData
+  urlData: CollectedUrlData,
+  requestedIndustry?: string
 ): Promise<boolean> {
   try {
-    const companyInfo = await scrapeCompanyInfo(urlData.url);
+    const companyInfo = await scrapeCompanyInfo(urlData.url, requestedIndustry);
 
     if (companyInfo.hasForm) {
       // isCompanySite: true かつ hasForm: true の場合のみここに到達
@@ -771,7 +774,7 @@ export async function collectUrlsWithQueries(
       `(scraped: ${scrapedTotal}/${MAX_SCRAPED_URLS}, saved: ${savedCount}/${targetCount})`
     );
 
-    const wasSaved = await scrapeAndSave(jobId, urlData);
+    const wasSaved = await scrapeAndSave(jobId, urlData, industry ?? undefined);
     if (wasSaved) {
       savedCount++;
     }

@@ -209,7 +209,7 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
       switch (action) {
         case 'new_request':
           if (replyToken) {
-            await replyMessage(replyToken, '業種と地域を送ってください。\n例：「東京の歯科医院100件」');
+            await replyMessage(replyToken, '業種と地域を送ってください。\n例：「渋谷区の不動産会社30件」');
           }
           break;
 
@@ -238,7 +238,7 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
 
         case 'help':
           if (replyToken) {
-            await replyMessage(replyToken, `📋 オートリストの使い方\n\n1️⃣ 業種と地域をLINEに送る\n例：「東京の歯科医院100件」\n\n2️⃣ 確認メッセージが届く\n\n3️⃣「はい」で収集開始\n\n4️⃣ 完了したらLINEに通知\n\n❓ 困ったことがあれば「問い合わせ」ボタンへ`);
+            await replyMessage(replyToken, `📋 オートリストの使い方\n\n1️⃣ 業種と地域をLINEに送る\n例：「渋谷区の不動産会社30件」\n\n2️⃣ 確認メッセージが届く\n\n3️⃣「はい」で収集開始\n\n4️⃣ 完了したらLINEに通知\n\n❓ 困ったことがあれば「問い合わせ」ボタンへ`);
           }
           break;
 
@@ -480,7 +480,7 @@ ${appUrl}/my-lists`
               await replyMessage(replyToken, `❌ キャンセルしました。
 
 別の条件で試す場合は、改めてメッセージを送ってください。
-例: 「東京の歯科医院を100件」`);
+例: 「渋谷区の不動産会社30件」`);
             }
 
           } else {

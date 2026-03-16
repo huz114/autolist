@@ -1,5 +1,5 @@
 import { prisma } from './prisma';
-import { scrapeCompanyInfo, fetchCompanyName } from './scrape-company';
+import { scrapeCompanyInfo } from './scrape-company';
 
 // ─── ドメインブラックリスト（修正1） ───────────────────────────────────────
 // ディレクトリ・ポータル・SNS・政府機関など、個社サイトではないドメインを除外する
@@ -401,16 +401,11 @@ async function scrapeAndSave(
     const companyInfo = await scrapeCompanyInfo(urlData.url);
 
     if (companyInfo.hasForm) {
-      // 法人名クロール
-      const fetchedName = await fetchCompanyName(urlData.url);
-      const companyVerified = fetchedName !== null;
-      const companyName = fetchedName ?? companyInfo.companyName ?? urlData.companyName;
+      // isCompanySite: true かつ hasForm: true の場合のみここに到達
+      const companyVerified = true;
+      const companyName = companyInfo.companyName ?? urlData.companyName;
 
-      if (companyVerified) {
-        console.log(`  -> hasForm: true, companyVerified: true (${fetchedName}), saved`);
-      } else {
-        console.log(`  -> hasForm: true, companyVerified: false (法人名取得失敗), saved`);
-      }
+      console.log(`  -> hasForm: true, companyVerified: true (isCompanySite確認済み), saved`);
 
       await prisma.collectedUrl.create({
         data: {
@@ -430,9 +425,9 @@ async function scrapeAndSave(
           status: 'collected',
         },
       });
-      return companyVerified; // verified件数カウントに companyVerified=true のみ
+      return companyVerified;
     } else {
-      console.log(`  -> hasForm: false, skipped`);
+      console.log(`  -> hasForm: false or not company site, skipped`);
       return false;
     }
   } catch (error) {

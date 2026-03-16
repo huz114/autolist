@@ -10,6 +10,7 @@ function LoginForm() {
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callbackUrl') || '/my-lists'
   const lineUserId = searchParams.get('lineUserId') || ''
+  const resetSuccess = searchParams.get('reset') === 'success'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -56,6 +57,12 @@ function LoginForm() {
           リスト管理・フォーム送信はログインが必要です
         </p>
 
+        {resetSuccess && (
+          <div className="mb-6 bg-green-900/30 border border-green-500/30 text-green-400 text-sm px-4 py-3 rounded-lg">
+            パスワードを変更しました。新しいパスワードでログインしてください。
+          </div>
+        )}
+
         {error && (
           <div className="mb-6 bg-red-900/30 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg">
             {error}
@@ -96,6 +103,11 @@ function LoginForm() {
           >
             {loading ? 'ログイン中...' : 'ログイン'}
           </button>
+          <div className="text-center">
+            <Link href="/forgot-password" className="text-sm text-orange-400 hover:text-orange-300">
+              パスワードを忘れた方はこちら
+            </Link>
+          </div>
         </form>
 
         <p className="mt-6 text-center text-sm text-gray-500">

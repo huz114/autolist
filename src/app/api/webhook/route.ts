@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifySignature, replyMessage } from '@/lib/line';
-import { analyzeQuery } from '@/lib/analyze-query';
+import { analyzeQuery, checkAmbiguousLocation } from '@/lib/analyze-query';
 import { prisma } from '@/lib/prisma';
 import Stripe from 'stripe';
 
@@ -514,7 +514,7 @@ ${appUrl}/my-lists`
               const remainingAfter = user.credits - newCount;
               const updatedConfirmMessageObj = {
                 type: 'text',
-                text: `以下の条件でリストを収集してよいですか？\n\n🏢 業種：${pendingState.industry || '指定なし'}\n📍 地域：${pendingState.location || '指定なし'}\n📊 件数：${newCount}社\n\n💳 ${newCount}クレジット消費（残り${remainingAfter}件）`,
+                text: `以下の条件でリストを収集してよいですか？\n\n🏢 業種：${pendingState.industry || '指定なし'}\n📍 地域：${pendingState.location || '指定なし'}\n📊 件数：${newCount}社\n\n💳 最大${newCount}クレジット消費予定（完了時に実績分が課金されます）`,
                 quickReply: {
                   items: [
                     {
@@ -575,6 +575,15 @@ ${appUrl}/my-lists`
       // Claude APIでクエリを解析
       const analyzed = await analyzeQuery(messageText);
 
+      // 曖昧な地域名チェック
+      const ambiguousWard = checkAmbiguousLocation(analyzed.location);
+      if (ambiguousWard) {
+        if (replyToken) {
+          await replyMessage(replyToken, `⚠️ 「${ambiguousWard}」は全国に複数あります。\n\n都道府県や市も含めて指定してください。\n\n例: 「大阪市西区」「横浜市西区」「名古屋市港区」`);
+        }
+        continue;
+      }
+
       // targetCount バリデーション
       if (analyzed.targetCount < 10) {
         if (replyToken) {
@@ -631,7 +640,7 @@ ${appUrl}/my-lists`
       const remainingAfter = user.credits - analyzed.targetCount;
       const confirmMessageObj = {
         type: 'text',
-        text: `以下の条件でリストを収集してよいですか？\n\n🏢 業種：${analyzed.industry || '指定なし'}\n📍 地域：${analyzed.location || '指定なし'}\n📊 件数：${analyzed.targetCount}社\n\n💳 ${analyzed.targetCount}クレジット消費（残り${remainingAfter}件）`,
+        text: `以下の条件でリストを収集してよいですか？\n\n🏢 業種：${analyzed.industry || '指定なし'}\n📍 地域：${analyzed.location || '指定なし'}\n📊 件数：${analyzed.targetCount}社\n\n💳 最大${analyzed.targetCount}クレジット消費予定（完了時に実績分が課金されます）`,
         quickReply: {
           items: [
             {

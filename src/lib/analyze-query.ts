@@ -9,6 +9,31 @@ export interface AnalyzedQuery {
 }
 
 /**
+ * 全国に複数存在する曖昧な区名リスト
+ */
+const AMBIGUOUS_WARD_NAMES = [
+  '西区', '東区', '南区', '北区', '中区', '中央区', '緑区', '港区',
+];
+
+/**
+ * locationが曖昧な区名のみかどうかを判定する
+ * 都道府県や市名が含まれていれば曖昧ではないと判定
+ * @returns 曖昧な場合はその区名を返す。曖昧でなければnull
+ */
+export function checkAmbiguousLocation(location: string): string | null {
+  if (!location) return null;
+
+  const trimmed = location.trim();
+
+  // 曖昧な区名リストに完全一致するかチェック
+  if (AMBIGUOUS_WARD_NAMES.includes(trimmed)) {
+    return trimmed;
+  }
+
+  return null;
+}
+
+/**
  * Gemini APIを使って自然言語のクエリを解析し、検索条件を抽出する
  * 例: 「IT企業 東京 100社リストして」
  * → { industry: "IT・情報通信", location: "東京", targetCount: 100, searchQueries: [...] }

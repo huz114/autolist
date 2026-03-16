@@ -7,9 +7,11 @@ import Link from 'next/link'
 
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   pending:    { label: '待機中',   color: 'text-gray-400 bg-gray-800' },
+  running:    { label: '収集中',   color: 'text-blue-400 bg-blue-900/30' },
   processing: { label: '収集中',   color: 'text-blue-400 bg-blue-900/30' },
-  completed:  { label: '完了',     color: 'text-green-400 bg-green-900/30' },
+  completed:  { label: '完了',     color: 'text-emerald-400 bg-emerald-900/30' },
   failed:     { label: '失敗',     color: 'text-red-400 bg-red-900/30' },
+  cancelled:  { label: 'キャンセル', color: 'text-gray-400 bg-gray-800' },
 }
 
 export default async function MyListsPage() {

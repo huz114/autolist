@@ -1,0 +1,4 @@
+# Prisma generated files (regenerated on build)
+*
+!.gitignore
+!schema.prisma

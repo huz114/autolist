@@ -65,6 +65,17 @@ const DOMAIN_BLACKLIST: ReadonlySet<string> = new Set([
   'itkonwakai.jp',
   'genee.jp',
   'gicp.co.jp',
+  // 医療ポータル・口コミ
+  'epark.jp',
+  'caloo.jp',
+  'denternet.jp',
+  'scuel.me',
+  'hospita.jp',
+  'doctorsfile.jp',
+  'byoinnavi.jp',
+  'haisha-yoyaku.jp',
+  'fdoc.jp',
+  'medinew.jp',
 ]);
 
 // ─── パスブラックリスト（修正3） ────────────────────────────────────────────

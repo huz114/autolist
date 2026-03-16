@@ -122,10 +122,10 @@ async function extractInfoWithGemini(
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-  const prompt = `このWebページが法人企業の公式サイトかどうか判定し、企業情報を抽出してJSONで返してください。
+  const prompt = `このWebページが法人・事業者の公式サイトかどうか判定し、企業情報を抽出してJSONで返してください。
 
 判定基準:
-- isCompanySite: true → 法人企業の公式Webサイト（会社概要・製品・サービス等を掲載）
+- isCompanySite: true → 法人・事業者の公式Webサイト（企業だけでなく、クリニック・医院・歯科医院・事務所・教室・サロン等の個人事業主の公式サイトも含む）（会社概要・製品・サービス等を掲載）
 - isCompanySite: false → ポータルサイト・求人サイト・ニュースサイト・口コミサイト・まとめサイト・ディレクトリ・地図サービス・SNS等
 
 isCompanySite: false の場合、他の項目は null で構いません。

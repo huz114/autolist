@@ -1288,6 +1288,10 @@ export namespace Prisma {
     aiConciergeSettings: string | null
     defaultConciergeId: string | null
     notificationSettings: string | null
+    senderEmail: string | null
+    senderTitle: string | null
+    lastSubject: string | null
+    lastBody: string | null
     plan: string | null
     billingCycle: string | null
     subscriptionStartDate: Date | null
@@ -1315,6 +1319,10 @@ export namespace Prisma {
     aiConciergeSettings: string | null
     defaultConciergeId: string | null
     notificationSettings: string | null
+    senderEmail: string | null
+    senderTitle: string | null
+    lastSubject: string | null
+    lastBody: string | null
     plan: string | null
     billingCycle: string | null
     subscriptionStartDate: Date | null
@@ -1342,6 +1350,10 @@ export namespace Prisma {
     aiConciergeSettings: number
     defaultConciergeId: number
     notificationSettings: number
+    senderEmail: number
+    senderTitle: number
+    lastSubject: number
+    lastBody: number
     plan: number
     billingCycle: number
     subscriptionStartDate: number
@@ -1371,6 +1383,10 @@ export namespace Prisma {
     aiConciergeSettings?: true
     defaultConciergeId?: true
     notificationSettings?: true
+    senderEmail?: true
+    senderTitle?: true
+    lastSubject?: true
+    lastBody?: true
     plan?: true
     billingCycle?: true
     subscriptionStartDate?: true
@@ -1398,6 +1414,10 @@ export namespace Prisma {
     aiConciergeSettings?: true
     defaultConciergeId?: true
     notificationSettings?: true
+    senderEmail?: true
+    senderTitle?: true
+    lastSubject?: true
+    lastBody?: true
     plan?: true
     billingCycle?: true
     subscriptionStartDate?: true
@@ -1425,6 +1445,10 @@ export namespace Prisma {
     aiConciergeSettings?: true
     defaultConciergeId?: true
     notificationSettings?: true
+    senderEmail?: true
+    senderTitle?: true
+    lastSubject?: true
+    lastBody?: true
     plan?: true
     billingCycle?: true
     subscriptionStartDate?: true
@@ -1525,6 +1549,10 @@ export namespace Prisma {
     aiConciergeSettings: string | null
     defaultConciergeId: string | null
     notificationSettings: string | null
+    senderEmail: string | null
+    senderTitle: string | null
+    lastSubject: string | null
+    lastBody: string | null
     plan: string
     billingCycle: string
     subscriptionStartDate: Date | null
@@ -1569,6 +1597,10 @@ export namespace Prisma {
     aiConciergeSettings?: boolean
     defaultConciergeId?: boolean
     notificationSettings?: boolean
+    senderEmail?: boolean
+    senderTitle?: boolean
+    lastSubject?: boolean
+    lastBody?: boolean
     plan?: boolean
     billingCycle?: boolean
     subscriptionStartDate?: boolean
@@ -1599,6 +1631,10 @@ export namespace Prisma {
     aiConciergeSettings?: boolean
     defaultConciergeId?: boolean
     notificationSettings?: boolean
+    senderEmail?: boolean
+    senderTitle?: boolean
+    lastSubject?: boolean
+    lastBody?: boolean
     plan?: boolean
     billingCycle?: boolean
     subscriptionStartDate?: boolean
@@ -1626,6 +1662,10 @@ export namespace Prisma {
     aiConciergeSettings?: boolean
     defaultConciergeId?: boolean
     notificationSettings?: boolean
+    senderEmail?: boolean
+    senderTitle?: boolean
+    lastSubject?: boolean
+    lastBody?: boolean
     plan?: boolean
     billingCycle?: boolean
     subscriptionStartDate?: boolean
@@ -1653,6 +1693,10 @@ export namespace Prisma {
     aiConciergeSettings?: boolean
     defaultConciergeId?: boolean
     notificationSettings?: boolean
+    senderEmail?: boolean
+    senderTitle?: boolean
+    lastSubject?: boolean
+    lastBody?: boolean
     plan?: boolean
     billingCycle?: boolean
     subscriptionStartDate?: boolean
@@ -1666,7 +1710,7 @@ export namespace Prisma {
     updatedAt?: boolean
   }
 
-  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "email" | "emailVerified" | "password" | "image" | "companyName" | "companyUrl" | "phone" | "furigana" | "aiConciergeSettings" | "defaultConciergeId" | "notificationSettings" | "plan" | "billingCycle" | "subscriptionStartDate" | "subscriptionEndDate" | "stripeCustomerId" | "stripeSubscriptionId" | "stripePriceId" | "planStatus" | "trialEndsAt" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "email" | "emailVerified" | "password" | "image" | "companyName" | "companyUrl" | "phone" | "furigana" | "aiConciergeSettings" | "defaultConciergeId" | "notificationSettings" | "senderEmail" | "senderTitle" | "lastSubject" | "lastBody" | "plan" | "billingCycle" | "subscriptionStartDate" | "subscriptionEndDate" | "stripeCustomerId" | "stripeSubscriptionId" | "stripePriceId" | "planStatus" | "trialEndsAt" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     accounts?: boolean | User$accountsArgs<ExtArgs>
     sessions?: boolean | User$sessionsArgs<ExtArgs>
@@ -1695,6 +1739,10 @@ export namespace Prisma {
       aiConciergeSettings: string | null
       defaultConciergeId: string | null
       notificationSettings: string | null
+      senderEmail: string | null
+      senderTitle: string | null
+      lastSubject: string | null
+      lastBody: string | null
       plan: string
       billingCycle: string
       subscriptionStartDate: Date | null
@@ -2144,6 +2192,10 @@ export namespace Prisma {
     readonly aiConciergeSettings: FieldRef<"User", 'String'>
     readonly defaultConciergeId: FieldRef<"User", 'String'>
     readonly notificationSettings: FieldRef<"User", 'String'>
+    readonly senderEmail: FieldRef<"User", 'String'>
+    readonly senderTitle: FieldRef<"User", 'String'>
+    readonly lastSubject: FieldRef<"User", 'String'>
+    readonly lastBody: FieldRef<"User", 'String'>
     readonly plan: FieldRef<"User", 'String'>
     readonly billingCycle: FieldRef<"User", 'String'>
     readonly subscriptionStartDate: FieldRef<"User", 'DateTime'>
@@ -6998,6 +7050,10 @@ export namespace Prisma {
     aiConciergeSettings: 'aiConciergeSettings',
     defaultConciergeId: 'defaultConciergeId',
     notificationSettings: 'notificationSettings',
+    senderEmail: 'senderEmail',
+    senderTitle: 'senderTitle',
+    lastSubject: 'lastSubject',
+    lastBody: 'lastBody',
     plan: 'plan',
     billingCycle: 'billingCycle',
     subscriptionStartDate: 'subscriptionStartDate',
@@ -7180,6 +7236,10 @@ export namespace Prisma {
     aiConciergeSettings?: StringNullableFilter<"User"> | string | null
     defaultConciergeId?: StringNullableFilter<"User"> | string | null
     notificationSettings?: StringNullableFilter<"User"> | string | null
+    senderEmail?: StringNullableFilter<"User"> | string | null
+    senderTitle?: StringNullableFilter<"User"> | string | null
+    lastSubject?: StringNullableFilter<"User"> | string | null
+    lastBody?: StringNullableFilter<"User"> | string | null
     plan?: StringFilter<"User"> | string
     billingCycle?: StringFilter<"User"> | string
     subscriptionStartDate?: DateTimeNullableFilter<"User"> | Date | string | null
@@ -7209,6 +7269,10 @@ export namespace Prisma {
     aiConciergeSettings?: SortOrderInput | SortOrder
     defaultConciergeId?: SortOrderInput | SortOrder
     notificationSettings?: SortOrderInput | SortOrder
+    senderEmail?: SortOrderInput | SortOrder
+    senderTitle?: SortOrderInput | SortOrder
+    lastSubject?: SortOrderInput | SortOrder
+    lastBody?: SortOrderInput | SortOrder
     plan?: SortOrder
     billingCycle?: SortOrder
     subscriptionStartDate?: SortOrderInput | SortOrder
@@ -7243,6 +7307,10 @@ export namespace Prisma {
     aiConciergeSettings?: StringNullableFilter<"User"> | string | null
     defaultConciergeId?: StringNullableFilter<"User"> | string | null
     notificationSettings?: StringNullableFilter<"User"> | string | null
+    senderEmail?: StringNullableFilter<"User"> | string | null
+    senderTitle?: StringNullableFilter<"User"> | string | null
+    lastSubject?: StringNullableFilter<"User"> | string | null
+    lastBody?: StringNullableFilter<"User"> | string | null
     plan?: StringFilter<"User"> | string
     billingCycle?: StringFilter<"User"> | string
     subscriptionStartDate?: DateTimeNullableFilter<"User"> | Date | string | null
@@ -7270,6 +7338,10 @@ export namespace Prisma {
     aiConciergeSettings?: SortOrderInput | SortOrder
     defaultConciergeId?: SortOrderInput | SortOrder
     notificationSettings?: SortOrderInput | SortOrder
+    senderEmail?: SortOrderInput | SortOrder
+    senderTitle?: SortOrderInput | SortOrder
+    lastSubject?: SortOrderInput | SortOrder
+    lastBody?: SortOrderInput | SortOrder
     plan?: SortOrder
     billingCycle?: SortOrder
     subscriptionStartDate?: SortOrderInput | SortOrder
@@ -7303,6 +7375,10 @@ export namespace Prisma {
     aiConciergeSettings?: StringNullableWithAggregatesFilter<"User"> | string | null
     defaultConciergeId?: StringNullableWithAggregatesFilter<"User"> | string | null
     notificationSettings?: StringNullableWithAggregatesFilter<"User"> | string | null
+    senderEmail?: StringNullableWithAggregatesFilter<"User"> | string | null
+    senderTitle?: StringNullableWithAggregatesFilter<"User"> | string | null
+    lastSubject?: StringNullableWithAggregatesFilter<"User"> | string | null
+    lastBody?: StringNullableWithAggregatesFilter<"User"> | string | null
     plan?: StringWithAggregatesFilter<"User"> | string
     billingCycle?: StringWithAggregatesFilter<"User"> | string
     subscriptionStartDate?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
@@ -7632,6 +7708,10 @@ export namespace Prisma {
     aiConciergeSettings?: string | null
     defaultConciergeId?: string | null
     notificationSettings?: string | null
+    senderEmail?: string | null
+    senderTitle?: string | null
+    lastSubject?: string | null
+    lastBody?: string | null
     plan?: string
     billingCycle?: string
     subscriptionStartDate?: Date | string | null
@@ -7661,6 +7741,10 @@ export namespace Prisma {
     aiConciergeSettings?: string | null
     defaultConciergeId?: string | null
     notificationSettings?: string | null
+    senderEmail?: string | null
+    senderTitle?: string | null
+    lastSubject?: string | null
+    lastBody?: string | null
     plan?: string
     billingCycle?: string
     subscriptionStartDate?: Date | string | null
@@ -7690,6 +7774,10 @@ export namespace Prisma {
     aiConciergeSettings?: NullableStringFieldUpdateOperationsInput | string | null
     defaultConciergeId?: NullableStringFieldUpdateOperationsInput | string | null
     notificationSettings?: NullableStringFieldUpdateOperationsInput | string | null
+    senderEmail?: NullableStringFieldUpdateOperationsInput | string | null
+    senderTitle?: NullableStringFieldUpdateOperationsInput | string | null
+    lastSubject?: NullableStringFieldUpdateOperationsInput | string | null
+    lastBody?: NullableStringFieldUpdateOperationsInput | string | null
     plan?: StringFieldUpdateOperationsInput | string
     billingCycle?: StringFieldUpdateOperationsInput | string
     subscriptionStartDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -7719,6 +7807,10 @@ export namespace Prisma {
     aiConciergeSettings?: NullableStringFieldUpdateOperationsInput | string | null
     defaultConciergeId?: NullableStringFieldUpdateOperationsInput | string | null
     notificationSettings?: NullableStringFieldUpdateOperationsInput | string | null
+    senderEmail?: NullableStringFieldUpdateOperationsInput | string | null
+    senderTitle?: NullableStringFieldUpdateOperationsInput | string | null
+    lastSubject?: NullableStringFieldUpdateOperationsInput | string | null
+    lastBody?: NullableStringFieldUpdateOperationsInput | string | null
     plan?: StringFieldUpdateOperationsInput | string
     billingCycle?: StringFieldUpdateOperationsInput | string
     subscriptionStartDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -7748,6 +7840,10 @@ export namespace Prisma {
     aiConciergeSettings?: string | null
     defaultConciergeId?: string | null
     notificationSettings?: string | null
+    senderEmail?: string | null
+    senderTitle?: string | null
+    lastSubject?: string | null
+    lastBody?: string | null
     plan?: string
     billingCycle?: string
     subscriptionStartDate?: Date | string | null
@@ -7775,6 +7871,10 @@ export namespace Prisma {
     aiConciergeSettings?: NullableStringFieldUpdateOperationsInput | string | null
     defaultConciergeId?: NullableStringFieldUpdateOperationsInput | string | null
     notificationSettings?: NullableStringFieldUpdateOperationsInput | string | null
+    senderEmail?: NullableStringFieldUpdateOperationsInput | string | null
+    senderTitle?: NullableStringFieldUpdateOperationsInput | string | null
+    lastSubject?: NullableStringFieldUpdateOperationsInput | string | null
+    lastBody?: NullableStringFieldUpdateOperationsInput | string | null
     plan?: StringFieldUpdateOperationsInput | string
     billingCycle?: StringFieldUpdateOperationsInput | string
     subscriptionStartDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -7802,6 +7902,10 @@ export namespace Prisma {
     aiConciergeSettings?: NullableStringFieldUpdateOperationsInput | string | null
     defaultConciergeId?: NullableStringFieldUpdateOperationsInput | string | null
     notificationSettings?: NullableStringFieldUpdateOperationsInput | string | null
+    senderEmail?: NullableStringFieldUpdateOperationsInput | string | null
+    senderTitle?: NullableStringFieldUpdateOperationsInput | string | null
+    lastSubject?: NullableStringFieldUpdateOperationsInput | string | null
+    lastBody?: NullableStringFieldUpdateOperationsInput | string | null
     plan?: StringFieldUpdateOperationsInput | string
     billingCycle?: StringFieldUpdateOperationsInput | string
     subscriptionStartDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -8247,6 +8351,10 @@ export namespace Prisma {
     aiConciergeSettings?: SortOrder
     defaultConciergeId?: SortOrder
     notificationSettings?: SortOrder
+    senderEmail?: SortOrder
+    senderTitle?: SortOrder
+    lastSubject?: SortOrder
+    lastBody?: SortOrder
     plan?: SortOrder
     billingCycle?: SortOrder
     subscriptionStartDate?: SortOrder
@@ -8274,6 +8382,10 @@ export namespace Prisma {
     aiConciergeSettings?: SortOrder
     defaultConciergeId?: SortOrder
     notificationSettings?: SortOrder
+    senderEmail?: SortOrder
+    senderTitle?: SortOrder
+    lastSubject?: SortOrder
+    lastBody?: SortOrder
     plan?: SortOrder
     billingCycle?: SortOrder
     subscriptionStartDate?: SortOrder
@@ -8301,6 +8413,10 @@ export namespace Prisma {
     aiConciergeSettings?: SortOrder
     defaultConciergeId?: SortOrder
     notificationSettings?: SortOrder
+    senderEmail?: SortOrder
+    senderTitle?: SortOrder
+    lastSubject?: SortOrder
+    lastBody?: SortOrder
     plan?: SortOrder
     billingCycle?: SortOrder
     subscriptionStartDate?: SortOrder
@@ -9001,6 +9117,10 @@ export namespace Prisma {
     aiConciergeSettings?: string | null
     defaultConciergeId?: string | null
     notificationSettings?: string | null
+    senderEmail?: string | null
+    senderTitle?: string | null
+    lastSubject?: string | null
+    lastBody?: string | null
     plan?: string
     billingCycle?: string
     subscriptionStartDate?: Date | string | null
@@ -9029,6 +9149,10 @@ export namespace Prisma {
     aiConciergeSettings?: string | null
     defaultConciergeId?: string | null
     notificationSettings?: string | null
+    senderEmail?: string | null
+    senderTitle?: string | null
+    lastSubject?: string | null
+    lastBody?: string | null
     plan?: string
     billingCycle?: string
     subscriptionStartDate?: Date | string | null
@@ -9073,6 +9197,10 @@ export namespace Prisma {
     aiConciergeSettings?: NullableStringFieldUpdateOperationsInput | string | null
     defaultConciergeId?: NullableStringFieldUpdateOperationsInput | string | null
     notificationSettings?: NullableStringFieldUpdateOperationsInput | string | null
+    senderEmail?: NullableStringFieldUpdateOperationsInput | string | null
+    senderTitle?: NullableStringFieldUpdateOperationsInput | string | null
+    lastSubject?: NullableStringFieldUpdateOperationsInput | string | null
+    lastBody?: NullableStringFieldUpdateOperationsInput | string | null
     plan?: StringFieldUpdateOperationsInput | string
     billingCycle?: StringFieldUpdateOperationsInput | string
     subscriptionStartDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -9101,6 +9229,10 @@ export namespace Prisma {
     aiConciergeSettings?: NullableStringFieldUpdateOperationsInput | string | null
     defaultConciergeId?: NullableStringFieldUpdateOperationsInput | string | null
     notificationSettings?: NullableStringFieldUpdateOperationsInput | string | null
+    senderEmail?: NullableStringFieldUpdateOperationsInput | string | null
+    senderTitle?: NullableStringFieldUpdateOperationsInput | string | null
+    lastSubject?: NullableStringFieldUpdateOperationsInput | string | null
+    lastBody?: NullableStringFieldUpdateOperationsInput | string | null
     plan?: StringFieldUpdateOperationsInput | string
     billingCycle?: StringFieldUpdateOperationsInput | string
     subscriptionStartDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -9129,6 +9261,10 @@ export namespace Prisma {
     aiConciergeSettings?: string | null
     defaultConciergeId?: string | null
     notificationSettings?: string | null
+    senderEmail?: string | null
+    senderTitle?: string | null
+    lastSubject?: string | null
+    lastBody?: string | null
     plan?: string
     billingCycle?: string
     subscriptionStartDate?: Date | string | null
@@ -9157,6 +9293,10 @@ export namespace Prisma {
     aiConciergeSettings?: string | null
     defaultConciergeId?: string | null
     notificationSettings?: string | null
+    senderEmail?: string | null
+    senderTitle?: string | null
+    lastSubject?: string | null
+    lastBody?: string | null
     plan?: string
     billingCycle?: string
     subscriptionStartDate?: Date | string | null
@@ -9201,6 +9341,10 @@ export namespace Prisma {
     aiConciergeSettings?: NullableStringFieldUpdateOperationsInput | string | null
     defaultConciergeId?: NullableStringFieldUpdateOperationsInput | string | null
     notificationSettings?: NullableStringFieldUpdateOperationsInput | string | null
+    senderEmail?: NullableStringFieldUpdateOperationsInput | string | null
+    senderTitle?: NullableStringFieldUpdateOperationsInput | string | null
+    lastSubject?: NullableStringFieldUpdateOperationsInput | string | null
+    lastBody?: NullableStringFieldUpdateOperationsInput | string | null
     plan?: StringFieldUpdateOperationsInput | string
     billingCycle?: StringFieldUpdateOperationsInput | string
     subscriptionStartDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -9229,6 +9373,10 @@ export namespace Prisma {
     aiConciergeSettings?: NullableStringFieldUpdateOperationsInput | string | null
     defaultConciergeId?: NullableStringFieldUpdateOperationsInput | string | null
     notificationSettings?: NullableStringFieldUpdateOperationsInput | string | null
+    senderEmail?: NullableStringFieldUpdateOperationsInput | string | null
+    senderTitle?: NullableStringFieldUpdateOperationsInput | string | null
+    lastSubject?: NullableStringFieldUpdateOperationsInput | string | null
+    lastBody?: NullableStringFieldUpdateOperationsInput | string | null
     plan?: StringFieldUpdateOperationsInput | string
     billingCycle?: StringFieldUpdateOperationsInput | string
     subscriptionStartDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null

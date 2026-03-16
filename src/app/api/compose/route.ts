@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'パラメータが不足しています' }, { status: 400 })
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-preview-04-17' })
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
 
     const prompt = `以下の会社情報をもとに、営業フォーム送信用のメール文を3パターン作成してください。
 

@@ -23,6 +23,14 @@ model User {
   defaultConciergeId   String?
   notificationSettings String?
 
+  // オートリスト: 送信者プロフィール
+  senderEmail String? // 送信用メールアドレス（ログイン用とは別）
+  senderTitle String? // 役職・部署
+
+  // オートリスト: 前回メッセージ
+  lastSubject String? // 前回件名
+  lastBody    String? // 前回本文
+
   plan                  String    @default("starter")
   billingCycle          String    @default("monthly")
   subscriptionStartDate DateTime?

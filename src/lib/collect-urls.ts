@@ -55,6 +55,16 @@ const DOMAIN_BLACKLIST: ReadonlySet<string> = new Set([
   // ニュース・通信社
   'nikkei.com',
   'kyodo.co.jp',
+  // 営業リスト・まとめ記事系
+  'salesnow.jp',
+  'syukatsu-kaigi.jp',
+  'system-kanji.com',
+  'system-dev-navi.com',
+  'readycrew.jp',
+  'stock-sun.com',
+  'itkonwakai.jp',
+  'genee.jp',
+  'gicp.co.jp',
 ]);
 
 // ─── パスブラックリスト（修正3） ────────────────────────────────────────────
@@ -549,6 +559,26 @@ export async function collectUrlsWithQueries(
           hasForm: true,
         },
       });
+      // ブラックリスト再チェック（過去データがブラックリスト追加前に収集されている場合の対策）
+      const beforeFilter = cachedUrls.length;
+      cachedUrls = cachedUrls.filter(u => {
+        if (isBlockedDomain(u.domain)) {
+          console.log(`  [CACHE BLOCKED domain] ${u.domain}`);
+          return false;
+        }
+        if (isBlockedPath(u.url)) {
+          console.log(`  [CACHE BLOCKED path] ${u.url}`);
+          return false;
+        }
+        return true;
+      });
+      if (beforeFilter !== cachedUrls.length) {
+        console.log(`[Job ${jobId}] キャッシュブラックリスト除外: ${beforeFilter - cachedUrls.length} 件`);
+      }
+      // TODO: 将来的に companyVerified: true のみをキャッシュ対象にする
+      // 現状は全データが companyVerified: false のため、有効化すると当面キャッシュが効かなくなる
+      // cachedUrls = cachedUrls.filter(u => u.companyVerified);
+
       // ランダムシャッフル
       cachedUrls = cachedUrls.sort(() => Math.random() - 0.5);
       console.log(`[Job ${jobId}] キャッシュURL数（重複排除済み）: ${cachedUrls.length}`);

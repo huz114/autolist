@@ -158,6 +158,7 @@ export default function SendClient({
   const furiganaManuallyEdited = useRef(false)
   // If profile already has furigana saved, treat as manually edited
   useEffect(() => {
+    console.log('initialProfile.furigana:', initialProfile.furigana, 'setting manuallyEdited:', !!initialProfile.furigana)
     if (initialProfile.furigana) {
       furiganaManuallyEdited.current = true
     }
@@ -469,8 +470,8 @@ export default function SendClient({
                   }
                 }}
                 onCompositionEnd={() => {
-                  console.log('React compositionEnd, reading:', compositionReadingRef.current)
-                  if (compositionReadingRef.current && !furiganaManuallyEdited.current) {
+                  console.log('React compositionEnd, reading:', compositionReadingRef.current, 'manuallyEdited:', furiganaManuallyEdited.current)
+                  if (compositionReadingRef.current) {
                     setFurigana(prev => prev + toKatakana(compositionReadingRef.current))
                   }
                   compositionReadingRef.current = ''

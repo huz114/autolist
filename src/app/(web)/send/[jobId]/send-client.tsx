@@ -158,15 +158,12 @@ export default function SendClient({
   const furiganaManuallyEdited = useRef(false)
   // If profile already has furigana saved, treat as manually edited
   useEffect(() => {
-    console.log('initialProfile.furigana:', initialProfile.furigana, 'setting manuallyEdited:', !!initialProfile.furigana)
     if (initialProfile.furigana) {
       furiganaManuallyEdited.current = true
     }
   }, [])
   const [senderEmail, setSenderEmail] = useState(initialProfile.senderEmail)
 
-  // DEBUG: Log state on every render
-  console.log('RENDER - furigana state:', furigana, 'personName:', personName)
   const [phone, setPhone] = useState(initialProfile.phone)
   const [companyUrl, setCompanyUrl] = useState(initialProfile.companyUrl)
   const [title, setTitle] = useState(initialProfile.title)
@@ -461,27 +458,18 @@ export default function SendClient({
                     furiganaManuallyEdited.current = false
                   }
                 }}
-                onFocus={() => console.log('Name input focused')}
                 onCompositionStart={() => {
-                  console.log('React compositionStart fired')
                   compositionReadingRef.current = ''
                 }}
                 onCompositionUpdate={(e) => {
-                  console.log('React compositionUpdate:', e.data)
                   if (e.data && /[\u3041-\u3096]/.test(e.data)) {
                     compositionReadingRef.current = e.data
                   }
                 }}
                 onCompositionEnd={() => {
-                  console.log('React compositionEnd, reading:', compositionReadingRef.current, 'manuallyEdited:', furiganaManuallyEdited.current)
-                  if (compositionReadingRef.current) {
+                  if (compositionReadingRef.current && !furiganaManuallyEdited.current) {
                     const katakana = toKatakana(compositionReadingRef.current)
-                    console.log('Called setFurigana with:', katakana)
-                    setFurigana(prev => {
-                      const newVal = prev + katakana
-                      console.log('setFurigana updater: prev=', JSON.stringify(prev), 'new=', JSON.stringify(newVal))
-                      return newVal
-                    })
+                    setFurigana(prev => prev + katakana)
                   }
                   compositionReadingRef.current = ''
                 }}

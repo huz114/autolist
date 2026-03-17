@@ -23,6 +23,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           user.password
         )
         if (!isValid) return null
+
+        // メール認証チェック
+        if (!user.emailVerified) {
+          throw new Error('メールアドレスが認証されていません。確認メールをご確認ください。')
+        }
+
         return { id: user.id, email: user.email, name: user.name }
       },
     }),

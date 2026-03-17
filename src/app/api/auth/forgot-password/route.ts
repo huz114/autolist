@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
-import { prisma } from '@/lib/prisma'
 import { prismaShiryolog } from '@/lib/prisma-shiryolog'
 import { Resend } from 'resend'
 
@@ -18,13 +17,13 @@ export async function POST(req: NextRequest) {
 
   if (user) {
     // 既存のトークンを削除
-    await prisma.passwordResetToken.deleteMany({ where: { email } })
+    await prismaShiryolog.passwordResetToken.deleteMany({ where: { email } })
 
     // 新しいトークン生成
     const token = crypto.randomBytes(32).toString('hex')
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000) // 1時間後
 
-    await prisma.passwordResetToken.create({
+    await prismaShiryolog.passwordResetToken.create({
       data: { email, token, expiresAt },
     })
 

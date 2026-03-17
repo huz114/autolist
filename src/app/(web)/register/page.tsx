@@ -1,21 +1,19 @@
 'use client'
 
 import { Suspense, useState } from 'react'
-import { signIn } from 'next-auth/react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
 function RegisterForm() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const jobId = searchParams.get('jobId') || ''
-  const lineUserId = searchParams.get('lineUserId') || ''
 
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [registered, setRegistered] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -29,40 +27,45 @@ function RegisterForm() {
     })
 
     const data = await res.json()
+    setLoading(false)
 
     if (!res.ok) {
       setError(data.error || '登録に失敗しました')
-      setLoading(false)
       return
     }
 
-    // 登録後、自動ログイン
-    const result = await signIn('credentials', {
-      email,
-      password,
-      redirect: false,
-    })
+    // メール認証が必要 → 確認メッセージを表示
+    setRegistered(true)
+  }
 
-    setLoading(false)
-
-    if (result?.error) {
-      setError('登録は完了しましたが、ログインに失敗しました。ログインページからお試しください。')
-    } else {
-      // LINEユーザーとWebアカウントの自動紐づけ
-      if (lineUserId) {
-        try {
-          await fetch('/api/auth/link-line', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ lineUserId }),
-          })
-        } catch {
-          // 紐づけ失敗はサイレント（メイン機能は継続）
-        }
-      }
-      router.push('/my-lists')
-      router.refresh()
-    }
+  // 登録完了 → メール確認メッセージ
+  if (registered) {
+    return (
+      <div className="w-full max-w-md">
+        <div className="bg-[#16161f] border border-white/10 rounded-2xl p-8">
+          <div className="flex justify-center mb-4">
+            <div className="w-16 h-16 rounded-full bg-orange-500/10 border border-orange-500/20 flex items-center justify-center">
+              <svg className="w-8 h-8 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+          </div>
+          <h1 className="text-lg font-bold text-white text-center mb-3">確認メールを送信しました</h1>
+          <p className="text-sm text-gray-400 text-center mb-2">
+            <span className="text-orange-400 font-medium">{email}</span> に確認メールを送信しました。
+          </p>
+          <p className="text-sm text-gray-400 text-center mb-6">
+            メール内のリンクをクリックして、アカウントを有効化してください。
+          </p>
+          <Link href="/login" className="block w-full bg-orange-500 hover:bg-orange-400 text-white font-medium py-2.5 rounded-lg transition-colors text-center">
+            ログインページへ
+          </Link>
+          <p className="mt-4 text-center text-xs text-gray-500">
+            メールが届かない場合は、迷惑メールフォルダをご確認ください。
+          </p>
+        </div>
+      </div>
+    )
   }
 
   return (

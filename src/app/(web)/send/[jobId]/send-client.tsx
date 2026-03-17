@@ -260,9 +260,11 @@ export default function SendClient({
   const isMessageComplete = subject.trim() && messageBody.trim()
   const canSend = isProfileComplete && isMessageComplete
 
+  const [sending, setSending] = useState(false)
+
   // 送信ハンドラ
-  function handleSend() {
-    if (!canSend) return
+  async function handleSend() {
+    if (!canSend || sending) return
     // 未編集プレースホルダーチェック
     const placeholders = findUnfilledPlaceholders(subject + '\n' + messageBody)
     if (placeholders.length > 0) {
@@ -273,8 +275,69 @@ export default function SendClient({
       if (!proceed) return
     }
     const ok = window.confirm(`${companies.length}件の企業にフォーム送信します。よろしいですか？`)
-    if (ok) {
-      showToast('送信機能は準備中です', 'error')
+    if (!ok) return
+
+    setSending(true)
+    try {
+      const res = await fetch(`/api/send/${jobId}/initiate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subject,
+          body: messageBody,
+          senderInfo: {
+            name: personName,
+            email: senderEmail,
+            phone,
+            companyName,
+          },
+        }),
+      })
+
+      if (!res.ok) {
+        const d = await res.json()
+        throw new Error(d.error || '送信の開始に失敗しました')
+      }
+
+      const { fillEntries, urls } = await res.json()
+
+      // Chrome拡張機能にデータを送信
+      window.postMessage(
+        { type: 'shiryolog-batch-fill-request', fillEntries, urls },
+        '*'
+      )
+
+      // Chrome拡張機能からの応答を待つ
+      let extensionResponded = false
+      const handleExtensionResponse = (event: MessageEvent) => {
+        if (event.data?.type === 'shiryolog-fill-ready') {
+          extensionResponded = true
+          window.removeEventListener('message', handleExtensionResponse)
+          showToast(
+            'Chrome拡張機能にデータを送信しました。各タブでフォーム送信を確認してください。',
+            'success'
+          )
+        }
+      }
+      window.addEventListener('message', handleExtensionResponse)
+
+      // 3秒待って拡張機能が応答しなければ警告
+      setTimeout(() => {
+        if (!extensionResponded) {
+          window.removeEventListener('message', handleExtensionResponse)
+          showToast(
+            'Chrome拡張機能が検出されませんでした。拡張機能がインストールされているか確認してください。',
+            'error'
+          )
+        }
+      }, 3000)
+    } catch (err) {
+      showToast(
+        err instanceof Error ? err.message : '送信の開始に失敗しました',
+        'error'
+      )
+    } finally {
+      setSending(false)
     }
   }
 
@@ -565,14 +628,14 @@ export default function SendClient({
         )}
         <button
           onClick={handleSend}
-          disabled={!canSend}
+          disabled={!canSend || sending}
           className={`w-full font-medium py-4 rounded-xl transition-colors text-base ${
-            canSend
+            canSend && !sending
               ? 'bg-orange-500 hover:bg-orange-400 text-white cursor-pointer'
               : 'bg-gray-700 text-gray-500 cursor-not-allowed'
           }`}
         >
-          {companies.length}件に送信する
+          {sending ? '送信準備中...' : `${companies.length}件に送信する`}
         </button>
       </div>
     </div>

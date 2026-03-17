@@ -24,6 +24,12 @@ function NavBar() {
               >
                 マイリスト
               </Link>
+              <Link
+                href="/send-history"
+                className="text-sm text-gray-300 hover:text-white transition-colors"
+              >
+                送信履歴
+              </Link>
               <button
                 onClick={() => signOut({ callbackUrl: '/login' })}
                 className="text-sm text-gray-400 hover:text-white transition-colors"

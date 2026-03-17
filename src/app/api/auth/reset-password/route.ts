@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
-import { prisma } from '@/lib/prisma'
 import { prismaShiryolog } from '@/lib/prisma-shiryolog'
 
 export async function POST(req: NextRequest) {
@@ -15,7 +14,7 @@ export async function POST(req: NextRequest) {
   }
 
   // トークンを検索
-  const resetToken = await prisma.passwordResetToken.findUnique({ where: { token } })
+  const resetToken = await prismaShiryolog.passwordResetToken.findUnique({ where: { token } })
 
   if (!resetToken) {
     return NextResponse.json({ error: 'このリンクは無効です' }, { status: 400 })
@@ -23,7 +22,7 @@ export async function POST(req: NextRequest) {
 
   if (resetToken.expiresAt < new Date()) {
     // 期限切れトークンを削除
-    await prisma.passwordResetToken.delete({ where: { token } })
+    await prismaShiryolog.passwordResetToken.delete({ where: { token } })
     return NextResponse.json({ error: 'このリンクは期限切れです。再度パスワードリセットをお試しください。' }, { status: 400 })
   }
 
@@ -36,7 +35,7 @@ export async function POST(req: NextRequest) {
   })
 
   // 使用済みトークンを削除
-  await prisma.passwordResetToken.delete({ where: { token } })
+  await prismaShiryolog.passwordResetToken.delete({ where: { token } })
 
   return NextResponse.json({ message: 'パスワードを変更しました' })
 }

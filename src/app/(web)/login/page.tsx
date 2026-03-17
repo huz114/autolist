@@ -30,7 +30,12 @@ function LoginForm() {
     setLoading(false)
 
     if (result?.error) {
-      setError('メールアドレスまたはパスワードが正しくありません')
+      // auth.ts の authorize で throw されたエラーメッセージを表示
+      if (result.error.includes('メールアドレスが認証されていません')) {
+        setError('メールアドレスが認証されていません。確認メールをご確認ください。')
+      } else {
+        setError('メールアドレスまたはパスワードが正しくありません')
+      }
     } else {
       // LINEユーザーとWebアカウントの自動紐づけ
       if (lineUserId) {

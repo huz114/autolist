@@ -26,6 +26,7 @@ model User {
 
   // オートリスト: 送信者プロフィール
   senderEmail       String?  // 送信用メールアドレス（ログイン用とは別）
+  senderFurigana    String?  // 送信者フリガナ
   senderTitle       String?  // 役職・部署
 
   // オートリスト: 前回メッセージ

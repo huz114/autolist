@@ -14,6 +14,7 @@ type Company = {
 type Profile = {
   companyName: string
   personName: string
+  furigana: string
   senderEmail: string
   phone: string
   companyUrl: string
@@ -144,6 +145,7 @@ export default function SendClient({
   // 送信者情報
   const [companyName, setCompanyName] = useState(initialProfile.companyName)
   const [personName, setPersonName] = useState(initialProfile.personName)
+  const [furigana, setFurigana] = useState(initialProfile.furigana)
   const [senderEmail, setSenderEmail] = useState(initialProfile.senderEmail)
   const [phone, setPhone] = useState(initialProfile.phone)
   const [companyUrl, setCompanyUrl] = useState(initialProfile.companyUrl)
@@ -177,7 +179,7 @@ export default function SendClient({
       const res = await fetch('/api/user/profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ companyName, personName, phone, companyUrl, title, senderEmail }),
+        body: JSON.stringify({ companyName, personName, furigana, phone, companyUrl, title, senderEmail }),
       })
       if (!res.ok) {
         const d = await res.json()
@@ -287,6 +289,7 @@ export default function SendClient({
           body: messageBody,
           senderInfo: {
             name: personName,
+            furigana,
             email: senderEmail,
             phone,
             companyName,
@@ -430,6 +433,16 @@ export default function SendClient({
                 value={personName}
                 onChange={(e) => setPersonName(e.target.value)}
                 placeholder="山田 太郎"
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1.5">フリガナ</label>
+              <input
+                type="text"
+                value={furigana}
+                onChange={(e) => setFurigana(e.target.value)}
+                placeholder="ヤマダ タロウ"
                 className={inputClass}
               />
             </div>

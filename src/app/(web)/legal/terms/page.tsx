@@ -6,7 +6,7 @@ export default function TermsPage() {
 
       <div className="space-y-10 text-gray-300 text-sm leading-relaxed">
         <p>
-          この利用規約（以下「本規約」）は、アイル（以下「当事業者」）が提供するオートリスト（以下「本サービス」）の利用条件を定めるものです。ユーザーの皆様には、本規約に同意のうえ本サービスをご利用いただきます。
+          この利用規約（以下「本規約」）は、アイル（AI'll）（以下「当事業者」）が提供するオートリスト（以下「本サービス」）の利用条件を定めるものです。ユーザーの皆様には、本規約に同意のうえ本サービスをご利用いただきます。
         </p>
 
         <section>
@@ -105,7 +105,7 @@ export default function TermsPage() {
         <section>
           <h2 className="text-lg font-semibold text-white mb-3">第10条（お問い合わせ先）</h2>
           <div className="bg-gray-900/50 rounded-lg border border-gray-800 p-5 mt-2">
-            <p>アイル（個人事業）</p>
+            <p>アイル（AI'll）</p>
             <p>代表者: 宇座 大陽</p>
             <p>メール: <a href="mailto:info@ai-ll.co" className="text-emerald-400 hover:underline">info@ai-ll.co</a></p>
           </div>

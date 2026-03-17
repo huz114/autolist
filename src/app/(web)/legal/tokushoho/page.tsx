@@ -9,7 +9,7 @@ export default function TokushohoPage() {
           <tbody className="divide-y divide-gray-800">
             <tr>
               <th className="px-5 py-4 text-left text-gray-400 bg-gray-900/50 w-1/3 align-top font-medium">事業者名</th>
-              <td className="px-5 py-4 text-gray-200">アイル（個人事業）</td>
+              <td className="px-5 py-4 text-gray-200">アイル（AI'll）</td>
             </tr>
             <tr>
               <th className="px-5 py-4 text-left text-gray-400 bg-gray-900/50 w-1/3 align-top font-medium">代表者</th>

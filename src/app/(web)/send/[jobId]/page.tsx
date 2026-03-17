@@ -65,6 +65,7 @@ export default async function SendPage({ params }: { params: { jobId: string } }
       companyUrl: true,
       phone: true,
       senderEmail: true,
+      senderFurigana: true,
       senderTitle: true,
       lastSubject: true,
       lastBody: true,
@@ -84,6 +85,7 @@ export default async function SendPage({ params }: { params: { jobId: string } }
       initialProfile={{
         companyName: user?.companyName ?? '',
         personName: user?.name ?? '',
+        furigana: user?.senderFurigana ?? '',
         senderEmail: user?.senderEmail ?? '',
         phone: user?.phone ?? '',
         companyUrl: user?.companyUrl ?? '',

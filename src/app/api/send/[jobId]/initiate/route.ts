@@ -19,6 +19,7 @@ export async function POST(
     body: string
     senderInfo: {
       name: string
+      furigana: string
       email: string
       phone: string
       companyName: string
@@ -87,7 +88,7 @@ export async function POST(
       name: senderInfo.name,
       email: senderInfo.email,
       phone: senderInfo.phone,
-      furigana: '',
+      furigana: senderInfo.furigana || '',
       companyName: senderInfo.companyName,
     },
     timestamp: Date.now(),

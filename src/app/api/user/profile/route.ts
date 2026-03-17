@@ -18,6 +18,7 @@ export async function GET() {
       companyUrl: true,
       phone: true,
       senderEmail: true,
+      senderFurigana: true,
       senderTitle: true,
     },
   })
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { companyName, personName, phone, companyUrl, title, senderEmail } = body
+  const { companyName, personName, furigana, phone, companyUrl, title, senderEmail } = body
 
   if (!companyName || !personName) {
     return NextResponse.json({ error: '会社名と担当者名は必須です' }, { status: 400 })
@@ -51,6 +52,7 @@ export async function POST(req: NextRequest) {
       phone: phone ?? undefined,
       companyUrl: companyUrl ?? undefined,
       senderEmail: senderEmail ?? undefined,
+      senderFurigana: furigana ?? undefined,
       senderTitle: title ?? undefined,
     },
     select: {
@@ -60,6 +62,7 @@ export async function POST(req: NextRequest) {
       companyUrl: true,
       phone: true,
       senderEmail: true,
+      senderFurigana: true,
       senderTitle: true,
     },
   })

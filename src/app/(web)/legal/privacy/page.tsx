@@ -6,7 +6,7 @@ export default function PrivacyPage() {
 
       <div className="space-y-10 text-gray-300 text-sm leading-relaxed">
         <p>
-          アイル（以下「当事業者」）は、オートリスト（以下「本サービス」）における個人情報の取り扱いについて、以下のとおりプライバシーポリシーを定めます。
+          アイル（AI'll）（以下「当事業者」）は、オートリスト（以下「本サービス」）における個人情報の取り扱いについて、以下のとおりプライバシーポリシーを定めます。
         </p>
 
         <section>
@@ -107,7 +107,7 @@ export default function PrivacyPage() {
         <section>
           <h2 className="text-lg font-semibold text-white mb-3">第11条（お問い合わせ先）</h2>
           <div className="bg-gray-900/50 rounded-lg border border-gray-800 p-5 mt-2">
-            <p>アイル（個人事業）</p>
+            <p>アイル（AI'll）</p>
             <p>代表者: 宇座 大陽</p>
             <p>メール: <a href="mailto:info@ai-ll.co" className="text-emerald-400 hover:underline">info@ai-ll.co</a></p>
           </div>

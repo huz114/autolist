@@ -1,7 +1,6 @@
 generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "debian-openssl-3.0.x"]
-  output        = "."
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma-shiryolog"
 }
 
 datasource db {
@@ -89,6 +88,14 @@ model VerificationToken {
   createdAt DateTime @default(now())
 
   @@index([email])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 }
 
 model Company {

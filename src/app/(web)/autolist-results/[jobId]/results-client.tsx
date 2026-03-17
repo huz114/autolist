@@ -289,7 +289,7 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
           >
             {confirming
               ? '確定中...'
-              : `この内容で確定する（${activeCount}件 / ${activeCount}クレジット消費）`
+              : `確定してフォーム送信の準備へ →（${activeCount}件 / ${activeCount}クレジット消費）`
             }
           </button>
           <p className="text-xs text-gray-500 text-center mt-2">

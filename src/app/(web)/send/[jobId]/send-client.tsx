@@ -549,6 +549,13 @@ export default function SendClient({
         )}
       </div>
 
+      {/* セキュリティ注意事項 */}
+      <div className="bg-amber-900/15 border border-amber-500/25 rounded-xl px-5 py-3.5 mb-6">
+        <p className="text-xs text-amber-300/80 leading-relaxed">
+          ※ セキュリティ保護のため、一括送信を開始してから10分経過すると、Chrome拡張機能内の送信データは自動的に消去されます。その場合は、このページから再度送信を開始してください。
+        </p>
+      </div>
+
       {/* 送信ボタン */}
       <div>
         {!canSend && (

@@ -31,9 +31,8 @@ export default function PrivacyPage() {
           <ul className="list-disc list-inside space-y-1 text-gray-400">
             <li>メールアドレス</li>
             <li>パスワード（ハッシュ化して保存）</li>
-            <li>氏名</li>
             <li>LINEユーザーID（LINE連携時）</li>
-            <li>送信者情報（メールアドレス・肩書き・送信メッセージ等、フォーム送信機能利用時）</li>
+            <li>送信者情報（氏名・会社名・URL・電話番号・肩書き、フォーム送信機能利用時）</li>
             <li>決済情報（Stripeが管理し、当事業者はクレジットカード番号等を保持しません）</li>
           </ul>
         </section>
@@ -45,7 +44,6 @@ export default function PrivacyPage() {
             <li>本サービスの提供・運営</li>
             <li>本人確認・認証</li>
             <li>クレジット管理・決済処理</li>
-            <li>サービスの改善・新機能開発</li>
             <li>お問い合わせ・サポート対応</li>
             <li>重要なお知らせの通知（メール・LINE）</li>
           </ul>
@@ -70,8 +68,6 @@ export default function PrivacyPage() {
           <ul className="list-disc list-inside mt-2 space-y-1 text-gray-400">
             <li>LINE Messaging API（LINEヤフー株式会社 — 依頼受付・通知送信）</li>
             <li>Stripe（Stripe, Inc. — 決済処理。カード情報はStripeが管理し、当事業者は保持しません）</li>
-            <li>Serper API（Google検索によるウェブサイト収集）</li>
-            <li>Google Gemini API（企業情報のAI解析）</li>
             <li>Resend（メール送信）</li>
           </ul>
         </section>
@@ -79,7 +75,7 @@ export default function PrivacyPage() {
         <section>
           <h2 className="text-lg font-semibold text-white mb-3">第7条（Chrome拡張機能について）</h2>
           <p>
-            本サービスが提供するChrome拡張機能は、フォーム送信アシスト機能としてウェブページ上のフォーム要素を検出し、自動入力を支援します。閲覧データは送信目的以外に使用しません。サーバーとの通信は、送信先企業情報の取得および送信結果の記録に限定されます。
+            本サービスが提供するChrome拡張機能は、フォーム送信アシスト機能としてウェブページ上のフォーム要素を検出し、自動入力を支援します。フォーム検出のためにアクセスしたウェブページのURL・フォーム要素の情報は、フォーム送信の目的にのみ使用します。サーバーとの通信は、送信先企業情報の取得および送信結果の記録に限定されます。
           </p>
         </section>
 
@@ -91,6 +87,7 @@ export default function PrivacyPage() {
             <li>パスワードのハッシュ化保存</li>
             <li>アクセス制御（認証トークンによるセッション管理）</li>
           </ul>
+          <p className="mt-2">フォーム送信完了後、Chrome拡張機能内の送信者情報は即座に消去されます。</p>
         </section>
 
         <section>

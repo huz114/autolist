@@ -29,8 +29,7 @@ export default function TermsPage() {
           <h2 className="text-lg font-semibold text-white mb-3">第3条（サービス内容）</h2>
           <p>本サービスは以下の機能を提供します。</p>
           <ul className="list-disc list-inside mt-2 space-y-1 text-gray-400">
-            <li>LINE経由での営業リスト自動収集</li>
-            <li>AIを活用した企業情報のリスト化</li>
+            <li>LINEまたはWebからの依頼に基づく営業リストの自動生成</li>
             <li>問い合わせフォーム送信支援（Chrome拡張機能）</li>
           </ul>
         </section>
@@ -46,7 +45,7 @@ export default function TermsPage() {
                 <li>エンタープライズプラン: ¥15,000（1,500クレジット）</li>
               </ul>
             </li>
-            <li>1クレジットはフォームあり企業1件に対応します。</li>
+            <li>1クレジットはフォームあり企業または事業者のURL1件に対応します。</li>
             <li>クレジットの消費はリスト確定時に実績分が課金されます。</li>
             <li>購入済みクレジットに有効期限はありません。</li>
           </ul>
@@ -73,6 +72,7 @@ export default function TermsPage() {
             <li>企業側の情報変更により、収集データと実際の情報に差異が生じる場合があります。</li>
             <li>フォーム送信機能を通じた送信結果（到達・返信等）について、当事業者は一切の保証をいたしません。</li>
             <li>本サービスの利用に起因してユーザーに生じた損害について、当事業者の故意または重過失による場合を除き、当事業者は責任を負いません。</li>
+            <li>本サービスを通じてGoogle検索から収集された企業リストの情報は、当事業者が運営する関連サービスにおいて活用される場合があります。</li>
           </ul>
         </section>
 

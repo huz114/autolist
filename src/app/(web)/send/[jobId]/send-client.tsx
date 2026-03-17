@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import Link from 'next/link'
 
 type Company = {
@@ -155,6 +155,12 @@ export default function SendClient({
   const [furigana, setFurigana] = useState(initialProfile.furigana)
   const compositionRef = useRef<string>('')
   const furiganaManuallyEdited = useRef(false)
+  // If profile already has furigana saved, treat as manually edited
+  useEffect(() => {
+    if (initialProfile.furigana) {
+      furiganaManuallyEdited.current = true
+    }
+  }, [])
   const [senderEmail, setSenderEmail] = useState(initialProfile.senderEmail)
   const [phone, setPhone] = useState(initialProfile.phone)
   const [companyUrl, setCompanyUrl] = useState(initialProfile.companyUrl)
@@ -443,12 +449,18 @@ export default function SendClient({
                 onChange={(e) => {
                   setPersonName(e.target.value)
                   // 名前欄がクリアされたらフリガナもリセット
-                  if (!e.target.value && !furiganaManuallyEdited.current) {
+                  if (!e.target.value) {
                     setFurigana('')
+                    furiganaManuallyEdited.current = false
                   }
                 }}
+                onCompositionStart={() => {
+                  compositionRef.current = ''
+                }}
                 onCompositionUpdate={(e) => {
-                  compositionRef.current = e.data
+                  if (/[\u3041-\u3096]/.test(e.data)) {
+                    compositionRef.current = e.data
+                  }
                 }}
                 onCompositionEnd={() => {
                   if (!furiganaManuallyEdited.current && compositionRef.current) {

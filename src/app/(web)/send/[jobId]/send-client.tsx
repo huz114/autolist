@@ -42,6 +42,89 @@ type ToastState = {
   type: 'success' | 'error'
 } | null
 
+type Template = {
+  id: string
+  title: string
+  description: string
+  subject: string
+  body: string
+}
+
+const TEMPLATES: Template[] = [
+  {
+    id: 'service',
+    title: 'サービス提案',
+    description: '自社サービスを紹介したい時に',
+    subject: '【ご提案】弊社サービスのご紹介',
+    body: `突然のご連絡失礼いたします。
+{会社名}の{担当者名}と申します。
+
+貴社のホームページを拝見し、弊社サービスがお役に立てるのではないかと思い、ご連絡いたしました。
+
+弊社では{自社サービス概要}を提供しており、貴社の業務効率化に貢献できると考えております。
+
+もしよろしければ、15分ほどお時間をいただき、サービスの概要をご説明できればと存じます。
+
+ご興味がございましたら、お気軽にご返信いただけますと幸いです。
+何卒よろしくお願いいたします。`,
+  },
+  {
+    id: 'partnership',
+    title: '協業・提携提案',
+    description: '協業やパートナーシップを打診したい時に',
+    subject: '【協業のご相談】{会社名}です',
+    body: `突然のご連絡失礼いたします。
+{会社名}の{担当者名}と申します。
+
+貴社の事業内容を拝見し、弊社との協業により相互にメリットを生み出せるのではないかと考え、ご連絡いたしました。
+
+弊社は{自社事業概要}を展開しており、貴社とのシナジーを感じております。
+
+一度お打ち合わせの機会をいただけないでしょうか。
+ご検討のほど、よろしくお願いいたします。`,
+  },
+  {
+    id: 'exchange',
+    title: '情報交換',
+    description: '業界の情報交換を依頼したい時に',
+    subject: '【情報交換のお願い】{会社名}の{担当者名}です',
+    body: `突然のご連絡失礼いたします。
+{会社名}の{担当者名}と申します。
+
+貴社の取り組みに大変興味を持ち、ぜひ情報交換させていただきたくご連絡いたしました。
+
+弊社でも同業界にて{自社事業概要}に取り組んでおり、業界の動向や課題について意見交換ができればと考えております。
+
+オンラインで30分ほどお時間をいただければ幸いです。
+ご都合の良い日時をお知らせいただけますと助かります。`,
+  },
+  {
+    id: 'seminar',
+    title: 'セミナー・イベント案内',
+    description: '無料セミナーやイベントに招待したい時に',
+    subject: '【ご招待】無料セミナーのご案内',
+    body: `突然のご連絡失礼いたします。
+{会社名}の{担当者名}と申します。
+
+この度、{セミナーテーマ}をテーマにしたセミナーを開催する運びとなりましたので、ぜひご参加いただきたくご案内いたします。
+
+■ 開催概要
+日時: {日時}
+場所: {場所（オンライン等）}
+参加費: 無料
+
+貴社のお役に立てる内容かと存じますので、ぜひご検討ください。
+
+何卒よろしくお願いいたします。`,
+  },
+]
+
+/** {xxx} 形式の未編集プレースホルダーを検出（{会社名}と{担当者名}は自動置換されるため除外） */
+function findUnfilledPlaceholders(text: string): string[] {
+  const matches = text.match(/\{[^}]+\}/g) || []
+  return matches.filter((m) => m !== '{会社名}' && m !== '{担当者名}')
+}
+
 export default function SendClient({
   jobId,
   keyword,
@@ -71,6 +154,9 @@ export default function SendClient({
   const [subject, setSubject] = useState(initialMessage.subject)
   const [messageBody, setMessageBody] = useState(initialMessage.body)
   const [savingMessage, setSavingMessage] = useState(false)
+
+  // テンプレート
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null)
 
   // トースト
   const [toast, setToast] = useState<ToastState>(null)
@@ -105,11 +191,34 @@ export default function SendClient({
     }
   }
 
+  // テンプレート選択
+  function handleSelectTemplate(template: Template) {
+    setSelectedTemplate(template.id)
+    // {会社名} と {担当者名} を自動置換
+    let newSubject = template.subject
+    let newBody = template.body
+    if (companyName.trim()) {
+      newSubject = newSubject.replace(/\{会社名\}/g, companyName.trim())
+      newBody = newBody.replace(/\{会社名\}/g, companyName.trim())
+    }
+    if (personName.trim()) {
+      newSubject = newSubject.replace(/\{担当者名\}/g, personName.trim())
+      newBody = newBody.replace(/\{担当者名\}/g, personName.trim())
+    }
+    setSubject(newSubject)
+    setMessageBody(newBody)
+  }
+
   // メッセージ保存
   async function handleSaveMessage() {
     if (!subject.trim() || !messageBody.trim()) {
       showToast('件名と本文は必須です', 'error')
       return
+    }
+    // 未編集プレースホルダーチェック
+    const placeholders = findUnfilledPlaceholders(subject + '\n' + messageBody)
+    if (placeholders.length > 0) {
+      showToast(`未編集の箇所があります: ${Array.from(new Set(placeholders)).join(', ')}`, 'error')
     }
     setSavingMessage(true)
     try {
@@ -138,6 +247,15 @@ export default function SendClient({
   // 送信ハンドラ
   function handleSend() {
     if (!canSend) return
+    // 未編集プレースホルダーチェック
+    const placeholders = findUnfilledPlaceholders(subject + '\n' + messageBody)
+    if (placeholders.length > 0) {
+      const unique = Array.from(new Set(placeholders))
+      const proceed = window.confirm(
+        `メッセージ内に未編集の箇所（${unique.join(', ')}）があります。このまま送信しますか？`
+      )
+      if (!proceed) return
+    }
     const ok = window.confirm(`${companies.length}件の企業にフォーム送信します。よろしいですか？`)
     if (ok) {
       showToast('送信機能は準備中です', 'error')
@@ -310,38 +428,62 @@ export default function SendClient({
         </button>
 
         {messageOpen && (
-          <div className="px-5 pb-5 space-y-4">
-            <div>
-              <label className="block text-xs text-gray-500 mb-1.5">
-                件名<span className="ml-1 text-orange-400">*</span>
-              </label>
-              <input
-                type="text"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                placeholder="【ご提案】〇〇サービスのご紹介"
-                className={inputClass}
-              />
+          <div className="px-5 pb-5">
+            <div className="flex flex-col-reverse sm:flex-row gap-4">
+              {/* 左カラム: 件名・本文入力 */}
+              <div className="flex-1 space-y-4">
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1.5">
+                    件名<span className="ml-1 text-orange-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    placeholder="【ご提案】〇〇サービスのご紹介"
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1.5">
+                    本文<span className="ml-1 text-orange-400">*</span>
+                  </label>
+                  <textarea
+                    value={messageBody}
+                    onChange={(e) => setMessageBody(e.target.value)}
+                    rows={10}
+                    placeholder={'はじめまして。〇〇株式会社の山田と申します。\n\nこの度はご連絡いたしました...'}
+                    className={`${inputClass} resize-none`}
+                  />
+                </div>
+                <button
+                  onClick={handleSaveMessage}
+                  disabled={savingMessage}
+                  className="w-full bg-white/10 hover:bg-white/20 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg transition-colors text-sm"
+                >
+                  {savingMessage ? '保存中...' : 'メッセージを保存'}
+                </button>
+              </div>
+
+              {/* 右カラム: テンプレート一覧 */}
+              <div className="sm:w-56 shrink-0 space-y-2">
+                <p className="text-xs text-gray-500 mb-1">テンプレート</p>
+                {TEMPLATES.map((tpl) => (
+                  <button
+                    key={tpl.id}
+                    onClick={() => handleSelectTemplate(tpl)}
+                    className={`w-full text-left rounded-lg p-3 transition-colors border-2 ${
+                      selectedTemplate === tpl.id
+                        ? 'border-orange-500 bg-gray-700'
+                        : 'border-transparent bg-gray-700 hover:bg-gray-600'
+                    }`}
+                  >
+                    <p className="text-sm font-bold text-white">{tpl.title}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{tpl.description}</p>
+                  </button>
+                ))}
+              </div>
             </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1.5">
-                本文<span className="ml-1 text-orange-400">*</span>
-              </label>
-              <textarea
-                value={messageBody}
-                onChange={(e) => setMessageBody(e.target.value)}
-                rows={10}
-                placeholder={'はじめまして。〇〇株式会社の山田と申します。\n\nこの度はご連絡いたしました...'}
-                className={`${inputClass} resize-none`}
-              />
-            </div>
-            <button
-              onClick={handleSaveMessage}
-              disabled={savingMessage}
-              className="w-full bg-white/10 hover:bg-white/20 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg transition-colors text-sm"
-            >
-              {savingMessage ? '保存中...' : 'メッセージを保存'}
-            </button>
           </div>
         )}
       </div>

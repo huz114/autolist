@@ -154,6 +154,7 @@ export default function SendClient({
   const [personName, setPersonName] = useState(initialProfile.personName)
   const [furigana, setFurigana] = useState(initialProfile.furigana)
   const nameInputRef = useRef<HTMLInputElement>(null)
+  const compositionReadingRef = useRef('')
   const furiganaManuallyEdited = useRef(false)
   // If profile already has furigana saved, treat as manually edited
   useEffect(() => {
@@ -161,46 +162,6 @@ export default function SendClient({
       furiganaManuallyEdited.current = true
     }
   }, [])
-
-  // Native DOM composition event listeners for reliable hiragana capture
-  // profileOpen is a dependency because the name input is inside a collapsible section;
-  // when profileOpen is false the input is not in the DOM and nameInputRef.current is null.
-  useEffect(() => {
-    const input = nameInputRef.current
-    if (!input) return
-
-    let compositionReading = ''
-
-    const handleCompositionStart = () => {
-      compositionReading = ''
-    }
-
-    const handleCompositionUpdate = (e: CompositionEvent) => {
-      console.log('compositionUpdate data:', e.data, 'isHiragana:', /[\u3041-\u3096]/.test(e.data))
-      // Only save when data contains hiragana (before kanji conversion)
-      if (e.data && /[\u3041-\u3096]/.test(e.data)) {
-        compositionReading = e.data
-      }
-    }
-
-    const handleCompositionEnd = () => {
-      console.log('compositionEnd, reading:', compositionReading)
-      if (compositionReading && !furiganaManuallyEdited.current) {
-        setFurigana(prev => prev + toKatakana(compositionReading))
-      }
-      compositionReading = ''
-    }
-
-    input.addEventListener('compositionstart', handleCompositionStart)
-    input.addEventListener('compositionupdate', handleCompositionUpdate)
-    input.addEventListener('compositionend', handleCompositionEnd)
-
-    return () => {
-      input.removeEventListener('compositionstart', handleCompositionStart)
-      input.removeEventListener('compositionupdate', handleCompositionUpdate)
-      input.removeEventListener('compositionend', handleCompositionEnd)
-    }
-  }, [profileOpen])
   const [senderEmail, setSenderEmail] = useState(initialProfile.senderEmail)
   const [phone, setPhone] = useState(initialProfile.phone)
   const [companyUrl, setCompanyUrl] = useState(initialProfile.companyUrl)
@@ -489,11 +450,30 @@ export default function SendClient({
                 value={personName}
                 onChange={(e) => {
                   setPersonName(e.target.value)
-                  // 名前欄がクリアされたらフリガナもリセット
                   if (!e.target.value) {
-                    setFurigana('')
+                    if (!furiganaManuallyEdited.current) {
+                      setFurigana('')
+                    }
                     furiganaManuallyEdited.current = false
                   }
+                }}
+                onFocus={() => console.log('Name input focused')}
+                onCompositionStart={() => {
+                  console.log('React compositionStart fired')
+                  compositionReadingRef.current = ''
+                }}
+                onCompositionUpdate={(e) => {
+                  console.log('React compositionUpdate:', e.data)
+                  if (e.data && /[\u3041-\u3096]/.test(e.data)) {
+                    compositionReadingRef.current = e.data
+                  }
+                }}
+                onCompositionEnd={() => {
+                  console.log('React compositionEnd, reading:', compositionReadingRef.current)
+                  if (compositionReadingRef.current && !furiganaManuallyEdited.current) {
+                    setFurigana(prev => prev + toKatakana(compositionReadingRef.current))
+                  }
+                  compositionReadingRef.current = ''
                 }}
                 placeholder="山田 太郎"
                 className={inputClass}

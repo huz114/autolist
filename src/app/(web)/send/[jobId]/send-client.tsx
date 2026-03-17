@@ -181,7 +181,10 @@ export default function SendClient({
       {/* 送信先概要 */}
       <div className="bg-emerald-900/20 border border-emerald-500/30 rounded-xl px-5 py-4 mb-6">
         <p className="text-sm text-emerald-300 font-medium">
-          {companies.length}件の企業にフォーム送信します
+          {companies.length}件の企業にフォーム送信します。
+          {hasProfile
+            ? 'メッセージを確認・入力して、送信ボタンを押してください。'
+            : '送信者情報とメッセージを入力して、送信ボタンを押してください。'}
         </p>
       </div>
 

@@ -256,16 +256,11 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
                     {isExcluded ? '元に戻す' : 'リストから外す'}
                   </button>
                 )}
-                {/* 確定後: フォームを開くボタン */}
-                {confirmed && u.formUrl && (
-                  <a
-                    href={u.formUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="shrink-0 text-xs bg-white/5 hover:bg-white/10 text-gray-300 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
-                  >
-                    フォームを開く
-                  </a>
+                {/* 確定後: 確定済みバッジ */}
+                {confirmed && (
+                  <span className="shrink-0 text-xs bg-green-900/50 text-green-400 px-2.5 py-1 rounded-md whitespace-nowrap">
+                    確定済み ✓
+                  </span>
                 )}
               </div>
             )

@@ -153,12 +153,50 @@ export default function SendClient({
   const [companyName, setCompanyName] = useState(initialProfile.companyName)
   const [personName, setPersonName] = useState(initialProfile.personName)
   const [furigana, setFurigana] = useState(initialProfile.furigana)
-  const compositionRef = useRef<string>('')
+  const nameInputRef = useRef<HTMLInputElement>(null)
   const furiganaManuallyEdited = useRef(false)
   // If profile already has furigana saved, treat as manually edited
   useEffect(() => {
     if (initialProfile.furigana) {
       furiganaManuallyEdited.current = true
+    }
+  }, [])
+
+  // Native DOM composition event listeners for reliable hiragana capture
+  useEffect(() => {
+    const input = nameInputRef.current
+    if (!input) return
+
+    let compositionReading = ''
+
+    const handleCompositionStart = () => {
+      compositionReading = ''
+    }
+
+    const handleCompositionUpdate = (e: CompositionEvent) => {
+      console.log('compositionUpdate data:', e.data, 'isHiragana:', /[\u3041-\u3096]/.test(e.data))
+      // Only save when data contains hiragana (before kanji conversion)
+      if (e.data && /[\u3041-\u3096]/.test(e.data)) {
+        compositionReading = e.data
+      }
+    }
+
+    const handleCompositionEnd = () => {
+      console.log('compositionEnd, reading:', compositionReading)
+      if (compositionReading && !furiganaManuallyEdited.current) {
+        setFurigana(prev => prev + toKatakana(compositionReading))
+      }
+      compositionReading = ''
+    }
+
+    input.addEventListener('compositionstart', handleCompositionStart)
+    input.addEventListener('compositionupdate', handleCompositionUpdate)
+    input.addEventListener('compositionend', handleCompositionEnd)
+
+    return () => {
+      input.removeEventListener('compositionstart', handleCompositionStart)
+      input.removeEventListener('compositionupdate', handleCompositionUpdate)
+      input.removeEventListener('compositionend', handleCompositionEnd)
     }
   }, [])
   const [senderEmail, setSenderEmail] = useState(initialProfile.senderEmail)
@@ -444,6 +482,7 @@ export default function SendClient({
                 担当者名<span className="ml-1 text-orange-400">*</span>
               </label>
               <input
+                ref={nameInputRef}
                 type="text"
                 value={personName}
                 onChange={(e) => {
@@ -453,20 +492,6 @@ export default function SendClient({
                     setFurigana('')
                     furiganaManuallyEdited.current = false
                   }
-                }}
-                onCompositionStart={() => {
-                  compositionRef.current = ''
-                }}
-                onCompositionUpdate={(e) => {
-                  if (/[\u3041-\u3096]/.test(e.data)) {
-                    compositionRef.current = e.data
-                  }
-                }}
-                onCompositionEnd={() => {
-                  if (!furiganaManuallyEdited.current && compositionRef.current) {
-                    setFurigana((prev) => prev + toKatakana(compositionRef.current))
-                  }
-                  compositionRef.current = ''
                 }}
                 placeholder="山田 太郎"
                 className={inputClass}

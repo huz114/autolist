@@ -77,7 +77,7 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
         return
       }
 
-      router.push(`/compose/${jobId}`)
+      router.push(`/send/${jobId}`)
     } catch {
       setError('通信エラーが発生しました')
     } finally {
@@ -175,10 +175,10 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
       {confirmed && (
         <div className="flex justify-end mb-6">
           <Link
-            href={`/compose/${jobId}`}
+            href={`/send/${jobId}`}
             className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-6 py-2.5 rounded-lg transition-colors whitespace-nowrap"
           >
-            フォーム送信の準備へ &rarr;
+            フォーム送信へ &rarr;
           </Link>
         </div>
       )}
@@ -304,10 +304,10 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
       {confirmed && urls.length > 5 && (
         <div className="flex justify-end mt-6">
           <Link
-            href={`/compose/${jobId}`}
+            href={`/send/${jobId}`}
             className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-6 py-2.5 rounded-lg transition-colors whitespace-nowrap"
           >
-            フォーム送信の準備へ &rarr;
+            フォーム送信へ &rarr;
           </Link>
         </div>
       )}

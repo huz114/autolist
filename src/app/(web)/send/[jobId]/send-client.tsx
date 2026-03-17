@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
 
 type Company = {
@@ -120,6 +120,13 @@ const TEMPLATES: Template[] = [
   },
 ]
 
+/** ひらがなをカタカナに変換（U+3041-U+3096 → U+30A1-U+30F6）、全角スペースは半角に */
+function toKatakana(str: string): string {
+  return str
+    .replace(/[\u3041-\u3096]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) + 96))
+    .replace(/\u3000/g, ' ')
+}
+
 /** {xxx} 形式の未編集プレースホルダーを検出（{会社名}と{担当者名}は自動置換されるため除外） */
 function findUnfilledPlaceholders(text: string): string[] {
   const matches = text.match(/\{[^}]+\}/g) || []
@@ -146,6 +153,8 @@ export default function SendClient({
   const [companyName, setCompanyName] = useState(initialProfile.companyName)
   const [personName, setPersonName] = useState(initialProfile.personName)
   const [furigana, setFurigana] = useState(initialProfile.furigana)
+  const compositionRef = useRef<string>('')
+  const furiganaManuallyEdited = useRef(false)
   const [senderEmail, setSenderEmail] = useState(initialProfile.senderEmail)
   const [phone, setPhone] = useState(initialProfile.phone)
   const [companyUrl, setCompanyUrl] = useState(initialProfile.companyUrl)
@@ -431,7 +440,22 @@ export default function SendClient({
               <input
                 type="text"
                 value={personName}
-                onChange={(e) => setPersonName(e.target.value)}
+                onChange={(e) => {
+                  setPersonName(e.target.value)
+                  // 名前欄がクリアされたらフリガナもリセット
+                  if (!e.target.value && !furiganaManuallyEdited.current) {
+                    setFurigana('')
+                  }
+                }}
+                onCompositionUpdate={(e) => {
+                  compositionRef.current = e.data
+                }}
+                onCompositionEnd={() => {
+                  if (!furiganaManuallyEdited.current && compositionRef.current) {
+                    setFurigana((prev) => prev + toKatakana(compositionRef.current))
+                  }
+                  compositionRef.current = ''
+                }}
                 placeholder="山田 太郎"
                 className={inputClass}
               />
@@ -441,7 +465,10 @@ export default function SendClient({
               <input
                 type="text"
                 value={furigana}
-                onChange={(e) => setFurigana(e.target.value)}
+                onChange={(e) => {
+                  setFurigana(e.target.value)
+                  furiganaManuallyEdited.current = true
+                }}
                 placeholder="ヤマダ タロウ"
                 className={inputClass}
               />

@@ -143,6 +143,71 @@ const FORM_TYPE_KEYWORDS: Array<{
   { type: "contact", keywords: ["contact", "連絡", "ご相談", "ご連絡"] },
 ];
 
+/** SSL/TLSエラーコード */
+const SSL_ERROR_CODES: ReadonlyArray<string> = [
+  "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
+  "CERT_HAS_EXPIRED",
+  "ERR_TLS_CERT_ALTNAME_INVALID",
+  "DEPTH_ZERO_SELF_SIGNED_CERT",
+  "SELF_SIGNED_CERT_IN_CHAIN",
+  "ERR_CERT_COMMON_NAME_INVALID",
+  "CERT_NOT_YET_VALID",
+  "ERR_SSL_PROTOCOL_ERROR",
+];
+
+/** 404ページ検出キーワード */
+const NOT_FOUND_KEYWORDS: ReadonlyArray<string> = [
+  "ページが見つかりません",
+  "ページが見つかりませんでした",
+  "お探しのページは見つかりませんでした",
+  "404 not found",
+  "page not found",
+  "not found",
+  "ページは存在しません",
+  "ページは削除されました",
+];
+
+/**
+ * SSL/TLSエラーかどうかを判定
+ */
+function isSslError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const err = error as Record<string, unknown>;
+  const code = String(err.code || "");
+  const message = String(err.message || "").toUpperCase();
+  return SSL_ERROR_CODES.some(
+    (sslCode) => code.includes(sslCode) || message.includes(sslCode)
+  );
+}
+
+/**
+ * ページが404コンテンツかどうかを判定
+ * （ステータス200でも本文が404ページの場合がある：ソフト404）
+ */
+function isSoft404Page(html: string): boolean {
+  const lowerHtml = html.toLowerCase();
+  // <title>タグ内に404キーワードがあるか
+  const titleMatch = lowerHtml.match(/<title[^>]*>([\s\S]*?)<\/title>/);
+  const titleText = titleMatch ? titleMatch[1].toLowerCase() : "";
+
+  // タイトルに404キーワードがある場合は高確率で404
+  if (NOT_FOUND_KEYWORDS.some((kw) => titleText.includes(kw.toLowerCase()))) {
+    return true;
+  }
+
+  // 本文に404キーワードがあり、かつ<form>タグがない場合
+  const hasNotFoundText = NOT_FOUND_KEYWORDS.some((kw) =>
+    lowerHtml.includes(kw.toLowerCase())
+  );
+  const hasFormTag = lowerHtml.includes("<form");
+
+  if (hasNotFoundText && !hasFormTag) {
+    return true;
+  }
+
+  return false;
+}
+
 /**
  * HEADリクエストでURLの存在を確認（5秒タイムアウト）
  */
@@ -155,7 +220,10 @@ async function headCheck(url: string): Promise<boolean> {
       redirect: "follow",
     });
     return response.ok;
-  } catch {
+  } catch (error) {
+    if (isSslError(error)) {
+      console.log(`[form-detector] SSL error for ${url}: ${(error as Error).message}`);
+    }
     return false;
   }
 }
@@ -176,7 +244,13 @@ async function fetchHtml(url: string): Promise<string | null> {
       redirect: "follow",
     });
 
-    if (!response.ok) return null;
+    // HTTPステータスコードチェック（200系以外は除外）
+    if (!response.ok) {
+      console.log(
+        `[form-detector] HTTP ${response.status} for ${url} — skipping`
+      );
+      return null;
+    }
 
     const contentType = response.headers.get("content-type") || "";
     if (
@@ -186,9 +260,28 @@ async function fetchHtml(url: string): Promise<string | null> {
       return null;
     }
 
-    const html = await response.text();
-    return html.length > 1_000_000 ? html.substring(0, 1_000_000) : html;
-  } catch {
+    let html = await response.text();
+    html = html.length > 1_000_000 ? html.substring(0, 1_000_000) : html;
+
+    // ソフト404検出（ステータス200だが本文が404ページ）
+    if (isSoft404Page(html)) {
+      console.log(
+        `[form-detector] Soft 404 detected for ${url} — skipping`
+      );
+      return null;
+    }
+
+    return html;
+  } catch (error) {
+    if (isSslError(error)) {
+      console.log(
+        `[form-detector] SSL/TLS error for ${url}: ${(error as Error).message} — skipping`
+      );
+    } else {
+      console.log(
+        `[form-detector] Fetch error for ${url}: ${(error as Error).message}`
+      );
+    }
     return null;
   }
 }

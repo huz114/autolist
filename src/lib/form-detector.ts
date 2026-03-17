@@ -301,13 +301,10 @@ export async function detectContactForm(
             form_type: classifyFormType(html, url),
           };
         }
-        // <form>はなくてもページが存在すればフォーム候補として記録
-        // （JS描画フォーム等もあるため）
-        return {
-          has_form: true,
-          form_url: url,
-          form_type: classifyFormType(html, url),
-        };
+        // <form>タグがないページはフォームなしと判定
+        // （電話番号のみの問い合わせページ等の誤検出を防止）
+        // 次のパスを試すためにcontinue
+        continue;
       }
     }
   }

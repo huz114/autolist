@@ -59,16 +59,28 @@ export default function WebLayout({ children }: { children: React.ReactNode }) {
       <div className="min-h-screen bg-[#0a0a0f] text-white flex flex-col">
         <NavBar />
         <main className="flex-1">{children}</main>
-        <footer className="border-t border-white/10 py-6 text-center text-sm text-gray-500">
-          &copy; 2026 オートリスト — powered by{' '}
-          <a
-            href="https://shiryolog.com"
-            className="text-orange-400 hover:underline"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            シリョログ
-          </a>
+        <footer className="border-t border-white/10 py-6 text-center text-gray-500">
+          {/* TODO: 公開前に法的ページの内容を作成すること */}
+          <div className="flex items-center justify-center gap-2 text-xs text-gray-400 mb-2">
+            <Link href="/legal/tokushoho" className="hover:text-white transition-colors">特定商取引法に基づく表記</Link>
+            <span>|</span>
+            <Link href="/legal/privacy" className="hover:text-white transition-colors">プライバシーポリシー</Link>
+            <span>|</span>
+            <Link href="/legal/terms" className="hover:text-white transition-colors">利用規約</Link>
+            <span>|</span>
+            <Link href="/legal/company" className="hover:text-white transition-colors">会社概要</Link>
+          </div>
+          <div className="text-sm">
+            &copy; 2026 オートリスト — powered by{' '}
+            <a
+              href="https://shiryolog.com"
+              className="text-orange-400 hover:underline"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              シリョログ
+            </a>
+          </div>
         </footer>
       </div>
     </SessionProvider>

@@ -191,6 +191,20 @@ export default function SendClient({
     }
   }
 
+  // 署名ブロック生成（空の項目は行ごと省略）
+  function buildSignature(): string {
+    const lines: string[] = []
+    if (companyName.trim()) lines.push(companyName.trim())
+    if (personName.trim()) lines.push(personName.trim())
+    if (title.trim()) lines.push(title.trim())
+    if (phone.trim()) lines.push(`TEL: ${phone.trim()}`)
+    if (senderEmail.trim()) lines.push(`Mail: ${senderEmail.trim()}`)
+    if (companyUrl.trim()) lines.push(`URL: ${companyUrl.trim()}`)
+    if (lines.length === 0) return ''
+    const sep = '──────────────'
+    return `\n${sep}\n${lines.join('\n')}\n${sep}`
+  }
+
   // テンプレート選択
   function handleSelectTemplate(template: Template) {
     setSelectedTemplate(template.id)
@@ -205,6 +219,8 @@ export default function SendClient({
       newSubject = newSubject.replace(/\{担当者名\}/g, personName.trim())
       newBody = newBody.replace(/\{担当者名\}/g, personName.trim())
     }
+    // 署名ブロックを末尾に追加
+    newBody += buildSignature()
     setSubject(newSubject)
     setMessageBody(newBody)
   }

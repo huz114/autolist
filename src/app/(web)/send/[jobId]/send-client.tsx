@@ -163,6 +163,8 @@ export default function SendClient({
   }, [])
 
   // Native DOM composition event listeners for reliable hiragana capture
+  // profileOpen is a dependency because the name input is inside a collapsible section;
+  // when profileOpen is false the input is not in the DOM and nameInputRef.current is null.
   useEffect(() => {
     const input = nameInputRef.current
     if (!input) return
@@ -198,7 +200,7 @@ export default function SendClient({
       input.removeEventListener('compositionupdate', handleCompositionUpdate)
       input.removeEventListener('compositionend', handleCompositionEnd)
     }
-  }, [])
+  }, [profileOpen])
   const [senderEmail, setSenderEmail] = useState(initialProfile.senderEmail)
   const [phone, setPhone] = useState(initialProfile.phone)
   const [companyUrl, setCompanyUrl] = useState(initialProfile.companyUrl)

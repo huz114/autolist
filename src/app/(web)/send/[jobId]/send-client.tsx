@@ -200,8 +200,10 @@ export default function SendClient({
               </span>
             )}
           </div>
-          <span className="text-gray-400 text-sm">
-            {profileOpen ? '\u25B2' : '\u25BC'}
+          <span
+            className={`text-gray-400 text-sm inline-block transition-transform duration-200 ${profileOpen ? 'rotate-90' : 'rotate-0'}`}
+          >
+            &#x25B6;
           </span>
         </button>
 
@@ -297,8 +299,10 @@ export default function SendClient({
               </span>
             )}
           </div>
-          <span className="text-gray-400 text-sm">
-            {messageOpen ? '\u25B2' : '\u25BC'}
+          <span
+            className={`text-gray-400 text-sm inline-block transition-transform duration-200 ${messageOpen ? 'rotate-90' : 'rotate-0'}`}
+          >
+            &#x25B6;
           </span>
         </button>
 
@@ -350,8 +354,10 @@ export default function SendClient({
             <h2 className="text-base font-semibold text-white">送信先企業リスト</h2>
             <span className="text-xs text-gray-400">{companies.length}件</span>
           </div>
-          <span className="text-gray-400 text-sm">
-            {companiesOpen ? '\u25B2' : '\u25BC'}
+          <span
+            className={`text-gray-400 text-sm inline-block transition-transform duration-200 ${companiesOpen ? 'rotate-90' : 'rotate-0'}`}
+          >
+            &#x25B6;
           </span>
         </button>
 

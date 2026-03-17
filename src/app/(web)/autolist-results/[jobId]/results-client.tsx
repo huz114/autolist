@@ -77,8 +77,7 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
         return
       }
 
-      setConfirmed(true)
-      router.refresh()
+      router.push(`/compose/${jobId}`)
     } catch {
       setError('通信エラーが発生しました')
     } finally {

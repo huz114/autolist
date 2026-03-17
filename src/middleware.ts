@@ -9,7 +9,8 @@ export default auth((req) => {
                      req.nextUrl.pathname.startsWith('/reset-password')
   const isPublicPage = req.nextUrl.pathname === '/' ||
                        req.nextUrl.pathname.startsWith('/autolist/results') ||
-                       req.nextUrl.pathname.startsWith('/api/')
+                       req.nextUrl.pathname.startsWith('/api/') ||
+                       req.nextUrl.pathname.startsWith('/legal')
 
   if (!isLoggedIn && !isAuthPage && !isPublicPage) {
     return NextResponse.redirect(new URL('/login', req.url))

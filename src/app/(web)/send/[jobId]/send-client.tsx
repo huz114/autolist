@@ -164,6 +164,9 @@ export default function SendClient({
     }
   }, [])
   const [senderEmail, setSenderEmail] = useState(initialProfile.senderEmail)
+
+  // DEBUG: Log state on every render
+  console.log('RENDER - furigana state:', furigana, 'personName:', personName)
   const [phone, setPhone] = useState(initialProfile.phone)
   const [companyUrl, setCompanyUrl] = useState(initialProfile.companyUrl)
   const [title, setTitle] = useState(initialProfile.title)
@@ -472,7 +475,13 @@ export default function SendClient({
                 onCompositionEnd={() => {
                   console.log('React compositionEnd, reading:', compositionReadingRef.current, 'manuallyEdited:', furiganaManuallyEdited.current)
                   if (compositionReadingRef.current) {
-                    setFurigana(prev => prev + toKatakana(compositionReadingRef.current))
+                    const katakana = toKatakana(compositionReadingRef.current)
+                    console.log('Called setFurigana with:', katakana)
+                    setFurigana(prev => {
+                      const newVal = prev + katakana
+                      console.log('setFurigana updater: prev=', JSON.stringify(prev), 'new=', JSON.stringify(newVal))
+                      return newVal
+                    })
                   }
                   compositionReadingRef.current = ''
                 }}

@@ -285,11 +285,14 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
           <button
             onClick={handleConfirm}
             disabled={confirming || activeCount <= 0}
-            className="w-full bg-orange-500 hover:bg-orange-400 disabled:bg-gray-700 disabled:text-gray-500 text-white font-medium py-3 rounded-xl transition-colors text-sm"
+            className="w-full bg-orange-500 hover:bg-orange-400 disabled:bg-gray-700 disabled:text-gray-500 text-white font-medium py-3 rounded-xl transition-colors flex flex-col items-center"
           >
             {confirming
               ? '確定中...'
-              : `確定してフォーム送信の準備へ →（${activeCount}件 / ${activeCount}クレジット消費）`
+              : <>
+                  <span className="text-sm">確定してフォーム送信の準備へ</span>
+                  <span className="text-sm text-white/70">（確定{activeCount}件 / {activeCount}クレジット消費）</span>
+                </>
             }
           </button>
           <p className="text-xs text-gray-500 text-center mt-2">

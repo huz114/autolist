@@ -102,10 +102,13 @@ export default function Home() {
           <span style={{ display: "block", fontSize: 11, color: "var(--text-secondary)", fontWeight: 500, letterSpacing: "0.08em", marginBottom: 2 }}>フォーム付き企業リスト自動収集</span>
           オート<span>リスト</span>
         </div>
-        <a href={LINE_URL} className="nav-cta" target="_blank" rel="noopener noreferrer">
-          {LINE_ICON}
-          LINEで無料登録
-        </a>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+          <span style={{ fontSize: 11, color: "var(--accent)", fontWeight: 700 }}>最初の100件は無料</span>
+          <a href={LINE_URL} className="nav-cta" target="_blank" rel="noopener noreferrer">
+            {LINE_ICON}
+            LINEで無料登録
+          </a>
+        </div>
       </nav>
 
       {/* HERO */}
@@ -139,8 +142,8 @@ export default function Home() {
               <div className="stat-label">LINEで依頼するだけ</div>
             </div>
             <div>
-              <div className="stat-num">100件〜</div>
-              <div className="stat-label">あとは放置で自動収集</div>
+              <div className="stat-num">10件〜</div>
+              <div className="stat-label">10件単位で自由に指定</div>
             </div>
             <div>
               <div className="stat-num">&yen;10〜</div>
@@ -165,7 +168,7 @@ export default function Home() {
           <div className="problem-grid">
             {[
               { icon: "\uD83D\uDD0D", title: "Googleで1社ずつ調べて", desc: "Excelにコピペする作業が延々と続く" },
-              { icon: "\uD83D\uDCCB", title: "100件買ったのに", desc: <>フォームがある会社は<br />半分以下だった</> },
+              { icon: "\uD83D\uDCCB", title: "100件買ったのに", desc: "フォームがある会社は半分以下" },
               { icon: "\uD83D\uDCB8", title: "リスト業者に頼んだら", desc: "高い・古い・使えない" },
               { icon: "\uD83D\uDEB6", title: "飛び込み先を探しながら", desc: "街を歩き回る非効率" },
             ].map((item, i) => (
@@ -193,8 +196,8 @@ export default function Home() {
           <div className="comparison-table reveal" ref={addRevealRef}>
             <div className="comparison-header">
               <div style={{ color: "var(--text-muted)" }}>比較項目</div>
-              <div className="col-before">&times; 従来の方法</div>
-              <div className="col-after">✓ オートリスト</div>
+              <div className="col-before">&times; 従来の<br />方法</div>
+              <div className="col-after">✓ オート<br />リスト</div>
             </div>
             {[
               {
@@ -225,7 +228,7 @@ export default function Home() {
                   </svg>
                 ),
                 label: "送信作業",
-                before: <>1件ずつコピペで<br />手入力</>,
+                before: <>1件ずつ<br />コピペで<br />手入力</>,
                 after: <>Chrome拡張で<br />半自動送信</>,
               },
             ].map((row, i) => (
@@ -254,20 +257,20 @@ export default function Home() {
               {
                 num: "01",
                 time: "わずか10秒",
-                title: "LINEで依頼する",
+                title: "LINEで依頼",
                 desc: "「渋谷区の税理士事務所を100件」とLINEに送るだけ。業種と地域と件数を自由に指定できます。",
               },
               {
                 num: "02",
                 time: "依頼したら放置でOK",
-                title: "AIが自動で収集する",
+                title: "AIが自動で収集",
                 desc: "Googleから企業名・URL・電話番号・フォームURLを自動収集。届くのはフォームがある企業だけ。完了したらLINEやメールで通知します。",
               },
               {
                 num: "03",
                 time: "半自動で送信",
                 title: "Chrome拡張でフォーム送信",
-                desc: "テンプレートを選んで送信ボタンを押すだけ。Chrome拡張がフォームを自動入力。コピペ地獄から解放されます。",
+                desc: <>テンプレートを選んで送信ボタンを押すだけ。Chrome拡張がフォームを自動入力。<br />コピペ地獄から解放されます。</>,
               },
             ].map((step, i) => (
               <div key={i} className={`step-card reveal reveal-delay-${i + 1}`} ref={addRevealRef}>
@@ -280,7 +283,7 @@ export default function Home() {
           </div>
           <p style={{ marginTop: 32, fontSize: 13, color: "var(--text-muted)", textAlign: "center", lineHeight: 1.8 }}>
             ※ 1回の依頼は最大100件までです（10件単位で指定可能）<br />
-            ※ 依頼した件数に満たなかった場合、実際に収集できた件数分のみの課金となります
+            ※ 依頼した件数に満たなかった場合、実際に収集できた<br />件数分のみの課金となります
           </p>
         </div>
       </section>
@@ -290,18 +293,13 @@ export default function Home() {
         <div className="container">
           <div className="reveal" ref={addRevealRef} style={{ textAlign: "center" }}>
             <div className="section-label">Benefits</div>
-            <h2 className="section-title">なぜ、オートリストが選ばれるのか</h2>
+            <h2 className="section-title">なぜ、オートリストが<br />選ばれるのか</h2>
           </div>
           <div className="benefits-grid">
             {[
               {
-                icon: "\uD83D\uDCAC",
-                title: <>LINEで完結。<br />アプリ不要。</>,
-                desc: "専用アプリのダウンロードも、PC操作も必要ありません。いつも使っているLINEから依頼するだけ。スマホ一台で全て完結します。",
-              },
-              {
                 icon: "\uD83E\uDD16",
-                title: <>頼んだら、<br />あとは放置でいい。</>,
+                title: <>LINEで頼んだら、<br />あとは放置でいい。</>,
                 desc: "AIが自動でGoogleを検索し収集します。移動中でも、商談中でも関係なし。気づいたら出来上がっています。",
               },
               {
@@ -330,9 +328,9 @@ export default function Home() {
         <div className="container">
           <div className="reveal" ref={addRevealRef} style={{ textAlign: "center" }}>
             <div className="section-label">Pricing</div>
-            <h2 className="section-title">使った分だけ。月額なし、解約なし。</h2>
+            <h2 className="section-title">使った分だけ。<br />月額なし、解約なし。</h2>
             <p className="section-sub" style={{ margin: "0 auto 0", textAlign: "center" }}>
-              クレジットを購入した分だけ使う、完全使い切り型。<br />無駄なコストは一切かかりません。
+              クレジットを購入した分だけ使う、<br />完全使い切り型。<br />無駄なコストは一切かかりません。
             </p>
           </div>
           <p style={{ marginTop: 24, textAlign: "center", fontSize: 16, color: "var(--accent)", fontWeight: 700 }}>
@@ -343,7 +341,7 @@ export default function Home() {
               { volume: "100件", price: "2,000", per: "\u00A520 / 件", feature: <>まず試してみたい方に<br />お手頃スタートプラン</>, featured: false },
               { volume: "300件", price: "5,000", per: "\u00A517 / 件", feature: <>週1回の定期リスト収集に<br />ちょうどいいボリューム</>, featured: false },
               { volume: "700件", price: "10,000", per: "\u00A514 / 件", feature: <>本格的に営業活動を<br />スケールさせるなら</>, featured: true },
-              { volume: "1,500件", price: "15,000", per: "\u00A510 / 件", feature: <>チームで使う・大量開拓<br />最もお得な大口プラン</>, featured: false },
+              { volume: "1,500件", price: "15,000", per: "\u00A510 / 件", feature: <>大量開拓に最適<br />最もお得な大口プラン</>, featured: false },
             ].map((plan, i) => (
               <div
                 key={i}
@@ -395,7 +393,7 @@ export default function Home() {
             <h2 className="final-cta-title">
               今日の移動中に<br />試してみてください
             </h2>
-            <p className="final-cta-sub">最初の100件は無料。月額なし、いつでも始められます。</p>
+            <p className="final-cta-sub">最初の100件は無料。<br />月額なし、いつでも始められます。</p>
             <div className="final-cta-group">
               <a
                 href={LINE_URL}

@@ -5,15 +5,17 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { detectContactForm } from "./form-detector";
 
 export interface CompanyInfo {
-  companyName?: string;       // 会社名
-  industry?: string;          // 業種
-  location?: string;          // 所在地
-  employeeCount?: string;     // 従業員数
-  capitalAmount?: string;     // 資本金
-  phoneNumber?: string;       // 電話番号
-  representativeName?: string; // 代表者名
-  formUrl?: string;           // フォームURL
-  hasForm: boolean;           // フォームあり/なし
+  companyName?: string;          // 会社名
+  industry?: string;             // 業種
+  location?: string;             // 所在地
+  employeeCount?: string;        // 従業員数
+  capitalAmount?: string;        // 資本金
+  phoneNumber?: string;          // 電話番号
+  representativeName?: string;   // 代表者名
+  establishedYear?: number;      // 設立年
+  businessDescription?: string;  // 事業内容
+  formUrl?: string;              // フォームURL
+  hasForm: boolean;              // フォームあり/なし
 }
 
 /** ユーザーエージェント */
@@ -112,6 +114,8 @@ interface GeminiExtractedInfo {
   capitalAmount: string | null;
   phoneNumber: string | null;
   representativeName: string | null;
+  establishedYear: number | null;
+  businessDescription: string | null;
 }
 
 /**
@@ -136,7 +140,7 @@ async function extractInfoWithGemini(
 
 isCompanySite: false の場合、他の項目は null で構いません。
 isCompanySite: true の場合、以下の情報を抽出してください（見つからない項目はnullにしてください）:
-会社名、業種、所在地（都道府県・市区町村）、従業員数、資本金、電話番号、代表者名
+会社名、業種、所在地（都道府県・市区町村）、従業員数、資本金、電話番号、代表者名、設立年（西暦の数値のみ）、事業内容（30文字以内の簡潔な説明）
 
 【会社名の重要ルール】法人格（株式会社・有限会社・合同会社・一般社団法人・医療法人等）を必ず含めること。ページ内に法人格が記載されている場合は必ず付与する。英語名の場合も Co., Ltd. や Inc. 等を含めること。例: ×「山田商事」→ ○「株式会社山田商事」${industryCheckInstruction}
 
@@ -144,7 +148,7 @@ isCompanySite: true の場合、以下の情報を抽出してください（見
 ${textContent}
 
 JSONのみ返してください：
-{"isCompanySite": true, "isRelevantIndustry": true, "companyName": "", "industry": "", "location": "", "employeeCount": "", "capitalAmount": "", "phoneNumber": "", "representativeName": ""}`;
+{"isCompanySite": true, "isRelevantIndustry": true, "companyName": "", "industry": "", "location": "", "employeeCount": "", "capitalAmount": "", "phoneNumber": "", "representativeName": "", "establishedYear": null, "businessDescription": ""}`;
 
   try {
     const result = await model.generateContent(prompt);
@@ -163,10 +167,23 @@ JSONのみ返してください：
         capitalAmount: null,
         phoneNumber: null,
         representativeName: null,
+        establishedYear: null,
+        businessDescription: null,
       };
     }
 
     const parsed = JSON.parse(jsonMatch[0]) as GeminiExtractedInfo;
+
+    // establishedYear を数値に正規化（文字列で返ってくる場合の対策）
+    let establishedYear: number | null = null;
+    if (parsed.establishedYear) {
+      const year = typeof parsed.establishedYear === 'string'
+        ? parseInt(parsed.establishedYear, 10)
+        : parsed.establishedYear;
+      if (!isNaN(year) && year >= 1800 && year <= new Date().getFullYear()) {
+        establishedYear = year;
+      }
+    }
 
     return {
       isCompanySite: parsed.isCompanySite === true,
@@ -178,6 +195,8 @@ JSONのみ返してください：
       capitalAmount: parsed.capitalAmount || null,
       phoneNumber: parsed.phoneNumber || null,
       representativeName: parsed.representativeName || null,
+      establishedYear,
+      businessDescription: parsed.businessDescription || null,
     };
   } catch {
     return {
@@ -190,6 +209,8 @@ JSONのみ返してください：
       capitalAmount: null,
       phoneNumber: null,
       representativeName: null,
+      establishedYear: null,
+      businessDescription: null,
     };
   }
 }
@@ -255,6 +276,8 @@ export async function scrapeCompanyInfo(url: string, requestedIndustry?: string)
     if (extracted.capitalAmount) result.capitalAmount = extracted.capitalAmount;
     if (extracted.phoneNumber) result.phoneNumber = extracted.phoneNumber;
     if (extracted.representativeName) result.representativeName = extracted.representativeName;
+    if (extracted.establishedYear) result.establishedYear = extracted.establishedYear;
+    if (extracted.businessDescription) result.businessDescription = extracted.businessDescription;
     if (formResult.form_url) result.formUrl = formResult.form_url;
 
     return result;

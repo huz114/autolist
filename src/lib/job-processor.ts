@@ -73,7 +73,7 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
       select: { status: true },
     });
 
-    const autolistUrl = process.env.AUTOLIST_URL || 'http://localhost:3007';
+    const autolistUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3007';
     const targetCount = job.targetCount;
     const lineUserId = job.user.lineUserId;
     const loginUrl = `${autolistUrl}/login?lineUserId=${lineUserId}&callbackUrl=/my-lists`;

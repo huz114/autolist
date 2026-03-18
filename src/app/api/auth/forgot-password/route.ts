@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
       data: { email, token, expiresAt },
     })
 
-    const resetUrl = `https://autolist-production.up.railway.app/reset-password?token=${token}`
+    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://autolist-production.up.railway.app'}/reset-password?token=${token}`
 
     await resend.emails.send({
       from: 'noreply@shiryolog.com',

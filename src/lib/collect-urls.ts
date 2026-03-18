@@ -377,6 +377,8 @@ export async function collectUrls(jobId: string): Promise<number> {
             capitalAmount: companyInfo.capitalAmount ?? null,
             phoneNumber: companyInfo.phoneNumber ?? null,
             representativeName: companyInfo.representativeName ?? null,
+            establishedYear: companyInfo.establishedYear ?? null,
+            businessDescription: companyInfo.businessDescription ?? null,
             hasForm: true,
             formUrl: companyInfo.formUrl ?? null,
             status: 'collected',
@@ -443,6 +445,8 @@ async function scrapeAndSave(
           capitalAmount: companyInfo.capitalAmount ?? null,
           phoneNumber: companyInfo.phoneNumber ?? null,
           representativeName: companyInfo.representativeName ?? null,
+          establishedYear: companyInfo.establishedYear ?? null,
+          businessDescription: companyInfo.businessDescription ?? null,
           hasForm: true,
           formUrl: companyInfo.formUrl ?? null,
           companyVerified,
@@ -558,6 +562,8 @@ export async function collectUrlsWithQueries(
       capitalAmount: string | null;
       phoneNumber: string | null;
       representativeName: string | null;
+      establishedYear: number | null;
+      businessDescription: string | null;
       hasForm: boolean;
       formUrl: string | null;
       companyVerified: boolean;
@@ -615,6 +621,8 @@ export async function collectUrlsWithQueries(
           capitalAmount: u.capitalAmount,
           phoneNumber: u.phoneNumber,
           representativeName: u.representativeName,
+          establishedYear: u.establishedYear,
+          businessDescription: u.businessDescription,
           hasForm: u.hasForm,
           formUrl: u.formUrl,
           companyVerified: u.companyVerified,
@@ -649,6 +657,8 @@ export async function collectUrlsWithQueries(
           capitalAmount: u.capitalAmount,
           phoneNumber: u.phoneNumber,
           representativeName: u.representativeName,
+          establishedYear: u.establishedYear,
+          businessDescription: u.businessDescription,
           hasForm: u.hasForm,
           formUrl: u.formUrl,
           companyVerified: u.companyVerified,

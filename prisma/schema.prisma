@@ -66,24 +66,26 @@ model ListJob {
 }
 
 model CollectedUrl {
-  id                 String   @id @default(cuid())
-  jobId              String
-  url                String
-  domain             String
-  companyName        String?
-  industry           String?
-  location           String?
-  employeeCount      String?
-  capitalAmount      String?
-  phoneNumber        String?
-  representativeName String?
-  hasForm            Boolean  @default(false)
-  formUrl            String?
-  companyVerified    Boolean  @default(false)
-  excluded           Boolean  @default(false)
-  status             String   @default("collected")
-  createdAt          DateTime @default(now())
-  job                ListJob  @relation(fields: [jobId], references: [id])
+  id                  String   @id @default(cuid())
+  jobId               String
+  url                 String
+  domain              String
+  companyName         String?
+  industry            String?
+  location            String?
+  employeeCount       String?
+  capitalAmount       String?
+  phoneNumber         String?
+  representativeName  String?
+  establishedYear     Int?
+  businessDescription String?
+  hasForm             Boolean  @default(false)
+  formUrl             String?
+  companyVerified     Boolean  @default(false)
+  excluded            Boolean  @default(false)
+  status              String   @default("collected")
+  createdAt           DateTime @default(now())
+  job                 ListJob  @relation(fields: [jobId], references: [id])
 }
 
 model SearchLog {

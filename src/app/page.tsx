@@ -99,6 +99,7 @@ export default function Home() {
       {/* NAVBAR */}
       <nav className={`navbar${navScrolled ? " scrolled" : ""}`}>
         <div className="nav-logo">
+          <span style={{ display: "block", fontSize: 11, color: "var(--text-secondary)", fontWeight: 500, letterSpacing: "0.08em", marginBottom: 2 }}>フォーム付き企業リスト自動収集</span>
           オート<span>リスト</span>
         </div>
         <a href={LINE_URL} className="nav-cta" target="_blank" rel="noopener noreferrer">
@@ -186,7 +187,7 @@ export default function Home() {
           <div className="reveal" ref={addRevealRef}>
             <div className="section-label">Solution</div>
             <h2 className="section-title">
-              オートリストが、<br />リスト作りを全部やります。
+              フォーム付きリストの<br />収集から送信まで、一気通貫。
             </h2>
           </div>
           <div className="comparison-table reveal" ref={addRevealRef}>
@@ -199,23 +200,12 @@ export default function Home() {
               {
                 icon: (
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: "var(--text-muted)" }}>
-                    <circle cx="12" cy="12" r="10" />
-                    <polyline points="12 6 12 12 16 14" />
-                  </svg>
-                ),
-                label: "収集スピード",
-                before: "1時間で20件が限界",
-                after: <>100件を自動収集<br />依頼は1分</>,
-              },
-              {
-                icon: (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: "var(--text-muted)" }}>
                     <line x1="12" y1="1" x2="12" y2="23" />
                     <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
                   </svg>
                 ),
                 label: "コスト",
-                before: <>リスト業者<br />&yen;50〜&yen;200/件</>,
+                before: <>リスト業者<br />&yen;5〜&yen;60/件</>,
                 after: <>&yen;10〜&yen;20/件</>,
               },
               {
@@ -225,7 +215,7 @@ export default function Home() {
                   </svg>
                 ),
                 label: "フォーム有無",
-                before: <>買うまでわからない<br />半分以上ハズレも</>,
+                before: <>買うまでわからない<br />フォーム無しリスト含む</>,
                 after: <>全件フォーム付き<br />確認作業ゼロ</>,
               },
               {
@@ -237,18 +227,6 @@ export default function Home() {
                 label: "送信作業",
                 before: <>1件ずつコピペで<br />手入力</>,
                 after: <>Chrome拡張で<br />半自動送信</>,
-              },
-              {
-                icon: (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: "var(--text-muted)" }}>
-                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
-                    <line x1="8" y1="21" x2="16" y2="21" />
-                    <line x1="12" y1="17" x2="12" y2="21" />
-                  </svg>
-                ),
-                label: "操作環境",
-                before: "PC作業が必要",
-                after: "LINEだけで完結",
               },
             ].map((row, i) => (
               <div key={i} className="comparison-row">

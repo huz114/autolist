@@ -302,7 +302,7 @@ body {
   text-transform: uppercase;
   letter-spacing: 1px;
 }
-.col-before { color: var(--red); }
+.col-before { color: var(--red); text-align: center; }
 .col-after { color: var(--accent); text-align: center; }
 .comparison-row {
   display: grid;

@@ -8,26 +8,47 @@ import { getAdjacentPrefectures } from './adjacent-prefectures';
 
 /**
  * pendingのジョブを1件取得して処理する
+ *
+ * 楽観的ロックで二重処理を防止:
+ * 1. findFirst で pending ジョブを取得
+ * 2. updateMany で status='pending' の条件付きで running に変更
+ * 3. count=0 なら他プロセスが先に取得済み → 次のジョブを探す
  */
 export async function processNextJob(): Promise<{ processed: boolean; jobId?: string }> {
-  // pendingのジョブを1件取得（古い順）
-  const job = await prisma.listJob.findFirst({
-    where: { status: 'pending' },
-    orderBy: { createdAt: 'asc' },
-    include: { user: true },
-  });
+  // 楽観的ロック: pendingジョブの取得とrunningへの更新をアトミックに行う
+  // 他プロセスに取られた場合はスキップして次のpendingジョブを探す
+  let job: Awaited<ReturnType<typeof prisma.listJob.findFirst<{ include: { user: true } }>>> = null;
 
-  if (!job) {
-    return { processed: false };
+  while (true) {
+    // pendingのジョブを1件取得（古い順）
+    const candidate = await prisma.listJob.findFirst({
+      where: { status: 'pending' },
+      orderBy: { createdAt: 'asc' },
+      include: { user: true },
+    });
+
+    if (!candidate) {
+      return { processed: false };
+    }
+
+    // 楽観的ロック: statusがまだpendingの場合のみrunningに変更
+    // リトライ時はprogressをリセットしない（途中再開のため既存の進捗を維持）
+    const updated = await prisma.listJob.updateMany({
+      where: { id: candidate.id, status: 'pending' },
+      data: { status: 'running' },
+    });
+
+    if (updated.count === 0) {
+      // 他プロセスが先に取得済み → スキップして次のpendingジョブを探す
+      console.log(`[processNextJob] Job ${candidate.id} already taken by another process, skipping...`);
+      continue;
+    }
+
+    job = candidate;
+    break;
   }
 
   console.log(`Processing job: ${job.id}, keyword: ${job.keyword}`);
-
-  // ジョブをrunningに更新
-  await prisma.listJob.update({
-    where: { id: job.id },
-    data: { status: 'running', progress: 0 },
-  });
 
   try {
     // クエリを解析して検索クエリを生成
@@ -51,16 +72,43 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
         ? job.industryKeywords
         : analyzed.industryKeywords || [];
 
-    // URL収集を実行
-    const { totalFound, scrapedCount } = await collectUrlsWithQueries(
-      job.id,
-      analyzed.searchQueries,
-      job.targetCount,
-      job.userId,
-      job.industry ?? null,
-      job.location ?? null,
-      industryKeywords
-    );
+    // ── リトライ時の途中再開: 既収集件数を確認して残りだけ収集する ──
+    const existingCollectedCount = await prisma.collectedUrl.count({
+      where: { jobId: job.id, hasForm: true, companyVerified: true },
+    });
+
+    // 残り件数を計算（既に収集済み分を差し引く）
+    const remainingCount = Math.max(0, job.targetCount - existingCollectedCount);
+
+    if (existingCollectedCount > 0) {
+      console.log(
+        `[Job ${job.id}] リトライ途中再開: 既収集 ${existingCollectedCount} 件, ` +
+        `残り ${remainingCount} 件を追加収集`
+      );
+    }
+
+    // 残り0件なら収集スキップ（既に目標達成済み）
+    let totalFound: number;
+    let scrapedCount: number;
+
+    if (remainingCount <= 0) {
+      console.log(`[Job ${job.id}] 既に目標件数に到達済み。収集をスキップします。`);
+      totalFound = existingCollectedCount;
+      scrapedCount = 0;
+    } else {
+      // URL収集を実行（remainingCountを目標件数として渡す）
+      const result = await collectUrlsWithQueries(
+        job.id,
+        analyzed.searchQueries,
+        remainingCount,
+        job.userId,
+        job.industry ?? null,
+        job.location ?? null,
+        industryKeywords
+      );
+      totalFound = result.totalFound;
+      scrapedCount = result.scrapedCount;
+    }
 
     // 法人名確認済み（companyVerified=true）の件数を取得（顧客提出用件数）
     const formCount = await prisma.collectedUrl.count({
@@ -241,25 +289,51 @@ ${loginUrl}
   } catch (error) {
     console.error(`Job ${job.id} failed:`, error);
 
-    // ジョブをfailedに更新
-    await prisma.listJob.update({
-      where: { id: job.id },
-      data: { status: 'failed' },
-    });
+    // ── エラー時の自動リトライ判定 ──
+    // retryCount < 3: pending に戻して自動リトライ（途中収集分は保持）
+    // retryCount >= 3: failed にして LINE 通知
+    const MAX_RETRY_COUNT = 3;
+    const currentRetryCount = job.retryCount ?? 0;
 
-    // エラーをLINEで通知
-    try {
-      const errorMessage = `❌ リスト収集に失敗しました
+    if (currentRetryCount < MAX_RETRY_COUNT) {
+      // リトライ可能: pending に戻す
+      await prisma.listJob.update({
+        where: { id: job.id },
+        data: {
+          status: 'pending',
+          retryCount: currentRetryCount + 1,
+        },
+      });
+      console.log(
+        `[processNextJob] Job ${job.id} -> pending for retry ` +
+        `(${currentRetryCount + 1}/${MAX_RETRY_COUNT}). 途中収集分は保持。`
+      );
+    } else {
+      // リトライ上限超過: failed にする
+      await prisma.listJob.update({
+        where: { id: job.id },
+        data: { status: 'failed' },
+      });
 
-もう一度お試しください。
-問題が続く場合はサポートにお問い合わせください。`;
+      // エラーをLINEで通知
+      try {
+        const errorMessage = `❌ リスト収集に失敗しました\n\n` +
+          `${MAX_RETRY_COUNT}回の自動リトライを試みましたが完了できませんでした。\n` +
+          `もう一度お試しください。\n` +
+          `問題が続く場合はサポートにお問い合わせください。`;
 
-      await sendMessage(job.user.lineUserId, errorMessage);
-    } catch (lineError) {
-      console.error('Failed to send error message via LINE:', lineError);
+        await sendMessage(job.user.lineUserId, errorMessage);
+      } catch (lineError) {
+        console.error('Failed to send error message via LINE:', lineError);
+      }
+
+      console.log(
+        `[processNextJob] Job ${job.id} -> failed (exceeded ${MAX_RETRY_COUNT} retries)`
+      );
     }
 
-    throw error;
+    // エラーをre-throwしない: processAllPendingJobsのwhileループが継続できるようにする
+    return { processed: true, jobId: job.id };
   }
 }
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifySignature, replyMessage } from '@/lib/line';
 import { analyzeQuery, checkAmbiguousLocation } from '@/lib/analyze-query';
 import { prisma } from '@/lib/prisma';
+import { startProcessingIfNeeded } from '@/lib/job-poller';
 import Stripe from 'stripe';
 
 interface LineEvent {
@@ -453,11 +454,9 @@ ${appUrl}/my-lists`
 
             console.log(`Job created: ${job.id} for user: ${lineUserId}`);
 
-            // ジョブ処理起動
-            const processJobsUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3007';
-            fetch(`${processJobsUrl}/api/process-jobs`, {
-              method: 'GET',
-            }).catch(error => {
+            // ジョブ処理起動: ポーラーのstartProcessingIfNeededを直接呼ぶ
+            // isProcessingガードが効くため、既に処理中なら何もしない（二重処理防止）
+            startProcessingIfNeeded().catch(error => {
               console.error('Failed to trigger job processing:', error);
             });
 
@@ -484,10 +483,10 @@ ${appUrl}/my-lists`
             if (countMatch) {
               const newCount = parseInt(countMatch[1], 10);
 
-              // バリデーション（10件単位、10〜500件）
-              if (newCount < 10 || newCount % 10 !== 0 || newCount > 500) {
+              // バリデーション（10件単位、10〜100件）
+              if (newCount < 10 || newCount % 10 !== 0 || newCount > 100) {
                 if (replyToken) {
-                  await replyMessage(replyToken, `❌ 件数は10〜500件の範囲で、10件単位で指定してください。\n\n例: 「50件に変更」`);
+                  await replyMessage(replyToken, `❌ 件数は10〜100件の範囲で、10件単位で指定してください。\n\n例: 「50件に変更」`);
                 }
                 continue;
               }
@@ -597,9 +596,9 @@ ${appUrl}/my-lists`
         }
         continue;
       }
-      if (analyzed.targetCount > 500) {
+      if (analyzed.targetCount > 100) {
         if (replyToken) {
-          await replyMessage(replyToken, `❌ 一度に依頼できるのは最大500社までです。`);
+          await replyMessage(replyToken, `❌ 一度に依頼できるのは最大100件までです。件数を減らして再度ご依頼ください。`);
         }
         continue;
       }

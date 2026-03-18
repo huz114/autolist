@@ -3,7 +3,7 @@
  *
  * 1. サーバー起動時: running ジョブを pending にリセット → pending ジョブを処理開始
  * 2. 2分おきのポーリング: pending ジョブチェック + スタックジョブ検知
- * 3. 30分以上スタックした running ジョブを failed 化 + クレジット返却 + LINE通知
+ * 3. タイムアウト超過した running ジョブを自動リトライ（最大3回）→ 超過で failed + LINE通知
  */
 
 import { prisma } from './prisma';
@@ -11,6 +11,9 @@ import { sendMessage } from './line';
 import { processAllPendingJobs } from './job-processor';
 
 let isProcessing = false;
+
+/** リトライ上限回数 */
+const MAX_RETRY_COUNT = 3;
 
 /**
  * ポーリング初期化（instrumentation.ts から呼ばれる）
@@ -43,6 +46,7 @@ export function initJobPoller() {
 
 /**
  * 対策1: サーバー起動時に running ジョブを pending にリセット
+ * ※ retryCount はインクリメントしない（サーバー再起動は正常復旧であり、リトライ扱いにしない）
  */
 async function recoverStuckJobs() {
   const runningJobs = await prisma.listJob.updateMany({
@@ -61,7 +65,7 @@ async function recoverStuckJobs() {
 /**
  * 対策2: pending ジョブがあれば処理を開始（二重処理防止付き）
  */
-async function startProcessingIfNeeded() {
+export async function startProcessingIfNeeded() {
   if (isProcessing) {
     console.log('[JobPoller] Already processing, skipping...');
     return;
@@ -89,49 +93,88 @@ async function startProcessingIfNeeded() {
 }
 
 /**
- * 対策3: 30分以上スタックした running ジョブを failed 化 + クレジット返却 + LINE通知
+ * 対策3: タイムアウト超過した running ジョブを自動リトライ or failed 化
+ *
+ * タイムアウト計算: 依頼件数 × 3分 + 30分（動的タイムアウト）
+ * - 100件依頼 → 330分（5.5時間）
+ * - 300件依頼 → 930分（15.5時間）
+ * - 最低でも30分は確保
+ *
+ * リトライ上限: 3回
+ * - retryCount < 3: pending に戻して自動リトライ（retryCount をインクリメント）
+ * - retryCount >= 3: failed にして LINE 通知（これ以上リトライしない）
+ *
+ * 途中再開:
+ * - pending に戻されたジョブは processNextJob で再処理される
+ * - 既に収集済みの CollectedUrl は job-processor.ts 側でスキップされる
  */
 async function handleStuckJobs() {
-  const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
-
-  const stuckJobs = await prisma.listJob.findMany({
-    where: {
-      status: 'running',
-      updatedAt: { lt: thirtyMinutesAgo },
-    },
+  // running 状態のジョブを全件取得して、個別にタイムアウト判定する
+  const runningJobs = await prisma.listJob.findMany({
+    where: { status: 'running' },
     include: { user: true },
   });
 
-  if (stuckJobs.length === 0) {
+  if (runningJobs.length === 0) {
     return;
   }
 
-  console.log(`[JobPoller] Found ${stuckJobs.length} stuck job(s) (running > 30min)`);
+  for (const job of runningJobs) {
+    // 動的タイムアウト: 依頼件数 × 3分 + 30分
+    const timeoutMs = (job.targetCount * 3 + 30) * 60 * 1000;
+    const elapsed = Date.now() - job.updatedAt.getTime();
 
-  for (const job of stuckJobs) {
+    // まだタイムアウトしていない場合はスキップ
+    if (elapsed < timeoutMs) {
+      continue;
+    }
+
+    const timeoutMinutes = Math.round(timeoutMs / 60000);
+    console.log(
+      `[JobPoller] Job ${job.id} stuck (elapsed: ${Math.round(elapsed / 60000)}min, ` +
+      `timeout: ${timeoutMinutes}min, retryCount: ${job.retryCount})`
+    );
+
     try {
-      // ジョブを failed に更新
-      await prisma.listJob.update({
-        where: { id: job.id },
-        data: { status: 'failed' },
-      });
+      if (job.retryCount < MAX_RETRY_COUNT) {
+        // ── リトライ可能: pending に戻して自動リトライ ──
+        await prisma.listJob.update({
+          where: { id: job.id },
+          data: {
+            status: 'pending',
+            retryCount: job.retryCount + 1,
+          },
+        });
 
-      // B案: 完了時実績ベース課金のため、スタック時のクレジット返却は不要
-
-      // LINE通知
-      try {
-        await sendMessage(
-          job.user.lineUserId,
-          `⚠️ 収集中にエラーが発生しました。\n\n` +
-          `依頼: ${job.keyword}\n` +
-          `クレジットは消費されていません。\n\n` +
-          `お手数ですが再度依頼してください。`
+        console.log(
+          `[JobPoller] Job ${job.id} -> pending (retry ${job.retryCount + 1}/${MAX_RETRY_COUNT}). ` +
+          `途中収集分は保持、残りから再開予定`
         );
-      } catch (lineError) {
-        console.error(`[JobPoller] Failed to send LINE notification for job ${job.id}:`, lineError);
-      }
+      } else {
+        // ── リトライ上限超過: failed にして LINE 通知 ──
+        await prisma.listJob.update({
+          where: { id: job.id },
+          data: { status: 'failed' },
+        });
 
-      console.log(`[JobPoller] Stuck job ${job.id} marked as failed (no credits charged, B案)`);
+        // LINE通知
+        try {
+          await sendMessage(
+            job.user.lineUserId,
+            `⚠️ 収集中にエラーが発生しました。\n\n` +
+            `依頼: ${job.keyword}\n` +
+            `${MAX_RETRY_COUNT}回の自動リトライを試みましたが完了できませんでした。\n` +
+            `クレジットは消費されていません。\n\n` +
+            `お手数ですが再度依頼してください。`
+          );
+        } catch (lineError) {
+          console.error(`[JobPoller] Failed to send LINE notification for job ${job.id}:`, lineError);
+        }
+
+        console.log(
+          `[JobPoller] Job ${job.id} -> failed (exceeded ${MAX_RETRY_COUNT} retries)`
+        );
+      }
     } catch (error) {
       console.error(`[JobPoller] Error handling stuck job ${job.id}:`, error);
     }

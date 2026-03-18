@@ -29,7 +29,7 @@ export default function Home() {
             ログイン
           </Link>
           <a
-            href="https://line.me/R/ti/p/@autolist"
+            href="https://lin.ee/HoBQrsC"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center px-8 py-3 rounded-lg bg-[#06C755] hover:bg-[#05b34d] text-white font-semibold transition-colors text-lg"

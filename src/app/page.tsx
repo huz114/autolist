@@ -74,7 +74,7 @@ export default function Home() {
     },
     {
       q: "どれくらいで収集できますか？",
-      a: "件数や業種によりますが、数時間が目安です。完了したらLINEやメールで通知しますので、依頼後は他の仕事をしていてOKです。外出中に依頼して戻ったらフォーム送信、前日の夜に依頼して翌朝すぐにフォーム送信、といった使い方がスムーズです。",
+      a: "件数や業種によりますが、数時間が目安です。完了したらLINEやメールで通知しますので、依頼後は他の仕事をしていてOKです。外出中に依頼して戻ったらフォーム送信、前日の夜に依頼して翌朝フォーム送信、といった使い方がスムーズです。",
     },
     {
       q: "リスト業者と何が違いますか？",
@@ -122,7 +122,8 @@ export default function Home() {
             業種と地域をLINEに送るだけ。<br />
             AIがGoogleから企業情報を自動収集。<br />
             届くのは、<strong style={{ color: "var(--text-primary)" }}>全件フォーム付きの企業だけ</strong>。<br />
-            リスト収集からフォーム送信まで、一気通貫。
+            リスト収集からフォーム送信まで、一気通貫。<br />
+            <strong style={{ color: "var(--accent)" }}>最初の100件は無料。</strong>
           </p>
           <div className="hero-cta-group">
             <a href={LINE_URL} className="btn-primary" target="_blank" rel="noopener noreferrer">
@@ -145,6 +146,9 @@ export default function Home() {
               <div className="stat-label">1件あたりの最安コスト</div>
             </div>
           </div>
+          <p className="hero-free-badge" style={{ marginTop: 24, textAlign: "center", fontSize: 15, color: "var(--accent)", fontWeight: 700, letterSpacing: "0.02em" }}>
+            🎁 最初の100件は無料で体験できます
+          </p>
         </div>
       </section>
 
@@ -353,6 +357,9 @@ export default function Home() {
               クレジットを購入した分だけ使う、完全使い切り型。<br />無駄なコストは一切かかりません。
             </p>
           </div>
+          <p style={{ marginTop: 24, textAlign: "center", fontSize: 16, color: "var(--accent)", fontWeight: 700 }}>
+            🎁 LINE友だち追加で、最初の100件は無料！
+          </p>
           <div className="pricing-grid" style={{ marginTop: 56 }}>
             {[
               { volume: "100件", price: "2,000", per: "\u00A520 / 件", feature: <>まず試してみたい方に<br />お手頃スタートプラン</>, featured: false },

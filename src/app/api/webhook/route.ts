@@ -157,7 +157,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 }
 
-const WELCOME_MESSAGE = `👋 友達登録ありがとうございます！
+const WELCOME_MESSAGE = `👋 友だち登録ありがとうございます！
 
 フォーム付き企業リストをLINEで
 依頼するだけで自動収集します📋
@@ -177,7 +177,7 @@ const WELCOME_MESSAGE = `👋 友達登録ありがとうございます！
  */
 async function handleEvents(events: LineEvent[]): Promise<void> {
   for (const event of events) {
-    // 友達追加イベントの処理
+    // 友だち追加イベントの処理
     if (event.type === 'follow') {
       if (event.replyToken) {
         await replyMessage(event.replyToken, WELCOME_MESSAGE);

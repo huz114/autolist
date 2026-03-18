@@ -4,6 +4,7 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import CancelButton from './CancelButton'
 
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   pending:    { label: '待機中',   color: 'text-gray-400 bg-gray-800' },
@@ -86,21 +87,26 @@ export default async function MyListsPage() {
                     </p>
                   )}
                 </div>
-                {(job.status === 'completed' || isPartialDelivery) && formCount > 0 && (
-                  <div className="shrink-0 flex flex-col items-end gap-1">
-                    {isPartialDelivery && (
-                      <span className="text-xs text-amber-400">
-                        {formCount}件収集済み（部分納品）
-                      </span>
-                    )}
-                    <Link
-                      href={`/autolist-results/${job.id}`}
-                      className="bg-[#06C755] hover:bg-[#05b34a] text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors whitespace-nowrap"
-                    >
-                      リストを見る →
-                    </Link>
-                  </div>
-                )}
+                <div className="shrink-0 flex flex-col items-end gap-2">
+                  {(job.status === 'running' || job.status === 'pending') && (
+                    <CancelButton jobId={job.id} />
+                  )}
+                  {(job.status === 'completed' || isPartialDelivery) && formCount > 0 && (
+                    <>
+                      {isPartialDelivery && (
+                        <span className="text-xs text-amber-400">
+                          {formCount}件収集済み（部分納品）
+                        </span>
+                      )}
+                      <Link
+                        href={`/autolist-results/${job.id}`}
+                        className="bg-[#06C755] hover:bg-[#05b34a] text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors whitespace-nowrap"
+                      >
+                        リストを見る →
+                      </Link>
+                    </>
+                  )}
+                </div>
               </div>
             )
           })}

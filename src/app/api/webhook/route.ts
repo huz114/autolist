@@ -557,6 +557,276 @@ ${appUrl}/my-lists`
         }
       }
 
+      // --- 不足情報待ち状態の処理 ---
+      if (user.state?.startsWith('{') && !skipConfirmationBlock) {
+        try {
+          const pendingState = JSON.parse(user.state);
+
+          if (pendingState.status === 'awaiting_query_info') {
+            const answer = messageText.trim();
+
+            // キャンセル処理
+            if (answer === 'キャンセル' || answer === 'cancel' || answer === 'CANCEL') {
+              await prisma.lineUser.update({
+                where: { id: user.id },
+                data: { state: null },
+              });
+              if (replyToken) {
+                await replyMessage(replyToken, `❌ キャンセルしました。\n\n別の条件で試す場合は、改めてメッセージを送ってください。\n例: 「渋谷区の不動産会社30件」`);
+              }
+              continue;
+            }
+
+            // ユーザーの追加情報をGeminiで解析
+            const supplementAnalyzed = await analyzeQuery(answer);
+
+            // 前回の解析結果と組み合わせ
+            const mergedIndustry = pendingState.missingFields.includes('industry') && supplementAnalyzed.industrySpecified
+              ? supplementAnalyzed.industry
+              : (pendingState.industry || supplementAnalyzed.industry);
+            const mergedLocation = pendingState.missingFields.includes('location') && supplementAnalyzed.locationSpecified
+              ? supplementAnalyzed.location
+              : (pendingState.location || supplementAnalyzed.location);
+            const mergedCount = pendingState.missingFields.includes('count') && supplementAnalyzed.countSpecified
+              ? supplementAnalyzed.targetCount
+              : (pendingState.targetCount || supplementAnalyzed.targetCount);
+            const mergedIndustryKeywords = supplementAnalyzed.industrySpecified && supplementAnalyzed.industryKeywords.length > 0
+              ? supplementAnalyzed.industryKeywords
+              : (pendingState.industryKeywords.length > 0 ? pendingState.industryKeywords : supplementAnalyzed.industryKeywords);
+
+            // 海外地域チェック
+            if (supplementAnalyzed.locationSpecified && !supplementAnalyzed.isDomestic) {
+              await prisma.lineUser.update({
+                where: { id: user.id },
+                data: { state: null },
+              });
+              if (replyToken) {
+                await replyMessage(replyToken, '申し訳ございません。現在は日本国内の地域のみ対応しています。');
+              }
+              continue;
+            }
+
+            // まだ不足している情報があるかチェック
+            const stillMissing: string[] = [];
+            if (!mergedIndustry) stillMissing.push('industry');
+            if (!mergedLocation) stillMissing.push('location');
+            if (!mergedCount || mergedCount <= 0) stillMissing.push('count');
+
+            if (stillMissing.length > 0) {
+              // まだ不足 → stateを更新して再度質問
+              const updatedPendingState = JSON.stringify({
+                status: 'awaiting_query_info',
+                industry: mergedIndustry || '',
+                location: mergedLocation || '',
+                targetCount: mergedCount || 0,
+                industryKeywords: mergedIndustryKeywords || [],
+                searchQueries: supplementAnalyzed.searchQueries.length > 0 ? supplementAnalyzed.searchQueries : pendingState.searchQueries || [],
+                originalMessage: pendingState.originalMessage,
+                missingFields: stillMissing,
+              });
+
+              await prisma.lineUser.update({
+                where: { id: user.id },
+                data: { state: updatedPendingState },
+              });
+
+              const questions: string[] = [];
+              if (stillMissing.includes('industry')) {
+                questions.push('🏢 業種：どの業種で収集しますか？\n   例：IT企業、歯科医院、不動産会社');
+              }
+              if (stillMissing.includes('location')) {
+                questions.push('📍 地域：どの地域で収集しますか？\n   例：渋谷区、大阪市、福岡県');
+              }
+              if (stillMissing.includes('count')) {
+                questions.push('📊 件数：何件収集しますか？（10件単位、最大100件）');
+              }
+
+              let questionMessage: string;
+              if (questions.length === 1) {
+                questionMessage = questions[0].replace(/^[^\s]+\s/, '');
+              }  else {
+                questionMessage = `まだ以下の情報が不足しています。\n\n${questions.join('\n\n')}`;
+              }
+
+              if (replyToken) {
+                await replyMessage(replyToken, questionMessage);
+              }
+              continue;
+            }
+
+            // 全情報が揃った → stateをクリアして通常フローへ
+            await prisma.lineUser.update({
+              where: { id: user.id },
+              data: { state: null },
+            });
+            user.state = null;
+
+            // 曖昧な地域名チェック
+            const ambiguousWardCheck = checkAmbiguousLocation(mergedLocation);
+            if (ambiguousWardCheck) {
+              // 地域だけ不足として再度質問
+              const reaskState = JSON.stringify({
+                status: 'awaiting_query_info',
+                industry: mergedIndustry,
+                location: '',
+                targetCount: mergedCount,
+                industryKeywords: mergedIndustryKeywords,
+                searchQueries: [],
+                originalMessage: pendingState.originalMessage,
+                missingFields: ['location'],
+              });
+              await prisma.lineUser.update({
+                where: { id: user.id },
+                data: { state: reaskState },
+              });
+              if (replyToken) {
+                await replyMessage(replyToken, `⚠️ 「${ambiguousWardCheck}」は全国に複数あります。\n\n都道府県や市も含めて指定してください。\n\n例: 「大阪市西区」「横浜市西区」「名古屋市港区」`);
+              }
+              continue;
+            }
+
+            // targetCountバリデーション
+            if (mergedCount < 10) {
+              const reaskState = JSON.stringify({
+                status: 'awaiting_query_info',
+                industry: mergedIndustry,
+                location: mergedLocation,
+                targetCount: 0,
+                industryKeywords: mergedIndustryKeywords,
+                searchQueries: [],
+                originalMessage: pendingState.originalMessage,
+                missingFields: ['count'],
+              });
+              await prisma.lineUser.update({
+                where: { id: user.id },
+                data: { state: reaskState },
+              });
+              if (replyToken) {
+                await replyMessage(replyToken, `❌ 10件以上からご利用いただけます。\n10、20、30社など、10件単位でご指定ください。`);
+              }
+              continue;
+            }
+            if (mergedCount % 10 !== 0) {
+              const reaskState = JSON.stringify({
+                status: 'awaiting_query_info',
+                industry: mergedIndustry,
+                location: mergedLocation,
+                targetCount: 0,
+                industryKeywords: mergedIndustryKeywords,
+                searchQueries: [],
+                originalMessage: pendingState.originalMessage,
+                missingFields: ['count'],
+              });
+              await prisma.lineUser.update({
+                where: { id: user.id },
+                data: { state: reaskState },
+              });
+              if (replyToken) {
+                await replyMessage(replyToken, `❌ 件数は10件単位でご指定ください。\n（例：10、20、30、50社）`);
+              }
+              continue;
+            }
+            if (mergedCount > 100) {
+              const reaskState = JSON.stringify({
+                status: 'awaiting_query_info',
+                industry: mergedIndustry,
+                location: mergedLocation,
+                targetCount: 0,
+                industryKeywords: mergedIndustryKeywords,
+                searchQueries: [],
+                originalMessage: pendingState.originalMessage,
+                missingFields: ['count'],
+              });
+              await prisma.lineUser.update({
+                where: { id: user.id },
+                data: { state: reaskState },
+              });
+              if (replyToken) {
+                await replyMessage(replyToken, `❌ 一度に依頼できるのは最大100件までです。件数を減らして再度ご依頼ください。`);
+              }
+              continue;
+            }
+
+            // クレジット残量チェック
+            if (user.credits < mergedCount) {
+              await prisma.lineUser.update({
+                where: { id: user.id },
+                data: { state: null },
+              });
+              const warningMessage = `⚠️ クレジットが不足しています。\n\n残クレジット: ${user.credits}件\n依頼件数: ${mergedCount}件\n\n残クレジット分（${user.credits}件）で実行するか、チャージしてから依頼してください。\n\nチャージする場合は「チャージ」と送信してください。\nこのまま続ける場合は「${user.credits}件で実行」と送信してください。`;
+              if (replyToken) {
+                await replyMessage(replyToken, warningMessage);
+              }
+              continue;
+            }
+
+            // searchQueriesを再生成（mergedの情報で）
+            const finalSearchQueries = [
+              `${mergedIndustry} ${mergedLocation} お問い合わせ`,
+              `${mergedIndustry} ${mergedLocation} 会社概要`,
+              ...(mergedIndustryKeywords.length > 0
+                ? [`${mergedIndustryKeywords.join(' ')} ${mergedLocation} 企業一覧`]
+                : []),
+              `${mergedIndustry} ${mergedLocation} contact`,
+            ];
+
+            // 確認メッセージ送信
+            const mergedConfirmState = JSON.stringify({
+              status: 'awaiting_confirmation',
+              keyword: `${mergedIndustry} ${mergedLocation} ${mergedCount}件`,
+              industry: mergedIndustry,
+              location: mergedLocation,
+              targetCount: mergedCount,
+              originalMessage: pendingState.originalMessage,
+              industryKeywords: mergedIndustryKeywords,
+            });
+
+            await prisma.lineUser.update({
+              where: { id: user.id },
+              data: { state: mergedConfirmState },
+            });
+
+            const mergedConfirmMsg = {
+              type: 'text',
+              text: `以下の条件でリストを収集してよいですか？\n\n🏢 業種：${mergedIndustry}\n📍 地域：${mergedLocation}\n📊 件数：${mergedCount}社\n\n💳 最大${mergedCount}クレジット消費予定（完了時に実績分が課金されます）`,
+              quickReply: {
+                items: [
+                  {
+                    type: 'action',
+                    action: {
+                      type: 'message',
+                      label: '🚀 収集スタート',
+                      text: 'はい',
+                    },
+                  },
+                  {
+                    type: 'action',
+                    action: {
+                      type: 'message',
+                      label: 'キャンセル',
+                      text: 'いいえ',
+                    },
+                  },
+                ],
+              },
+            };
+
+            if (replyToken) {
+              await replyMessage(replyToken, mergedConfirmMsg);
+            }
+            continue;
+          }
+        } catch (parseError) {
+          // JSONパースに失敗した場合はstateをリセットして通常フローへ
+          console.error('Failed to parse pending query state:', parseError);
+          await prisma.lineUser.update({
+            where: { id: user.id },
+            data: { state: null },
+          });
+          user.state = null;
+        }
+      }
+
       // --- クレジット残量チェック ---
       if (user.credits <= 0) {
         // stateをawaiting_chargeに更新
@@ -573,6 +843,63 @@ ${appUrl}/my-lists`
 
       // Claude APIでクエリを解析
       const analyzed = await analyzeQuery(messageText);
+
+      // --- 海外地域の拒否 ---
+      if (analyzed.locationSpecified && !analyzed.isDomestic) {
+        if (replyToken) {
+          await replyMessage(replyToken, '申し訳ございません。現在は日本国内の地域のみ対応しています。');
+        }
+        continue;
+      }
+
+      // --- 不足情報の質問 ---
+      const missingFields: string[] = [];
+      if (!analyzed.industrySpecified) missingFields.push('industry');
+      if (!analyzed.locationSpecified) missingFields.push('location');
+      if (!analyzed.countSpecified) missingFields.push('count');
+
+      if (missingFields.length > 0) {
+        // 不足情報がある場合、pendingQueryとして保存して質問
+        const pendingQueryState = JSON.stringify({
+          status: 'awaiting_query_info',
+          industry: analyzed.industry || '',
+          location: analyzed.location || '',
+          targetCount: analyzed.targetCount || 0,
+          industryKeywords: analyzed.industryKeywords || [],
+          searchQueries: analyzed.searchQueries || [],
+          originalMessage: messageText,
+          missingFields,
+        });
+
+        await prisma.lineUser.update({
+          where: { id: user.id },
+          data: { state: pendingQueryState },
+        });
+
+        // 不足情報に応じた質問メッセージを組み立て
+        const questions: string[] = [];
+        if (missingFields.includes('industry')) {
+          questions.push('🏢 業種：どの業種で収集しますか？\n   例：IT企業、歯科医院、不動産会社');
+        }
+        if (missingFields.includes('location')) {
+          questions.push('📍 地域：どの地域で収集しますか？\n   例：渋谷区、大阪市、福岡県');
+        }
+        if (missingFields.includes('count')) {
+          questions.push('📊 件数：何件収集しますか？（10件単位、最大100件）');
+        }
+
+        let questionMessage: string;
+        if (questions.length === 1) {
+          questionMessage = questions[0].replace(/^[^\s]+\s/, '');
+        } else {
+          questionMessage = `以下の情報が不足しています。\n\n${questions.join('\n\n')}`;
+        }
+
+        if (replyToken) {
+          await replyMessage(replyToken, questionMessage);
+        }
+        continue;
+      }
 
       // 曖昧な地域名チェック
       const ambiguousWard = checkAmbiguousLocation(analyzed.location);

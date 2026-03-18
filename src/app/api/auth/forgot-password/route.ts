@@ -35,12 +35,12 @@ export async function POST(req: NextRequest) {
       subject: '【オートリスト】パスワードリセット',
       html: `
         <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; color: #333;">
-          <h2 style="color: #f97316;">オートリスト パスワードリセット</h2>
+          <h2 style="color: #06C755;">オートリスト パスワードリセット</h2>
           <p>パスワードリセットのリクエストを受け付けました。</p>
           <p>以下のボタンをクリックして、新しいパスワードを設定してください。</p>
           <p style="margin: 24px 0;">
             <a href="${resetUrl}"
-               style="background: #f97316; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">
+               style="background: #06C755; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">
               パスワードをリセットする
             </a>
           </p>

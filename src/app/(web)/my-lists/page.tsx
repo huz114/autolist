@@ -27,7 +27,7 @@ export default async function MyListsPage() {
         orderBy: { createdAt: 'desc' },
         include: {
           urls: {
-            select: { hasForm: true },
+            select: { hasForm: true, companyVerified: true },
           },
         },
       },
@@ -55,8 +55,10 @@ export default async function MyListsPage() {
       ) : (
         <div className="space-y-4">
           {jobs.map((job) => {
-            const formCount = job.urls.filter((u) => u.hasForm).length
+            const formCount = job.urls.filter((u) => u.hasForm && u.companyVerified).length
             const status = STATUS_LABEL[job.status] ?? { label: job.status, color: 'text-gray-400 bg-gray-800' }
+            // failedジョブでも収集済みデータがあれば部分納品として閲覧可能にする
+            const isPartialDelivery = job.status === 'failed' && formCount > 0
 
             return (
               <div
@@ -84,13 +86,20 @@ export default async function MyListsPage() {
                     </p>
                   )}
                 </div>
-                {job.status === 'completed' && formCount > 0 && (
-                  <Link
-                    href={`/autolist-results/${job.id}`}
-                    className="shrink-0 bg-orange-500 hover:bg-orange-400 text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors whitespace-nowrap"
-                  >
-                    リストを見る →
-                  </Link>
+                {(job.status === 'completed' || isPartialDelivery) && formCount > 0 && (
+                  <div className="shrink-0 flex flex-col items-end gap-1">
+                    {isPartialDelivery && (
+                      <span className="text-xs text-amber-400">
+                        {formCount}件収集済み（部分納品）
+                      </span>
+                    )}
+                    <Link
+                      href={`/autolist-results/${job.id}`}
+                      className="bg-[#06C755] hover:bg-[#05b34a] text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors whitespace-nowrap"
+                    >
+                      リストを見る →
+                    </Link>
+                  </div>
                 )}
               </div>
             )

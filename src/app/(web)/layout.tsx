@@ -12,7 +12,7 @@ function NavBar() {
       <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
           <span className="text-lg font-bold text-white">
-            オート<span className="text-orange-400">リスト</span>
+            オート<span className="text-[#06C755]">リスト</span>
           </span>
         </Link>
         <nav className="flex items-center gap-4">
@@ -47,7 +47,7 @@ function NavBar() {
               </Link>
               <Link
                 href="/register"
-                className="text-sm bg-orange-500 hover:bg-orange-400 text-white px-4 py-1.5 rounded-lg transition-colors"
+                className="text-sm bg-[#06C755] hover:bg-[#05b34a] text-white px-4 py-1.5 rounded-lg transition-colors"
               >
                 登録
               </Link>
@@ -80,7 +80,7 @@ export default function WebLayout({ children }: { children: React.ReactNode }) {
             &copy; 2026 オートリスト — powered by{' '}
             <a
               href="https://shiryolog.com"
-              className="text-orange-400 hover:underline"
+              className="text-[#06C755] hover:underline"
               target="_blank"
               rel="noopener noreferrer"
             >

@@ -279,7 +279,7 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
           <button
             onClick={handleConfirm}
             disabled={confirming || activeCount <= 0}
-            className="w-full bg-orange-500 hover:bg-orange-400 disabled:bg-gray-700 disabled:text-gray-500 text-white font-medium py-3 rounded-xl transition-colors flex flex-col items-center"
+            className="w-full bg-[#06C755] hover:bg-[#05b34a] disabled:bg-gray-700 disabled:text-gray-500 text-white font-medium py-3 rounded-xl transition-colors flex flex-col items-center"
           >
             {confirming
               ? '確定中...'

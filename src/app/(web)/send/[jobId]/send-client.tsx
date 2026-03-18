@@ -362,7 +362,7 @@ export default function SendClient({
   }
 
   const inputClass =
-    'w-full bg-[#0a0a0f] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-orange-500/50 transition-colors placeholder:text-gray-600'
+    'w-full bg-[#0a0a0f] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#06C755]/50 transition-colors placeholder:text-gray-600'
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-10">
@@ -412,7 +412,7 @@ export default function SendClient({
           className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-white/5 transition-colors"
         >
           <div className="flex items-center gap-3">
-            <span className="text-xs font-bold text-orange-400 bg-orange-400/10 px-2 py-1 rounded-lg">1</span>
+            <span className="text-xs font-bold text-[#06C755] bg-[#06C755]/10 px-2 py-1 rounded-lg">1</span>
             <h2 className="text-base font-semibold text-white">送信者情報</h2>
             {isProfileComplete && !profileOpen && (
               <span className="text-xs text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded">
@@ -431,7 +431,7 @@ export default function SendClient({
           <div className="px-5 pb-5 space-y-4">
             <div>
               <label className="block text-xs text-gray-500 mb-1.5">
-                会社名<span className="ml-1 text-orange-400">*</span>
+                会社名<span className="ml-1 text-[#06C755]">*</span>
               </label>
               <input
                 type="text"
@@ -443,7 +443,7 @@ export default function SendClient({
             </div>
             <div>
               <label className="block text-xs text-gray-500 mb-1.5">
-                担当者名<span className="ml-1 text-orange-400">*</span>
+                担当者名<span className="ml-1 text-[#06C755]">*</span>
               </label>
               <input
                 ref={nameInputRef}
@@ -548,7 +548,7 @@ export default function SendClient({
           className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-white/5 transition-colors"
         >
           <div className="flex items-center gap-3">
-            <span className="text-xs font-bold text-orange-400 bg-orange-400/10 px-2 py-1 rounded-lg">2</span>
+            <span className="text-xs font-bold text-[#06C755] bg-[#06C755]/10 px-2 py-1 rounded-lg">2</span>
             <h2 className="text-base font-semibold text-white">メッセージ</h2>
             {isMessageComplete && !messageOpen && (
               <span className="text-xs text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded truncate max-w-[200px]">
@@ -570,7 +570,7 @@ export default function SendClient({
               <div className="flex-1 space-y-4">
                 <div>
                   <label className="block text-xs text-gray-500 mb-1.5">
-                    件名<span className="ml-1 text-orange-400">*</span>
+                    件名<span className="ml-1 text-[#06C755]">*</span>
                   </label>
                   <input
                     type="text"
@@ -582,7 +582,7 @@ export default function SendClient({
                 </div>
                 <div>
                   <label className="block text-xs text-gray-500 mb-1.5">
-                    本文<span className="ml-1 text-orange-400">*</span>
+                    本文<span className="ml-1 text-[#06C755]">*</span>
                   </label>
                   <textarea
                     value={messageBody}
@@ -610,7 +610,7 @@ export default function SendClient({
                     onClick={() => handleSelectTemplate(tpl)}
                     className={`w-full text-left rounded-lg p-3 transition-colors border-2 ${
                       selectedTemplate === tpl.id
-                        ? 'border-orange-500 bg-gray-700'
+                        ? 'border-[#06C755] bg-gray-700'
                         : 'border-transparent bg-gray-700 hover:bg-gray-600'
                     }`}
                   >
@@ -631,7 +631,7 @@ export default function SendClient({
           className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-white/5 transition-colors"
         >
           <div className="flex items-center gap-3">
-            <span className="text-xs font-bold text-orange-400 bg-orange-400/10 px-2 py-1 rounded-lg">3</span>
+            <span className="text-xs font-bold text-[#06C755] bg-[#06C755]/10 px-2 py-1 rounded-lg">3</span>
             <h2 className="text-base font-semibold text-white">送信先企業リスト</h2>
             <span className="text-xs text-gray-400">{companies.length}件</span>
           </div>
@@ -688,7 +688,7 @@ export default function SendClient({
           disabled={!canSend || sending}
           className={`w-full font-medium py-4 rounded-xl transition-colors text-base ${
             canSend && !sending
-              ? 'bg-orange-500 hover:bg-orange-400 text-white cursor-pointer'
+              ? 'bg-[#06C755] hover:bg-[#05b34a] text-white cursor-pointer'
               : 'bg-gray-700 text-gray-500 cursor-not-allowed'
           }`}
         >

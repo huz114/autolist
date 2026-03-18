@@ -20,7 +20,7 @@ export async function POST(
     where: {
       id: jobId,
       user: { userId: session.user.id },
-      status: 'completed',
+      status: { in: ['completed', 'failed'] },
       confirmedAt: null, // 未確定のみ
     },
     include: {

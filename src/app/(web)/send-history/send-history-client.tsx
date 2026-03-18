@@ -43,7 +43,7 @@ const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string }>
   submitted: { label: '送信済み', bg: 'bg-emerald-900/30', text: 'text-emerald-400' },
   confirmed: { label: '確認済み', bg: 'bg-blue-900/30', text: 'text-blue-400' },
   bounced: { label: '失敗', bg: 'bg-red-900/30', text: 'text-red-400' },
-  replied: { label: '返信あり', bg: 'bg-orange-900/30', text: 'text-orange-400' },
+  replied: { label: '返信あり', bg: 'bg-green-900/30', text: 'text-[#06C755]' },
 }
 
 function getStatus(status: string) {
@@ -138,7 +138,7 @@ export default function SendHistoryClient() {
         </div>
         <div className="bg-[#16161f] border border-white/10 rounded-xl p-4">
           <p className="text-xs text-gray-400 mb-1">累計</p>
-          <p className="text-2xl font-bold text-orange-400">
+          <p className="text-2xl font-bold text-[#06C755]">
             {stats.allTime}<span className="text-sm text-gray-400 ml-1">件</span>
           </p>
         </div>
@@ -151,14 +151,14 @@ export default function SendHistoryClient() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="企業名で検索..."
-          className="w-full sm:w-72 bg-[#16161f] border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-orange-400/50 transition-colors"
+          className="w-full sm:w-72 bg-[#16161f] border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#06C755]/50 transition-colors"
         />
       </div>
 
       {/* Content */}
       {loading ? (
         <div className="bg-[#16161f] border border-white/10 rounded-2xl p-12 flex flex-col items-center">
-          <div className="w-8 h-8 border-2 border-orange-400 border-t-transparent rounded-full animate-spin mb-3" />
+          <div className="w-8 h-8 border-2 border-[#06C755] border-t-transparent rounded-full animate-spin mb-3" />
           <p className="text-sm text-gray-400">読み込み中...</p>
         </div>
       ) : error ? (
@@ -167,7 +167,7 @@ export default function SendHistoryClient() {
           <p className="text-xs text-gray-500 mb-4">{error}</p>
           <button
             onClick={() => fetchData(page, debouncedSearch)}
-            className="bg-orange-500 hover:bg-orange-400 text-white text-sm px-4 py-2 rounded-lg transition-colors"
+            className="bg-[#06C755] hover:bg-[#05b34a] text-white text-sm px-4 py-2 rounded-lg transition-colors"
           >
             再試行
           </button>
@@ -217,7 +217,7 @@ export default function SendHistoryClient() {
                             href={s.formUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-orange-400 hover:text-orange-300 hover:underline transition-colors"
+                            className="text-[#06C755] hover:text-[#05b34a] hover:underline transition-colors"
                           >
                             {s.formUrl ? new URL(s.formUrl).hostname : '-'}
                           </a>
@@ -248,7 +248,7 @@ export default function SendHistoryClient() {
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page <= 1}
-                  className="px-3 py-1.5 text-sm bg-[#16161f] border border-white/10 rounded-lg text-gray-300 hover:text-white hover:border-orange-400/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  className="px-3 py-1.5 text-sm bg-[#16161f] border border-white/10 rounded-lg text-gray-300 hover:text-white hover:border-[#06C755]/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 >
                   前へ
                 </button>
@@ -258,7 +258,7 @@ export default function SendHistoryClient() {
                 <button
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page >= totalPages}
-                  className="px-3 py-1.5 text-sm bg-[#16161f] border border-white/10 rounded-lg text-gray-300 hover:text-white hover:border-orange-400/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  className="px-3 py-1.5 text-sm bg-[#16161f] border border-white/10 rounded-lg text-gray-300 hover:text-white hover:border-[#06C755]/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 >
                   次へ
                 </button>

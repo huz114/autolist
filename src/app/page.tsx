@@ -78,7 +78,7 @@ export default function Home() {
     },
     {
       q: "リスト業者と何が違いますか？",
-      a: "リスト業者は1件¥50〜¥200が相場です。オートリストはAIがリアルタイムでGoogle検索して収集するため、常に最新の情報を¥10〜で取得できます。",
+      a: "リスト業者のデータは更新頻度が低いことも多く、フォームの有無も保証されません。オートリストはAIがリアルタイムでGoogle検索して収集するため、常に最新の情報を取得できます。さらに全件フォーム付きなので、そのままChrome拡張で送信まで完結します。",
     },
     {
       q: "追加料金や月額費用はありますか？",
@@ -408,9 +408,9 @@ export default function Home() {
           <div className="final-cta-inner reveal" ref={addRevealRef}>
             <div className="section-label" style={{ textAlign: "center" }}>Get Started</div>
             <h2 className="final-cta-title">
-              今日の移動中に、<br />試してみてください。
+              今日の移動中に<br />試してみてください
             </h2>
-            <p className="final-cta-sub">最初の100件は&yen;2,000から。月額なし、いつでも始められます。</p>
+            <p className="final-cta-sub">最初の100件は無料。月額なし、いつでも始められます。</p>
             <div className="final-cta-group">
               <a
                 href={LINE_URL}

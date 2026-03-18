@@ -85,7 +85,7 @@ function LoginForm() {
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="example@email.com"
-              className="w-full bg-[#0a0a0f] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-orange-500/50 transition-colors placeholder:text-gray-600"
+              className="w-full bg-[#0a0a0f] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#06C755]/50 transition-colors placeholder:text-gray-600"
             />
           </div>
           <div>
@@ -98,18 +98,18 @@ function LoginForm() {
               onChange={(e) => setPassword(e.target.value)}
               required
               placeholder="••••••••"
-              className="w-full bg-[#0a0a0f] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-orange-500/50 transition-colors placeholder:text-gray-600"
+              className="w-full bg-[#0a0a0f] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#06C755]/50 transition-colors placeholder:text-gray-600"
             />
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-orange-500 hover:bg-orange-400 disabled:opacity-60 text-white font-medium py-2.5 rounded-lg transition-colors"
+            className="w-full bg-[#06C755] hover:bg-[#05b34a] disabled:opacity-60 text-white font-medium py-2.5 rounded-lg transition-colors"
           >
             {loading ? 'ログイン中...' : 'ログイン'}
           </button>
           <div className="text-center">
-            <Link href="/forgot-password" className="text-sm text-orange-400 hover:text-orange-300">
+            <Link href="/forgot-password" className="text-sm text-[#06C755] hover:text-[#05b34a]">
               パスワードを忘れた方はこちら
             </Link>
           </div>
@@ -119,7 +119,7 @@ function LoginForm() {
           アカウントをお持ちでない方は{' '}
           <Link
             href={lineUserId ? `/register?lineUserId=${lineUserId}` : '/register'}
-            className="text-orange-400 hover:underline"
+            className="text-[#06C755] hover:underline"
           >
             アカウント登録
           </Link>

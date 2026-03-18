@@ -49,7 +49,7 @@ export default function TokushohoPage() {
             </tr>
             <tr>
               <th className="px-5 py-4 text-left text-gray-400 bg-gray-900/50 w-1/3 align-top font-medium">商品の引渡し時期</th>
-              <td className="px-5 py-4 text-gray-200">クレジット購入後、即時利用可能。リスト収集は依頼後数分〜数十分で完了します。</td>
+              <td className="px-5 py-4 text-gray-200">クレジット購入後、即時利用可能。<br />リスト収集は依頼後、数十分〜数時間で完了します。</td>
             </tr>
             <tr>
               <th className="px-5 py-4 text-left text-gray-400 bg-gray-900/50 w-1/3 align-top font-medium">返品・交換</th>

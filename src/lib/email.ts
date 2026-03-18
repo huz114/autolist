@@ -73,7 +73,7 @@ function buildVerificationEmailHtml(verifyUrl: string): string {
             <td style="padding:32px 32px 0;">
               <table cellpadding="0" cellspacing="0">
                 <tr>
-                  <td style="width:40px;height:40px;background:linear-gradient(135deg,#f97316,#ea580c);border-radius:8px;text-align:center;vertical-align:middle;">
+                  <td style="width:40px;height:40px;background:linear-gradient(135deg,#06C755,#05b34a);border-radius:8px;text-align:center;vertical-align:middle;">
                     <span style="color:#fff;font-size:18px;font-weight:bold;">A</span>
                   </td>
                   <td style="padding-left:10px;">
@@ -94,7 +94,7 @@ function buildVerificationEmailHtml(verifyUrl: string): string {
               </p>
               <table cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
                 <tr>
-                  <td style="background:linear-gradient(135deg,#f97316,#ea580c);border-radius:8px;padding:12px 32px;">
+                  <td style="background:linear-gradient(135deg,#06C755,#05b34a);border-radius:8px;padding:12px 32px;">
                     <a href="${verifyUrl}" style="color:#ffffff;text-decoration:none;font-size:14px;font-weight:bold;display:block;">
                       メールアドレスを確認する
                     </a>
@@ -105,7 +105,7 @@ function buildVerificationEmailHtml(verifyUrl: string): string {
                 ボタンがクリックできない場合は、以下のURLをブラウザに貼り付けてください：
               </p>
               <p style="color:#9ca3af;font-size:12px;line-height:1.6;margin:0 0 24px;word-break:break-all;">
-                <a href="${verifyUrl}" style="color:#f97316;text-decoration:underline;">${verifyUrl}</a>
+                <a href="${verifyUrl}" style="color:#06C755;text-decoration:underline;">${verifyUrl}</a>
               </p>
               <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:24px 0;">
               <p style="color:#6b7280;font-size:12px;line-height:1.6;margin:0;">

@@ -5,6 +5,7 @@ import { analyzeQuery } from './analyze-query';
 import { importJobToShiryolog } from './import-to-shiryolog';
 import { sendJobCompletedEmail } from './mailer';
 import { getAdjacentPrefectures } from './adjacent-prefectures';
+import { suggestAlternativeKeywords } from './suggest-keywords';
 
 /**
  * pendingのジョブを1件取得して処理する
@@ -290,37 +291,95 @@ ${loginUrl}
     console.error(`Job ${job.id} failed:`, error);
 
     // ── エラー時の自動リトライ判定 ──
-    // retryCount < 3: pending に戻して自動リトライ（途中収集分は保持）
-    // retryCount >= 3: failed にして LINE 通知
-    const MAX_RETRY_COUNT = 3;
+    // retryCount < 1: pending に戻して自動リトライ（途中収集分は保持）
+    // retryCount >= 1: failed にして LINE 通知
+    const MAX_RETRY = 1;
     const currentRetryCount = job.retryCount ?? 0;
 
-    if (currentRetryCount < MAX_RETRY_COUNT) {
-      // リトライ可能: pending に戻す
+    // 収集済み件数を確認
+    const partialCount = await prisma.collectedUrl.count({
+      where: { jobId: job.id, hasForm: true, companyVerified: true },
+    });
+
+    if (currentRetryCount < MAX_RETRY) {
+      // リトライ可能
+
+      // 収集済みが1件以上ある場合は中間通知を送信
+      if (partialCount > 0) {
+        try {
+          const autolistUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3007';
+          const loginUrl = `${autolistUrl}/login?lineUserId=${job.user.lineUserId}&callbackUrl=/my-lists`;
+
+          await sendMessage(job.user.lineUserId,
+            `📋 「${job.keyword}」の収集状況をお知らせします。\n\n` +
+            `現在${partialCount}件の企業を収集できました。\n` +
+            `リストはこちらから確認できます：\n${loginUrl}\n\n` +
+            `残りは引き続き収集中です。完了したら改めてお知らせします。`
+          );
+        } catch (lineError) {
+          console.error('Failed to send interim LINE message:', lineError);
+        }
+      }
+
       await prisma.listJob.update({
         where: { id: job.id },
         data: {
           status: 'pending',
           retryCount: currentRetryCount + 1,
+          totalFound: partialCount,
         },
       });
       console.log(
         `[processNextJob] Job ${job.id} -> pending for retry ` +
-        `(${currentRetryCount + 1}/${MAX_RETRY_COUNT}). 途中収集分は保持。`
+        `(${currentRetryCount + 1}/${MAX_RETRY}). collected: ${partialCount}件`
       );
     } else {
       // リトライ上限超過: failed にする
+      const previousCount = job.totalFound ?? 0;
+      const additionalCount = partialCount - previousCount;
+
       await prisma.listJob.update({
         where: { id: job.id },
-        data: { status: 'failed' },
+        data: {
+          status: 'failed',
+          totalFound: partialCount,
+        },
       });
 
-      // エラーをLINEで通知
+      // キーワード提案を生成
+      let keywordSuggestion = '';
       try {
-        const errorMessage = `❌ リスト収集に失敗しました\n\n` +
-          `${MAX_RETRY_COUNT}回の自動リトライを試みましたが完了できませんでした。\n` +
-          `もう一度お試しください。\n` +
-          `問題が続く場合はサポートにお問い合わせください。`;
+        const suggestions = await suggestAlternativeKeywords(job.keyword);
+        if (suggestions.length > 0) {
+          keywordSuggestion = '\n\n以下のキーワードで追加収集できる可能性があります：\n' +
+            suggestions.map(s => `・${s}`).join('\n');
+        }
+      } catch (e) {
+        console.error('Failed to generate keyword suggestions:', e);
+      }
+
+      // LINE通知（収集済み件数に応じてメッセージを変える）
+      try {
+        const autolistUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3007';
+        const loginUrl = `${autolistUrl}/login?lineUserId=${job.user.lineUserId}&callbackUrl=/my-lists`;
+
+        let errorMessage: string;
+        if (partialCount > 0) {
+          errorMessage = additionalCount > 0
+            ? `📋 「${job.keyword}」の追加収集が完了しました。\n\n` +
+              `さらに${additionalCount}件収集できました。合計${partialCount}件になりました。\n\n` +
+              `これ以上の収集が難しいため、こちらが最終結果となります。\n` +
+              `リストはこちらから確認できます：\n${loginUrl}\n\n` +
+              `クレジットはリスト確定時に実績分のみ課金されます。${keywordSuggestion}`
+            : `📋 「${job.keyword}」の追加収集を試みましたが、これ以上見つかりませんでした。\n\n` +
+              `最終結果は${partialCount}件です。\n` +
+              `リストはこちらから確認できます：\n${loginUrl}\n\n` +
+              `クレジットはリスト確定時に実績分のみ課金されます。${keywordSuggestion}`;
+        } else {
+          errorMessage = `申し訳ありません。「${job.keyword}」の収集を試みましたが、条件に合う企業が見つかりませんでした。\n\n` +
+            `クレジットは消費されていません。${keywordSuggestion}\n\n` +
+            `別のキーワードで再度お試しください。`;
+        }
 
         await sendMessage(job.user.lineUserId, errorMessage);
       } catch (lineError) {
@@ -328,7 +387,7 @@ ${loginUrl}
       }
 
       console.log(
-        `[processNextJob] Job ${job.id} -> failed (exceeded ${MAX_RETRY_COUNT} retries)`
+        `[processNextJob] Job ${job.id} -> failed (exceeded ${MAX_RETRY} retries, collected: ${partialCount}件)`
       );
     }
 

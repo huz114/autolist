@@ -61,7 +61,7 @@ function ResetPasswordForm() {
           </p>
           <Link
             href="/forgot-password"
-            className="block w-full text-center bg-orange-500 hover:bg-orange-400 text-white font-medium py-2.5 rounded-lg transition-colors"
+            className="block w-full text-center bg-[#06C755] hover:bg-[#05b34a] text-white font-medium py-2.5 rounded-lg transition-colors"
           >
             パスワードリセットページへ
           </Link>
@@ -95,7 +95,7 @@ function ResetPasswordForm() {
               onChange={(e) => setPassword(e.target.value)}
               required
               placeholder="••••••••"
-              className="w-full bg-[#0a0a0f] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-orange-500/50 transition-colors placeholder:text-gray-600"
+              className="w-full bg-[#0a0a0f] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#06C755]/50 transition-colors placeholder:text-gray-600"
             />
           </div>
           <div>
@@ -108,20 +108,20 @@ function ResetPasswordForm() {
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
               placeholder="••••••••"
-              className="w-full bg-[#0a0a0f] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-orange-500/50 transition-colors placeholder:text-gray-600"
+              className="w-full bg-[#0a0a0f] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#06C755]/50 transition-colors placeholder:text-gray-600"
             />
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-orange-500 hover:bg-orange-400 disabled:opacity-60 text-white font-medium py-2.5 rounded-lg transition-colors"
+            className="w-full bg-[#06C755] hover:bg-[#05b34a] disabled:opacity-60 text-white font-medium py-2.5 rounded-lg transition-colors"
           >
             {loading ? '変更中...' : 'パスワードを変更する'}
           </button>
         </form>
 
         <p className="mt-6 text-center text-sm text-gray-500">
-          <Link href="/login" className="text-orange-400 hover:text-orange-300">
+          <Link href="/login" className="text-[#06C755] hover:text-[#05b34a]">
             ログインに戻る
           </Link>
         </p>

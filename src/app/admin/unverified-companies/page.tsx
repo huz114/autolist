@@ -140,7 +140,7 @@ export default function UnverifiedCompaniesPage() {
               <div key={key} className="bg-[#16161f] border border-white/10 rounded-xl overflow-hidden">
                 {/* ジョブヘッダー */}
                 <div className="bg-[#0e0e18] px-5 py-3 flex flex-wrap items-center gap-3 border-b border-white/10">
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-orange-900/40 text-orange-300">
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-green-900/40 text-green-300">
                     {job.keyword}
                   </span>
                   <span className="text-xs text-gray-500">

@@ -205,7 +205,7 @@ function JobRow({ job }: { job: Job }) {
         <td className="py-3 pr-4">
           <div className="flex flex-wrap gap-1">
             {job.keyword && (
-              <span className="text-xs px-1.5 py-0.5 rounded bg-orange-900/40 text-orange-300">
+              <span className="text-xs px-1.5 py-0.5 rounded bg-green-900/40 text-green-300">
                 {job.keyword}
               </span>
             )}

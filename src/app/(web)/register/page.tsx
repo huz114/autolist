@@ -44,20 +44,20 @@ function RegisterForm() {
       <div className="w-full max-w-md">
         <div className="bg-[#16161f] border border-white/10 rounded-2xl p-8">
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 rounded-full bg-orange-500/10 border border-orange-500/20 flex items-center justify-center">
-              <svg className="w-8 h-8 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-16 h-16 rounded-full bg-[#06C755]/10 border border-[#06C755]/20 flex items-center justify-center">
+              <svg className="w-8 h-8 text-[#06C755]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
             </div>
           </div>
           <h1 className="text-lg font-bold text-white text-center mb-3">確認メールを送信しました</h1>
           <p className="text-sm text-gray-400 text-center mb-2">
-            <span className="text-orange-400 font-medium">{email}</span> に確認メールを送信しました。
+            <span className="text-[#06C755] font-medium">{email}</span> に確認メールを送信しました。
           </p>
           <p className="text-sm text-gray-400 text-center mb-6">
             メール内のリンクをクリックして、アカウントを有効化してください。
           </p>
-          <Link href="/login" className="block w-full bg-orange-500 hover:bg-orange-400 text-white font-medium py-2.5 rounded-lg transition-colors text-center">
+          <Link href="/login" className="block w-full bg-[#06C755] hover:bg-[#05b34a] text-white font-medium py-2.5 rounded-lg transition-colors text-center">
             ログインページへ
           </Link>
           <p className="mt-4 text-center text-xs text-gray-500">
@@ -95,12 +95,12 @@ function RegisterForm() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="山田 太郎"
-              className="w-full bg-[#0a0a0f] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-orange-500/50 transition-colors placeholder:text-gray-600"
+              className="w-full bg-[#0a0a0f] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#06C755]/50 transition-colors placeholder:text-gray-600"
             />
           </div>
           <div>
             <label className="block text-sm text-gray-400 mb-1.5">
-              メールアドレス <span className="text-orange-400">*</span>
+              メールアドレス <span className="text-[#06C755]">*</span>
             </label>
             <input
               type="email"
@@ -108,12 +108,12 @@ function RegisterForm() {
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="example@email.com"
-              className="w-full bg-[#0a0a0f] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-orange-500/50 transition-colors placeholder:text-gray-600"
+              className="w-full bg-[#0a0a0f] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#06C755]/50 transition-colors placeholder:text-gray-600"
             />
           </div>
           <div>
             <label className="block text-sm text-gray-400 mb-1.5">
-              パスワード <span className="text-orange-400">*</span>
+              パスワード <span className="text-[#06C755]">*</span>
             </label>
             <input
               type="password"
@@ -122,13 +122,13 @@ function RegisterForm() {
               required
               minLength={8}
               placeholder="8文字以上"
-              className="w-full bg-[#0a0a0f] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-orange-500/50 transition-colors placeholder:text-gray-600"
+              className="w-full bg-[#0a0a0f] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#06C755]/50 transition-colors placeholder:text-gray-600"
             />
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-orange-500 hover:bg-orange-400 disabled:opacity-60 text-white font-medium py-2.5 rounded-lg transition-colors"
+            className="w-full bg-[#06C755] hover:bg-[#05b34a] disabled:opacity-60 text-white font-medium py-2.5 rounded-lg transition-colors"
           >
             {loading ? '登録中...' : '無料で登録する'}
           </button>
@@ -136,7 +136,7 @@ function RegisterForm() {
 
         <p className="mt-6 text-center text-sm text-gray-500">
           既にアカウントをお持ちの方は{' '}
-          <Link href="/login" className="text-orange-400 hover:underline">
+          <Link href="/login" className="text-[#06C755] hover:underline">
             ログイン
           </Link>
         </p>

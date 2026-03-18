@@ -55,7 +55,7 @@ function VerifyContent() {
             <p className="text-sm text-gray-400 text-center mb-6">
               メールアドレスが確認されました。ログインしてご利用ください。
             </p>
-            <Link href="/login" className="block w-full bg-orange-500 hover:bg-orange-400 text-white font-medium py-2.5 rounded-lg transition-colors text-center">
+            <Link href="/login" className="block w-full bg-[#06C755] hover:bg-[#05b34a] text-white font-medium py-2.5 rounded-lg transition-colors text-center">
               ログインページへ
             </Link>
           </>
@@ -85,14 +85,14 @@ function VerifyContent() {
                   type="email"
                   value={resendEmail}
                   onChange={(e) => setResendEmail(e.target.value)}
-                  className="w-full bg-[#0a0a0f] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-orange-500/50 transition-colors placeholder:text-gray-600"
+                  className="w-full bg-[#0a0a0f] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#06C755]/50 transition-colors placeholder:text-gray-600"
                   placeholder="example@email.com"
                 />
               </div>
               <button
                 onClick={handleResend}
                 disabled={resendLoading || !resendEmail}
-                className="w-full bg-orange-500 hover:bg-orange-400 disabled:opacity-60 text-white font-medium py-2.5 rounded-lg transition-colors"
+                className="w-full bg-[#06C755] hover:bg-[#05b34a] disabled:opacity-60 text-white font-medium py-2.5 rounded-lg transition-colors"
               >
                 {resendLoading ? '送信中...' : '確認メールを再送信'}
               </button>
@@ -124,14 +124,14 @@ function VerifyContent() {
                   type="email"
                   value={resendEmail}
                   onChange={(e) => setResendEmail(e.target.value)}
-                  className="w-full bg-[#0a0a0f] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-orange-500/50 transition-colors placeholder:text-gray-600"
+                  className="w-full bg-[#0a0a0f] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#06C755]/50 transition-colors placeholder:text-gray-600"
                   placeholder="example@email.com"
                 />
               </div>
               <button
                 onClick={handleResend}
                 disabled={resendLoading || !resendEmail}
-                className="w-full bg-orange-500 hover:bg-orange-400 disabled:opacity-60 text-white font-medium py-2.5 rounded-lg transition-colors"
+                className="w-full bg-[#06C755] hover:bg-[#05b34a] disabled:opacity-60 text-white font-medium py-2.5 rounded-lg transition-colors"
               >
                 {resendLoading ? '送信中...' : '確認メールを再送信'}
               </button>
@@ -153,7 +153,7 @@ function VerifyContent() {
             <p className="text-sm text-gray-400 text-center mb-6">
               メール認証処理中にエラーが発生しました。もう一度お試しください。
             </p>
-            <Link href="/login" className="block w-full bg-orange-500 hover:bg-orange-400 text-white font-medium py-2.5 rounded-lg transition-colors text-center">
+            <Link href="/login" className="block w-full bg-[#06C755] hover:bg-[#05b34a] text-white font-medium py-2.5 rounded-lg transition-colors text-center">
               ログインページへ
             </Link>
           </>
@@ -176,14 +176,14 @@ function VerifyContent() {
                   type="email"
                   value={resendEmail}
                   onChange={(e) => setResendEmail(e.target.value)}
-                  className="w-full bg-[#0a0a0f] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-orange-500/50 transition-colors placeholder:text-gray-600"
+                  className="w-full bg-[#0a0a0f] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#06C755]/50 transition-colors placeholder:text-gray-600"
                   placeholder="example@email.com"
                 />
               </div>
               <button
                 onClick={handleResend}
                 disabled={resendLoading || !resendEmail}
-                className="w-full bg-orange-500 hover:bg-orange-400 disabled:opacity-60 text-white font-medium py-2.5 rounded-lg transition-colors"
+                className="w-full bg-[#06C755] hover:bg-[#05b34a] disabled:opacity-60 text-white font-medium py-2.5 rounded-lg transition-colors"
               >
                 {resendLoading ? '送信中...' : '確認メールを再送信'}
               </button>
@@ -204,7 +204,7 @@ function VerifyContent() {
 
         {/* ログインリンク */}
         <div className="mt-6 text-center">
-          <Link href="/login" className="text-sm text-orange-400 hover:text-orange-300">
+          <Link href="/login" className="text-sm text-[#06C755] hover:text-[#05b34a]">
             ログインページへ戻る
           </Link>
         </div>

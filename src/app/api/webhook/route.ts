@@ -492,7 +492,7 @@ ${appUrl}/my-lists`
 
 完了したらLINEでお知らせします。
 
-💡 収集完了後、PCのChromeでリスト確認→フォーム半自動送信ができます。
+💡 収集完了後、PCのChromeでリスト確認→フォーム送信ができます。
 会員登録するとメールでもリストURLが届くので、PCですぐに作業を始められます。
 → ${appUrl}/register`;
 
@@ -1052,9 +1052,9 @@ ${appUrl}/my-lists`
       console.error(`Error processing message from ${lineUserId}:`, error);
 
       // エラーメッセージを送信
-      const errorMessage = `申し訳ありません。処理中にエラーが発生しました。
+      const errorMessage = `申し訳ありません。システムエラーが発生しました。
 
-もう一度お試しいただくか、「ヘルプ」と送信して使い方を確認してください。`;
+お手数ですが、しばらく後にもう一度お試しください。問題が続く場合は「問い合わせ」ボタンからご連絡ください。`;
 
       try {
         if (replyToken) {

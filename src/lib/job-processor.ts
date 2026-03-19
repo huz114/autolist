@@ -304,7 +304,7 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
           lineMessage = `✅ リストが完成しました！\n` +
             `📋 ${formCount}社のフォームあり企業リストを収集しました\n` +
             `💳 ${formCount}クレジット使用 → 残り${remainingCreditsAfterCompletion}クレジット\n\n` +
-            `🖥️ PCのChromeでリスト確認→フォーム半自動送信ができます。\n` +
+            `🖥️ PCのChromeでリスト確認→フォーム送信ができます。\n` +
             `Chrome拡張をインストールすると、フォーム送信が半自動化できます。\n\n` +
             `💡 会員登録するとメールでもリストURLが届くので、PCですぐに作業を始められます。\n` +
             `→ ${registerUrl}\n\n` +
@@ -316,7 +316,7 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
             `📋 ${formCount}社のフォームあり企業リストを収集しました${detailLine}\n` +
             `💳 ${formCount}クレジット使用 → 残り${remainingCreditsAfterCompletion}クレジット\n` +
             `${suggestionBlock}\n` +
-            `🖥️ PCのChromeでリスト確認→フォーム半自動送信ができます。\n` +
+            `🖥️ PCのChromeでリスト確認→フォーム送信ができます。\n` +
             `Chrome拡張をインストールすると、フォーム送信が半自動化できます。\n\n` +
             `💡 会員登録するとメールでもリストURLが届くので、PCですぐに作業を始められます。\n` +
             `→ ${registerUrl}\n\n` +
@@ -332,7 +332,7 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
           lineMessage = `✅ リストが完成しました！\n` +
             `📋 ${formCount}社のフォームあり企業リストを収集しました\n` +
             `💳 ${formCount}クレジット使用 → 残り${remainingCreditsAfterCompletion}クレジット\n\n` +
-            `🖥️ PCのChromeでリスト確認→フォーム半自動送信ができます。\n` +
+            `🖥️ PCのChromeでリスト確認→フォーム送信ができます。\n` +
             `Chrome拡張をインストールすると、フォーム送信が半自動化できます。\n\n` +
             `📧 メールでもリストURLをお送りしました。`;
         } else {
@@ -341,7 +341,7 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
             `📋 ${formCount}社のフォームあり企業リストを収集しました${detailLine}\n` +
             `💳 ${formCount}クレジット使用 → 残り${remainingCreditsAfterCompletion}クレジット\n` +
             `${suggestionBlock}\n` +
-            `🖥️ PCのChromeでリスト確認→フォーム半自動送信ができます。\n` +
+            `🖥️ PCのChromeでリスト確認→フォーム送信ができます。\n` +
             `Chrome拡張をインストールすると、フォーム送信が半自動化できます。\n\n` +
             `📧 メールでもリストURLをお送りしました。` + keywordSuggestion;
         }
@@ -485,7 +485,7 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
           const updatedUserAfterFail = await prisma.lineUser.findUnique({ where: { id: job.userId }, select: { credits: true } });
           const remainingAfterFail = updatedUserAfterFail?.credits ?? 0;
           errorMessage = `申し訳ございません。「${job.keyword}」の条件で収集を試みましたが、問い合わせフォーム付きの企業が見つかりませんでした。\n\n` +
-            `💳 仮押さえした${reservedCreditsForFail}クレジットは全額返却しました。残り${remainingAfterFail}クレジット` +
+            `💳 仮押さえした${reservedCreditsForFail}クレジットは全額返却しました。\n残り${remainingAfterFail}クレジット` +
             `${keywordSuggestion}` +
             `\n\n別のキーワードで再度お試しください。`;
         }

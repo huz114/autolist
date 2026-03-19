@@ -63,6 +63,65 @@ const SEARCH_ACTION_KEYWORDS: ReadonlyArray<string> = [
 ];
 
 /**
+ * 問い合わせフォーム以外のフォームを除外するためのキーワード群
+ * フォームのHTML全体（input name, placeholder, label, button text等）を対象に判定
+ */
+const NON_CONTACT_FORM_KEYWORDS: ReadonlyArray<string> = [
+  // 予約系
+  'チェックイン', 'チェックアウト', 'checkin', 'checkout', 'check-in', 'check-out',
+  'booking', 'reservation', '予約', '空室', '宿泊',
+  // 検索系（searchはCSS class等で誤爆しやすいため別処理に移行）
+  '検索', 'サイト内検索', 'keyword',
+  // ログイン系
+  'login', 'ログイン', 'password', 'パスワード', 'signin', 'sign-in', 'サインイン',
+  // カート・購入系
+  'cart', 'カート', '購入', 'add to cart', '買い物かご',
+];
+
+/**
+ * ホワイトリスト: フォーム内にこれらのキーワードが含まれていれば、
+ * NON_CONTACT_FORM_KEYWORDS による除外を無効化する（問い合わせフォームとして救済）
+ */
+const CONTACT_FORM_WHITELIST_KEYWORDS: ReadonlyArray<string> = [
+  'お問い合わせ', 'お問合せ', 'お問合わせ', 'contact', 'inquiry', 'enquiry',
+  'ご相談', '資料請求',
+];
+
+/**
+ * "search" キーワードによる除外判定（限定的に判定）
+ * CSSクラス名等での誤爆を防ぐため、action属性・buttonテキスト・inputのplaceholderのみを対象とする
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function isSearchFormByLimitedScope($form: any, $: any): boolean {
+  // action属性にsearchを含む
+  const action = ($form.attr('action') || '').toLowerCase();
+  if (action.includes('search')) return true;
+
+  // button/input[type=submit]のテキストにsearchを含む
+  let hasSearchButton = false;
+  $form.find('button, input[type="submit"]').each((_: number, el: unknown) => {
+    const text = $(el).text().toLowerCase();
+    const value = ($(el).attr('value') || '').toLowerCase();
+    if (text.includes('search') || text.includes('検索') || value.includes('search') || value.includes('検索')) {
+      hasSearchButton = true;
+    }
+  });
+  if (hasSearchButton) return true;
+
+  // inputのplaceholderにsearchを含む
+  let hasSearchPlaceholder = false;
+  $form.find('input[placeholder]').each((_: number, el: unknown) => {
+    const ph = ($(el).attr('placeholder') || '').toLowerCase();
+    if (ph.includes('search') || ph.includes('検索')) {
+      hasSearchPlaceholder = true;
+    }
+  });
+  if (hasSearchPlaceholder) return true;
+
+  return false;
+}
+
+/**
  * <form> 要素が問い合わせ・申し込みフォームとして有効かどうかを判定する。
  *
  * 条件A: <form> 内に type="email" / type="tel" / <textarea> /
@@ -83,11 +142,29 @@ function hasValidContactForm($: ReturnType<typeof import("cheerio").load>): bool
     const $form = $(formEl);
     const action = ($form.attr('action') || '').toLowerCase();
 
-    // 条件B: 検索フォームっぽい action を持つ場合は除外
-    const isSearchForm =
+    // フォーム内のHTML全体を取得（各種判定に使用）
+    const formOuterHtml = ($.html(formEl) || '').toLowerCase();
+
+    // ホワイトリスト判定: フォーム内に問い合わせ系キーワードがあれば救済対象
+    const hasWhitelistKeyword = CONTACT_FORM_WHITELIST_KEYWORDS.some(kw =>
+      formOuterHtml.includes(kw.toLowerCase())
+    );
+
+    // 条件B: 検索フォームっぽい action を持つ場合は除外（ただしホワイトリストで救済）
+    const isSearchAction =
       SEARCH_ACTION_KEYWORDS.some(kw => action.includes(kw)) ||
       action.includes('?q=');
-    if (isSearchForm) return;
+    if (isSearchAction && !hasWhitelistKeyword) return;
+
+    // 条件B': "search" の限定的判定（action/button/placeholderのみ対象、CSSクラス名での誤爆防止）
+    if (isSearchFormByLimitedScope($form, $) && !hasWhitelistKeyword) return;
+
+    // 条件C: 問い合わせフォーム以外（予約・検索・ログイン・カート等）を除外
+    // ただしホワイトリストキーワードがフォーム内にあれば除外しない（救済）
+    const isNonContactForm = NON_CONTACT_FORM_KEYWORDS.some(kw =>
+      formOuterHtml.includes(kw.toLowerCase())
+    );
+    if (isNonContactForm && !hasWhitelistKeyword) return;
 
     // 条件A: 有効な入力フィールドの確認
     // type="email"

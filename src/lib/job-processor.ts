@@ -128,9 +128,10 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
     const loginUrl = `${autolistUrl}/login?lineUserId=${lineUserId}&callbackUrl=/my-lists`;
 
     if (finalJob?.status === 'cancelled') {
-      // キャンセル：収集済み件数分のみ課金（10件単位切り上げ）
+      // キャンセル：仮押さえ分から実績分を引いた差額を返却
       const actualCount = formCount;
-      const chargedCount = actualCount > 0 ? Math.ceil(actualCount / 10) * 10 : 0;
+      const reservedCredits = job.reservedCredits ?? 0;
+      const refundCredits = Math.max(0, reservedCredits - actualCount);
 
       await prisma.listJob.update({
         where: { id: job.id },
@@ -142,19 +143,23 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
         },
       });
 
-      // 按分課金（収集件数分のみ）
-      if (chargedCount > 0) {
+      // 仮押さえ済みのクレジットから差分を返却 + monthlyCount更新
+      if (refundCredits > 0 || actualCount > 0) {
         await prisma.lineUser.update({
           where: { id: job.userId },
           data: {
             monthlyCount: { increment: actualCount },
-            credits: { decrement: chargedCount },
+            credits: { increment: refundCredits },
           },
         });
       }
 
-      // キャンセル完了通知（シリョログ登録済みならメール、未登録はLINE）
-      const remainingCredits = job.user.credits - chargedCount;
+      // キャンセル完了通知
+      const updatedUserAfterCancel = await prisma.lineUser.findUnique({
+        where: { id: job.userId },
+        select: { credits: true },
+      });
+      const remainingCredits = updatedUserAfterCancel?.credits ?? 0;
 
       const lineUser = await prisma.lineUser.findUnique({
         where: { id: job.userId },
@@ -183,7 +188,7 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
         await sendMessage(job.user.lineUserId,
           `❌ リスト収集をキャンセルしました。\n\n` +
           `収集済み: ${actualCount}社\n` +
-          `課金: ${chargedCount}件分\n` +
+          `消費: ${actualCount}クレジット` + (refundCredits > 0 ? `（${refundCredits}クレジット返却）` : '') + `\n` +
           `💳 残クレジット: ${remainingCredits}件\n\n` +
           `収集済みのリストはこちらから確認できます 🔗\n` +
           loginUrl + '\n\n' +
@@ -191,10 +196,13 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
         );
       }
 
-      console.log(`Job ${job.id} cancelled. Found ${actualCount} URLs, charged ${chargedCount} credits.`);
+      console.log(`Job ${job.id} cancelled. Found ${actualCount} URLs, consumed ${actualCount} credits, refunded ${refundCredits} credits.`);
 
     } else {
-      // 通常完了: ジョブをcompletedに更新
+      // 通常完了: ジョブをcompletedに更新 + 仮押さえ差分を返却
+      const reservedCredits = job.reservedCredits ?? 0;
+      const refundCredits = Math.max(0, reservedCredits - formCount);
+
       await prisma.listJob.update({
         where: { id: job.id },
         data: {
@@ -205,8 +213,21 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
         },
       });
 
-      // クレジット消費は確定ボタン押下時に実行（/api/confirm-list/[jobId]）
-      // ここでは消費しない
+      // 仮押さえ差分を返却 + monthlyCount更新
+      const updateData: { credits?: { increment: number }; monthlyCount?: { increment: number } } = {};
+      if (refundCredits > 0) {
+        updateData.credits = { increment: refundCredits };
+      }
+      if (formCount > 0) {
+        updateData.monthlyCount = { increment: formCount };
+      }
+      if (Object.keys(updateData).length > 0) {
+        await prisma.lineUser.update({
+          where: { id: job.userId },
+          data: updateData,
+        });
+      }
+
       const updatedLineUser = await prisma.lineUser.findUnique({
         where: { id: job.userId },
         select: { credits: true, lineUserId: true, displayName: true, userId: true },
@@ -246,7 +267,7 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
 ${loginUrl}
 
 📧 シリョログに登録するとメールで完了通知が届きます`
-          : (() => {
+          : await (async () => {
             // 近隣地域提案を生成（未達時のみ）
             const location = job.location ?? analyzed.location ?? '';
             const industry = job.industry ?? analyzed.industry ?? '';
@@ -259,14 +280,30 @@ ${loginUrl}
                 '\n'
               : '';
 
+            // Geminiキーワード提案を生成
+            let keywordSuggestion = '';
+            try {
+              const keywordSuggestions = await suggestAlternativeKeywords(job.keyword);
+              if (keywordSuggestions.length > 0) {
+                keywordSuggestion = '\n\n以下のキーワードで追加収集できる可能性があります：\n' +
+                  keywordSuggestions.map(s => `・${s}`).join('\n');
+              }
+            } catch (e) {
+              console.error('Failed to generate keyword suggestions:', e);
+            }
+
+            // scrapedCount > 0 の場合のみ括弧書き説明を表示
+            const detailLine = scrapedCount > 0
+              ? `\n（目標${targetCount}社に対し、Google検索${scrapedCount}件分のURLを調べ、フォームのある企業が${formCount}社でした）`
+              : '';
+
             return `✅ リストが完成しました！
-📋 ${formCount}社のフォームあり企業リストを収集しました
-（目標${targetCount}社に対し、Google検索${scrapedCount}件分のURLを調べましたが、フォームのある企業が${formCount}社でした）
+📋 ${formCount}社のフォームあり企業リストを収集しました${detailLine}
 
 💳 ${formCount}クレジット使用 → 残り${remainingCreditsAfterCompletion}クレジット
 ${suggestionBlock}
 ログインしてリストを確認・送信できます 🔗
-${loginUrl}
+${loginUrl}${keywordSuggestion}
 
 📧 シリョログに登録するとメールで完了通知が届きます`;
           })();
@@ -334,9 +371,11 @@ ${loginUrl}
         `(${currentRetryCount + 1}/${MAX_RETRY}). collected: ${partialCount}件`
       );
     } else {
-      // リトライ上限超過: failed にする
+      // リトライ上限超過: failed にする + 仮押さえ差分を返却
       const previousCount = job.totalFound ?? 0;
       const additionalCount = partialCount - previousCount;
+      const reservedCreditsForFail = job.reservedCredits ?? 0;
+      const refundCreditsForFail = Math.max(0, reservedCreditsForFail - partialCount);
 
       await prisma.listJob.update({
         where: { id: job.id },
@@ -345,6 +384,21 @@ ${loginUrl}
           totalFound: partialCount,
         },
       });
+
+      // 仮押さえ差分を返却 + monthlyCount更新
+      if (refundCreditsForFail > 0 || partialCount > 0) {
+        const failUpdateData: { credits?: { increment: number }; monthlyCount?: { increment: number } } = {};
+        if (refundCreditsForFail > 0) {
+          failUpdateData.credits = { increment: refundCreditsForFail };
+        }
+        if (partialCount > 0) {
+          failUpdateData.monthlyCount = { increment: partialCount };
+        }
+        await prisma.lineUser.update({
+          where: { id: job.userId },
+          data: failUpdateData,
+        });
+      }
 
       // キーワード提案を生成
       let keywordSuggestion = '';
@@ -370,15 +424,18 @@ ${loginUrl}
               `さらに${additionalCount}件収集できました。合計${partialCount}件になりました。\n\n` +
               `これ以上の収集が難しいため、こちらが最終結果となります。\n` +
               `リストはこちらから確認できます：\n${loginUrl}\n\n` +
-              `クレジットはリスト確定時に実績分のみ課金されます。${keywordSuggestion}`
+              `除外した企業分のクレジットは返却されます。${keywordSuggestion}`
             : `📋 「${job.keyword}」の追加収集を試みましたが、これ以上見つかりませんでした。\n\n` +
               `最終結果は${partialCount}件です。\n` +
               `リストはこちらから確認できます：\n${loginUrl}\n\n` +
-              `クレジットはリスト確定時に実績分のみ課金されます。${keywordSuggestion}`;
+              `除外した企業分のクレジットは返却されます。${keywordSuggestion}`;
         } else {
-          errorMessage = `申し訳ありません。「${job.keyword}」の収集を試みましたが、条件に合う企業が見つかりませんでした。\n\n` +
-            `クレジットは消費されていません。${keywordSuggestion}\n\n` +
-            `別のキーワードで再度お試しください。`;
+          const updatedUserAfterFail = await prisma.lineUser.findUnique({ where: { id: job.userId }, select: { credits: true } });
+          const remainingAfterFail = updatedUserAfterFail?.credits ?? 0;
+          errorMessage = `申し訳ございません。「${job.keyword}」の条件で収集を試みましたが、問い合わせフォーム付きの企業が見つかりませんでした。\n\n` +
+            `💳 仮押さえした${reservedCreditsForFail}クレジットは全額返却しました。残り${remainingAfterFail}クレジット` +
+            `${keywordSuggestion}` +
+            `\n\n別のキーワードで再度お試しください。`;
         }
 
         await sendMessage(job.user.lineUserId, errorMessage);

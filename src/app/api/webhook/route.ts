@@ -180,7 +180,13 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
     // 友だち追加イベントの処理
     if (event.type === 'follow') {
       if (event.replyToken) {
-        await replyMessage(event.replyToken, WELCOME_MESSAGE);
+        const lineUserId = event.source.userId;
+        const existingUser = lineUserId ? await prisma.lineUser.findUnique({ where: { lineUserId } }) : null;
+        if (existingUser) {
+          await replyMessage(event.replyToken, `おかえりなさい！👋\n\nオートリストをまたご利用いただきありがとうございます。\n\n💳 残りクレジット: ${existingUser.credits}件\n\nさっそく依頼してみてください！\n例: 「渋谷区の不動産会社 30件」`);
+        } else {
+          await replyMessage(event.replyToken, WELCOME_MESSAGE);
+        }
       }
       continue;
     }
@@ -394,19 +400,29 @@ ${paymentUrl}
               data: { state: null },
             });
 
-            // ジョブ作成
-            const job = await prisma.listJob.create({
-              data: {
-                userId: user.id,
-                keyword: pendingState.keyword,
-                industry: pendingState.industry,
-                location: pendingState.location,
-                targetCount: pendingState.targetCount,
-                status: 'pending',
-                originalMessage: pendingState.originalMessage,
-                industryKeywords: pendingState.industryKeywords || [],
-              },
-            });
+            // ジョブ作成 + クレジット仮押さえ（トランザクション）
+            const reservedCredits = pendingState.targetCount;
+            const [job] = await prisma.$transaction([
+              prisma.listJob.create({
+                data: {
+                  userId: user.id,
+                  keyword: pendingState.keyword,
+                  industry: pendingState.industry,
+                  location: pendingState.location,
+                  targetCount: pendingState.targetCount,
+                  reservedCredits: reservedCredits,
+                  status: 'pending',
+                  originalMessage: pendingState.originalMessage,
+                  industryKeywords: pendingState.industryKeywords || [],
+                },
+              }),
+              prisma.lineUser.update({
+                where: { id: user.id },
+                data: {
+                  credits: { decrement: reservedCredits },
+                },
+              }),
+            ]);
 
             // SearchLog記録
             await prisma.searchLog.create({
@@ -421,7 +437,8 @@ ${paymentUrl}
               },
             });
 
-            // クレジットは完了時に実績ベースで課金（ここでは消費しない）
+            // クレジット仮押さえ済み（完了時に差分返却）
+            const remainingAfterReserve = user.credits - reservedCredits;
 
             const isShiryologUser = !!user.userId;
             const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3007';
@@ -433,7 +450,8 @@ ${paymentUrl}
 ・地域: ${pendingState.location || '指定なし'}
 ・件数: ${pendingState.targetCount}社
 
-💳 残クレジット: ${user.credits}件（完了時に実績分が課金されます）
+💳 ${reservedCredits}クレジット仮押さえ → 残り${remainingAfterReserve}クレジット
+（収集できた分だけ消費、残りは返却）
 
 完了後はこちらでご確認ください👇
 ${appUrl}/my-lists`
@@ -444,7 +462,8 @@ ${appUrl}/my-lists`
 ・地域: ${pendingState.location || '指定なし'}
 ・件数: ${pendingState.targetCount}社
 
-💳 残クレジット: ${user.credits}件（完了時に実績分が課金されます）
+💳 ${reservedCredits}クレジット仮押さえ → 残り${remainingAfterReserve}クレジット
+（収集できた分だけ消費、残りは返却）
 
 完了したらLINEでお知らせします。`;
 
@@ -513,7 +532,7 @@ ${appUrl}/my-lists`
               const remainingAfter = user.credits - newCount;
               const updatedConfirmMessageObj = {
                 type: 'text',
-                text: `以下の条件でリストを収集してよいですか？\n\n🏢 業種：${pendingState.industry || '指定なし'}\n📍 地域：${pendingState.location || '指定なし'}\n📊 件数：${newCount}社\n\n💳 最大${newCount}クレジット消費予定（完了時に実績分が課金されます）`,
+                text: `以下の条件でリストを収集してよいですか？\n\n🏢 業種：${pendingState.industry || '指定なし'}\n📍 地域：${pendingState.location || '指定なし'}\n📊 件数：${newCount}社\n\n💳 最大${newCount}クレジット消費予定（開始時に仮押さえ、未使用分は返却）`,
                 quickReply: {
                   items: [
                     {
@@ -788,7 +807,7 @@ ${appUrl}/my-lists`
 
             const mergedConfirmMsg = {
               type: 'text',
-              text: `以下の条件でリストを収集してよいですか？\n\n🏢 業種：${mergedIndustry}\n📍 地域：${mergedLocation}\n📊 件数：${mergedCount}社\n\n💳 最大${mergedCount}クレジット消費予定（完了時に実績分が課金されます）`,
+              text: `以下の条件でリストを収集してよいですか？\n\n🏢 業種：${mergedIndustry}\n📍 地域：${mergedLocation}\n📊 件数：${mergedCount}社\n\n💳 最大${mergedCount}クレジット消費予定（開始時に仮押さえ、未使用分は返却）`,
               quickReply: {
                 items: [
                   {
@@ -966,7 +985,7 @@ ${appUrl}/my-lists`
       const remainingAfter = user.credits - analyzed.targetCount;
       const confirmMessageObj = {
         type: 'text',
-        text: `以下の条件でリストを収集してよいですか？\n\n🏢 業種：${analyzed.industry || '指定なし'}\n📍 地域：${analyzed.location || '指定なし'}\n📊 件数：${analyzed.targetCount}社\n\n💳 最大${analyzed.targetCount}クレジット消費予定（完了時に実績分が課金されます）`,
+        text: `以下の条件でリストを収集してよいですか？\n\n🏢 業種：${analyzed.industry || '指定なし'}\n📍 地域：${analyzed.location || '指定なし'}\n📊 件数：${analyzed.targetCount}社\n\n💳 最大${analyzed.targetCount}クレジット消費予定（開始時に仮押さえ、未使用分は返却）`,
         quickReply: {
           items: [
             {

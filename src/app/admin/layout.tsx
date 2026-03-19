@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation'
 const navItems = [
   { href: '/admin/requests', label: '依頼管理' },
   { href: '/admin/analytics', label: 'アナリティクス' },
+  { href: '/admin/search-logs', label: '検索ログ' },
   { href: '/admin/exclusion-analytics', label: '除外分析' },
   { href: '/admin/unverified-companies', label: '未確認企業' },
 ]

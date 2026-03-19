@@ -285,12 +285,12 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
               ? '確定中...'
               : <>
                   <span className="text-sm">確定してフォーム送信の準備へ</span>
-                  <span className="text-sm text-white/70">（確定{activeCount}件 / {activeCount}クレジット消費）</span>
+                  <span className="text-sm text-white/70">（確定{activeCount}件{excludedCount > 0 ? ` / ${excludedCount}クレジット返却` : ''}）</span>
                 </>
             }
           </button>
           <p className="text-xs text-gray-500 text-center mt-2">
-            確定後にクレジットが消費されます。確定前は課金されません。
+            クレジットは依頼時に仮押さえ済みです。
           </p>
         </div>
       )}

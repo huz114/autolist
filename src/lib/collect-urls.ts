@@ -734,9 +734,26 @@ export async function collectUrlsWithQueries(
     }
   }
 
+  // searchQueries と結果件数を記録する配列
+  const queryResults: Array<{ query: string; resultCount: number }> = [];
+
   // 初回の検索バッチを全クエリ分実行してキューを温める
   for (let i = 0; i < searchQueries.length; i++) {
+    const queueBefore = pendingQueue.length;
     await fetchNextBatch();
+    const added = pendingQueue.length - queueBefore;
+    queryResults.push({ query: searchQueries[i], resultCount: Math.max(added, 0) });
+  }
+
+  // searchQueries をDBに保存
+  try {
+    await prisma.listJob.update({
+      where: { id: jobId },
+      data: { searchQueries: JSON.stringify(queryResults) },
+    });
+    console.log(`[Job ${jobId}] searchQueries saved: ${queryResults.length} queries`);
+  } catch (e) {
+    console.error(`[Job ${jobId}] Failed to save searchQueries:`, e);
   }
 
   // メインループ: targetCount 達成 or 上限に達するまでスクレイピング & 追加検索

@@ -60,23 +60,11 @@ export async function POST(
     )
   }
 
-  // クレジット残高チェック
-  if (job.user.credits < confirmedCount) {
-    return NextResponse.json(
-      { error: 'Insufficient credits', required: confirmedCount, available: job.user.credits },
-      { status: 400 }
-    )
-  }
+  // 除外分のクレジットを返却 & confirmedAt設定
+  // クレジットは依頼時に仮押さえ済み → 除外分だけ返却
+  const refundCredits = excludedIds.length
 
-  // クレジット消費 & confirmedAt設定
-  await prisma.$transaction([
-    prisma.lineUser.update({
-      where: { id: job.userId },
-      data: {
-        credits: { decrement: confirmedCount },
-        monthlyCount: { increment: confirmedCount },
-      },
-    }),
+  const transactionOps = [
     prisma.listJob.update({
       where: { id: jobId },
       data: {
@@ -84,11 +72,25 @@ export async function POST(
         totalFound: confirmedCount,
       },
     }),
-  ])
+  ]
+
+  if (refundCredits > 0) {
+    transactionOps.push(
+      prisma.lineUser.update({
+        where: { id: job.userId },
+        data: {
+          credits: { increment: refundCredits },
+          monthlyCount: { decrement: refundCredits },
+        },
+      }) as any
+    )
+  }
+
+  await prisma.$transaction(transactionOps)
 
   return NextResponse.json({
     success: true,
     confirmedCount,
-    creditsUsed: confirmedCount,
+    creditsRefunded: refundCredits,
   })
 }

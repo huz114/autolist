@@ -60,7 +60,9 @@ model ListJob {
   completedAt      DateTime?
   confirmedAt      DateTime?
   originalMessage  String?
+  reservedCredits  Int        @default(0)
   retryCount       Int        @default(0)
+  searchQueries    String?
   industryKeywords String[]
   urls             CollectedUrl[]
   user             LineUser       @relation(fields: [userId], references: [id])

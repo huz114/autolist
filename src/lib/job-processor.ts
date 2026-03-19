@@ -235,19 +235,59 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
       if (!updatedLineUser) throw new Error('User not found');
       const remainingCreditsAfterCompletion = updatedLineUser.credits;
 
-      // 完了通知（シリョログ登録済みならメール、未登録はLINE）
-      const lineUserForNotification = updatedLineUser;
+      // ── 完了通知（4パターン分岐） ──
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3007';
+      const registerUrl = `${appUrl}/register`;
+      const isShiryologUser = !!updatedLineUser.userId;
 
-      if (lineUserForNotification.userId) {
-        // シリョログ登録済み → メール通知
+      // 完了済みジョブ数カウント（今回のジョブを除く）
+      const completedJobCount = await prisma.listJob.count({
+        where: { userId: job.userId, status: 'completed', id: { not: job.id } },
+      });
+      const isFirstTime = completedJobCount === 0;
+
+      // 未達成時のキーワード提案ブロックを生成する関数
+      const generateSuggestionBlocks = async (): Promise<{ suggestionBlock: string; keywordSuggestion: string; detailLine: string }> => {
+        const location = job.location ?? analyzed.location ?? '';
+        const industry = job.industry ?? analyzed.industry ?? '';
+        const adjacentPrefectures = location ? getAdjacentPrefectures(location) : [];
+        const suggestions = adjacentPrefectures.slice(0, 3);
+
+        const suggestionBlock = suggestions.length > 0
+          ? `\n📍 近隣の地域でも試してみませんか？\n` +
+            suggestions.map(pref => `・「${industry} ${pref} ${targetCount}社」`).join('\n') +
+            '\n'
+          : '';
+
+        let keywordSuggestion = '';
+        try {
+          const keywordSuggestions = await suggestAlternativeKeywords(job.keyword);
+          if (keywordSuggestions.length > 0) {
+            keywordSuggestion = '\n\n以下のキーワードで追加収集できる可能性があります：\n' +
+              keywordSuggestions.map(s => `・${s}`).join('\n');
+          }
+        } catch (e) {
+          console.error('Failed to generate keyword suggestions:', e);
+        }
+
+        const detailLine = scrapedCount > 0
+          ? `\n（目標${targetCount}社に対し、Google検索${scrapedCount}件分のURLを調べ、フォームのある企業が${formCount}社でした）`
+          : '';
+
+        return { suggestionBlock, keywordSuggestion, detailLine };
+      };
+
+      const isUnderTarget = formCount < targetCount;
+
+      // メール送信ヘルパー（登録済みユーザー共通）
+      const sendCompletionEmail = async () => {
         const shiryologUser = await prisma.$queryRaw<Array<{email: string, name: string | null}>>`
-          SELECT email, name FROM "public"."User" WHERE id = ${lineUserForNotification.userId} LIMIT 1
+          SELECT email, name FROM "public"."User" WHERE id = ${updatedLineUser.userId} LIMIT 1
         `;
         if (shiryologUser.length > 0) {
-          const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3007';
           await sendJobCompletedEmail({
             to: shiryologUser[0].email,
-            userName: shiryologUser[0].name || lineUserForNotification.displayName || 'お客様',
+            userName: shiryologUser[0].name || updatedLineUser.displayName || 'お客様',
             keyword: job.keyword,
             industry: job.industry,
             location: job.location,
@@ -255,60 +295,72 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
             myListsUrl: `${appUrl}/my-lists`,
           });
         }
+      };
+
+      if (!isShiryologUser) {
+        // ── パターンA: 未登録（初回・2回目以降共通） ──
+        let lineMessage: string;
+        if (!isUnderTarget) {
+          lineMessage = `✅ リストが完成しました！\n` +
+            `📋 ${formCount}社のフォームあり企業リストを収集しました\n` +
+            `💳 ${formCount}クレジット使用 → 残り${remainingCreditsAfterCompletion}クレジット\n\n` +
+            `🖥️ PCのChromeでリスト確認→フォーム半自動送信ができます。\n` +
+            `Chrome拡張をインストールすると、フォーム送信が半自動化できます。\n\n` +
+            `💡 会員登録するとメールでもリストURLが届くので、PCですぐに作業を始められます。\n` +
+            `→ ${registerUrl}\n\n` +
+            `ログインしてリストを確認 🔗\n` +
+            loginUrl;
+        } else {
+          const { suggestionBlock, keywordSuggestion, detailLine } = await generateSuggestionBlocks();
+          lineMessage = `✅ リストが完成しました！\n` +
+            `📋 ${formCount}社のフォームあり企業リストを収集しました${detailLine}\n` +
+            `💳 ${formCount}クレジット使用 → 残り${remainingCreditsAfterCompletion}クレジット\n` +
+            `${suggestionBlock}\n` +
+            `🖥️ PCのChromeでリスト確認→フォーム半自動送信ができます。\n` +
+            `Chrome拡張をインストールすると、フォーム送信が半自動化できます。\n\n` +
+            `💡 会員登録するとメールでもリストURLが届くので、PCですぐに作業を始められます。\n` +
+            `→ ${registerUrl}\n\n` +
+            `ログインしてリストを確認 🔗\n` +
+            loginUrl + keywordSuggestion;
+        }
+        await sendMessage(job.user.lineUserId, lineMessage);
+
+      } else if (isFirstTime) {
+        // ── パターンB: 初回 × 登録済み ──
+        let lineMessage: string;
+        if (!isUnderTarget) {
+          lineMessage = `✅ リストが完成しました！\n` +
+            `📋 ${formCount}社のフォームあり企業リストを収集しました\n` +
+            `💳 ${formCount}クレジット使用 → 残り${remainingCreditsAfterCompletion}クレジット\n\n` +
+            `🖥️ PCのChromeでリスト確認→フォーム半自動送信ができます。\n` +
+            `Chrome拡張をインストールすると、フォーム送信が半自動化できます。\n\n` +
+            `📧 メールでもリストURLをお送りしました。`;
+        } else {
+          const { suggestionBlock, keywordSuggestion, detailLine } = await generateSuggestionBlocks();
+          lineMessage = `✅ リストが完成しました！\n` +
+            `📋 ${formCount}社のフォームあり企業リストを収集しました${detailLine}\n` +
+            `💳 ${formCount}クレジット使用 → 残り${remainingCreditsAfterCompletion}クレジット\n` +
+            `${suggestionBlock}\n` +
+            `🖥️ PCのChromeでリスト確認→フォーム半自動送信ができます。\n` +
+            `Chrome拡張をインストールすると、フォーム送信が半自動化できます。\n\n` +
+            `📧 メールでもリストURLをお送りしました。` + keywordSuggestion;
+        }
+        await sendMessage(job.user.lineUserId, lineMessage);
+        await sendCompletionEmail();
+
       } else {
-        // 未登録 → LINE Push通知
-        const completionMessage = formCount >= targetCount
-          ? `✅ リストが完成しました！
-📋 ${formCount}社のフォームあり企業リストを収集しました
-
-💳 ${formCount}クレジット使用 → 残り${remainingCreditsAfterCompletion}クレジット
-
-ログインしてリストを確認・送信できます 🔗
-${loginUrl}
-
-📧 シリョログに登録するとメールで完了通知が届きます`
-          : await (async () => {
-            // 近隣地域提案を生成（未達時のみ）
-            const location = job.location ?? analyzed.location ?? '';
-            const industry = job.industry ?? analyzed.industry ?? '';
-            const adjacentPrefectures = location ? getAdjacentPrefectures(location) : [];
-            const suggestions = adjacentPrefectures.slice(0, 3);
-
-            const suggestionBlock = suggestions.length > 0
-              ? `\n📍 近隣の地域でも試してみませんか？\n` +
-                suggestions.map(pref => `・「${industry} ${pref} ${targetCount}社」`).join('\n') +
-                '\n'
-              : '';
-
-            // Geminiキーワード提案を生成
-            let keywordSuggestion = '';
-            try {
-              const keywordSuggestions = await suggestAlternativeKeywords(job.keyword);
-              if (keywordSuggestions.length > 0) {
-                keywordSuggestion = '\n\n以下のキーワードで追加収集できる可能性があります：\n' +
-                  keywordSuggestions.map(s => `・${s}`).join('\n');
-              }
-            } catch (e) {
-              console.error('Failed to generate keyword suggestions:', e);
-            }
-
-            // scrapedCount > 0 の場合のみ括弧書き説明を表示
-            const detailLine = scrapedCount > 0
-              ? `\n（目標${targetCount}社に対し、Google検索${scrapedCount}件分のURLを調べ、フォームのある企業が${formCount}社でした）`
-              : '';
-
-            return `✅ リストが完成しました！
-📋 ${formCount}社のフォームあり企業リストを収集しました${detailLine}
-
-💳 ${formCount}クレジット使用 → 残り${remainingCreditsAfterCompletion}クレジット
-${suggestionBlock}
-ログインしてリストを確認・送信できます 🔗
-${loginUrl}${keywordSuggestion}
-
-📧 シリョログに登録するとメールで完了通知が届きます`;
-          })();
-
-        await sendMessage(job.user.lineUserId, completionMessage);
+        // ── パターンD: 2回目以降 × 登録済み ──
+        // LINE通知は送信しない（未達成時のみLINEも送る）
+        if (isUnderTarget) {
+          const { suggestionBlock, keywordSuggestion, detailLine } = await generateSuggestionBlocks();
+          const lineMessage = `✅ リストが完成しました！\n` +
+            `📋 ${formCount}社のフォームあり企業リストを収集しました${detailLine}\n` +
+            `💳 ${formCount}クレジット使用 → 残り${remainingCreditsAfterCompletion}クレジット\n` +
+            `${suggestionBlock}\n` +
+            `📧 メールでもリストURLをお送りしました。` + keywordSuggestion;
+          await sendMessage(job.user.lineUserId, lineMessage);
+        }
+        await sendCompletionEmail();
       }
 
       // シリョログの Company テーブルへの自動インポート（一時無効化）

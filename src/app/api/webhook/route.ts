@@ -40,17 +40,39 @@ const HELP_MESSAGE = `📋 オートリスト の使い方
 
 🎁 新規登録: 100件無料`;
 
-const CHARGE_MESSAGE = `💳 無料枠（100件）を使い切りました。
-続けてご利用いただくにはチャージが必要です。
+const CHARGE_QUICK_REPLY = {
+  items: [
+    {
+      type: 'action' as const,
+      action: { type: 'message' as const, label: '¥2,000/100件', text: '1' },
+    },
+    {
+      type: 'action' as const,
+      action: { type: 'message' as const, label: '¥5,000/300件', text: '2' },
+    },
+    {
+      type: 'action' as const,
+      action: { type: 'message' as const, label: '¥10,000/700件', text: '3' },
+    },
+    {
+      type: 'action' as const,
+      action: { type: 'message' as const, label: '¥15,000/1,500件', text: '4' },
+    },
+  ],
+};
 
-チャージするプランを選んでください：
+const CHARGE_PRICING_TEXT = `チャージするプランを選んでください：
 
 1️⃣ ¥2,000 → 100件（20円/件）
 2️⃣ ¥5,000 → 300件（17円/件）★人気
 3️⃣ ¥10,000 → 700件（14円/件）
-4️⃣ ¥15,000 → 1,500件（10円/件）
+4️⃣ ¥15,000 → 1,500件（10円/件）`;
 
-番号を送信してください。`;
+const CHARGE_MESSAGE = {
+  type: 'text',
+  text: `💳 無料枠（100件）を使い切りました。\n続けてご利用いただくにはチャージが必要です。\n\n${CHARGE_PRICING_TEXT}`,
+  quickReply: CHARGE_QUICK_REPLY,
+};
 
 const CHARGE_PLANS = [
   { amount: 2000, credits: 100, label: '¥2,000 → 100件' },
@@ -233,12 +255,15 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
             data: { state: 'awaiting_charge' },
           });
           const credits = pbUser.credits ?? 0;
-          const pricingMessage = `チャージするプランを選んでください：\n\n1️⃣ ¥2,000 → 100件（20円/件）\n2️⃣ ¥5,000 → 300件（17円/件）★人気\n3️⃣ ¥10,000 → 700件（14円/件）\n4️⃣ ¥15,000 → 1,500件（10円/件）\n\n番号を送信してください。`;
-          const chargeReplyText = credits <= 0
-            ? `💳 無料枠（100件）を使い切りました。\n続けてご利用いただくにはチャージが必要です。\n\n${pricingMessage}`
-            : `💳 現在の残クレジット: ${credits}件\n\nさらにチャージすることもできます。\n\n${pricingMessage}`;
+          const chargeReplyObj = credits <= 0
+            ? CHARGE_MESSAGE
+            : {
+                type: 'text',
+                text: `💳 現在の残クレジット: ${credits}件\n\nさらにチャージすることもできます。\n\n${CHARGE_PRICING_TEXT}`,
+                quickReply: CHARGE_QUICK_REPLY,
+              };
           if (replyToken) {
-            await replyMessage(replyToken, chargeReplyText);
+            await replyMessage(replyToken, chargeReplyObj);
           }
           break;
         }
@@ -465,7 +490,11 @@ ${appUrl}/my-lists`
 💳 ${reservedCredits}クレジット仮押さえ → 残り${remainingAfterReserve}クレジット
 （収集できた分だけ消費、残りは返却）
 
-完了したらLINEでお知らせします。`;
+完了したらLINEでお知らせします。
+
+💡 収集完了後、PCのChromeでリスト確認→フォーム半自動送信ができます。
+会員登録するとメールでもリストURLが届くので、PCですぐに作業を始められます。
+→ ${appUrl}/register`;
 
             if (replyToken) {
               await replyMessage(replyToken, acceptanceMessage);
@@ -878,7 +907,15 @@ ${appUrl}/my-lists`
       if (!analyzed.countSpecified) missingFields.push('count');
 
       if (missingFields.length > 0) {
-        // 不足情報がある場合、pendingQueryとして保存して質問
+        // 全項目不足（関係ないメッセージ）の場合はやわらかい案内を返す
+        if (missingFields.length === 3) {
+          if (replyToken) {
+            await replyMessage(replyToken, `何かお困りですか？リスト収集は業種・地域・件数を送るだけです。\n\n例：「渋谷区の不動産会社 30件」\n\nお問い合わせの場合は、「問い合わせ」ボタンを押していただくと、カスタマー担当が対応いたします。`);
+          }
+          continue;
+        }
+
+        // 一部不足の場合、pendingQueryとして保存して質問
         const pendingQueryState = JSON.stringify({
           status: 'awaiting_query_info',
           industry: analyzed.industry || '',

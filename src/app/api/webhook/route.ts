@@ -398,15 +398,6 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
         continue;
       }
 
-      // creditsが残っているのにawaiting_chargeのままの場合はリセット
-      if (user.credits > 0 && user.state === 'awaiting_charge') {
-        await prisma.lineUser.update({
-          where: { id: user.id },
-          data: { state: 'idle' }
-        });
-        user.state = 'idle';
-      }
-
       // --- チャージ待ち状態の処理 ---
       if (user.state === 'awaiting_charge') {
         const planNumber = parseInt(messageText.trim(), 10);

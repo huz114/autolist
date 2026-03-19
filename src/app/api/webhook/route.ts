@@ -44,19 +44,19 @@ const CHARGE_QUICK_REPLY = {
   items: [
     {
       type: 'action' as const,
-      action: { type: 'message' as const, label: '¥2,000/100件', text: '1' },
+      action: { type: 'message' as const, label: '100件', text: '1' },
     },
     {
       type: 'action' as const,
-      action: { type: 'message' as const, label: '¥5,000/300件', text: '2' },
+      action: { type: 'message' as const, label: '300件', text: '2' },
     },
     {
       type: 'action' as const,
-      action: { type: 'message' as const, label: '¥10,000/700件', text: '3' },
+      action: { type: 'message' as const, label: '700件', text: '3' },
     },
     {
       type: 'action' as const,
-      action: { type: 'message' as const, label: '¥15,000/1,500件', text: '4' },
+      action: { type: 'message' as const, label: '1,500件', text: '4' },
     },
   ],
 };
@@ -264,6 +264,39 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
               };
           if (replyToken) {
             await replyMessage(replyToken, chargeReplyObj);
+          }
+          break;
+        }
+
+        case 'history': {
+          if (replyToken) {
+            const jobs = await prisma.listJob.findMany({
+              where: { userId: pbUser.id },
+              orderBy: { createdAt: 'desc' },
+              take: 5,
+            });
+
+            if (jobs.length === 0) {
+              await replyMessage(replyToken, `📋 依頼履歴はまだありません。\n\n「新規依頼」から最初のリスト収集を始めましょう！`);
+            } else {
+              const statusEmoji: Record<string, string> = {
+                completed: '✅完了',
+                running: '⏳収集中',
+                pending: '🕐待機中',
+                cancelled: '❌キャンセル',
+                failed: '⚠️失敗',
+              };
+              const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://autolist.shiryolog.com';
+              const lines = jobs.map((job, i) => {
+                const emoji = statusEmoji[job.status] || job.status;
+                const location = job.location || '';
+                const industry = job.industry || '';
+                const count = job.targetCount || 0;
+                return `${i + 1}. ${location} ${industry} ${count}件 ${emoji}`;
+              });
+              const msg = `📋 依頼履歴（直近${jobs.length}件）\n\n${lines.join('\n')}\n\n詳細はこちら →\n${appUrl}/my-lists`;
+              await replyMessage(replyToken, msg);
+            }
           }
           break;
         }

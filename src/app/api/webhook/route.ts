@@ -294,7 +294,7 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
                 const count = job.targetCount || 0;
                 return `${i + 1}. ${location} ${industry} ${count}件 ${emoji}`;
               });
-              const msg = `📋 依頼履歴（直近${jobs.length}件）\n\n${lines.join('\n')}\n\n詳細はこちら →\n${appUrl}/my-lists`;
+              const msg = `📋 依頼履歴（直近${jobs.length}件）\n\n${lines.join('\n')}\n\n詳細はこちら →\n${appUrl}/my-lists?openExternalBrowser=1`;
               await replyMessage(replyToken, msg);
             }
           }
@@ -503,7 +503,7 @@ ${paymentUrl}
 （収集できた分だけ消費、残りは返却）
 
 完了後はこちらでご確認ください👇
-${appUrl}/my-lists`
+${appUrl}/my-lists?openExternalBrowser=1`
               : `✅ リスト収集を開始します！
 
 条件:
@@ -518,7 +518,7 @@ ${appUrl}/my-lists`
 
 💡 収集完了後、PCのChromeでリスト確認→フォーム送信ができます。
 会員登録するとメールでもリストURLが届くので、PCですぐに作業を始められます。
-→ ${appUrl}/register`;
+→ ${appUrl}/register?openExternalBrowser=1`;
 
             if (replyToken) {
               await replyMessage(replyToken, acceptanceMessage);

@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { logGeminiUsage } from '@/lib/gemini-usage-logger';
 
 export interface AnalyzedQuery {
   industry: string;
@@ -111,6 +112,7 @@ searchQueriesの生成ルール:
 ユーザーメッセージ: ${userMessage}`;
 
   const result = await model.generateContent(prompt);
+  await logGeminiUsage('analyzeQuery', result.response.usageMetadata);
   const text = result.response.text();
 
   try {

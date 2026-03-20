@@ -3,6 +3,7 @@
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { detectContactForm } from "./form-detector";
+import { logGeminiUsage } from "@/lib/gemini-usage-logger";
 
 export interface CompanyInfo {
   companyName?: string;          // 会社名
@@ -152,6 +153,7 @@ JSONのみ返してください：
 
   try {
     const result = await model.generateContent(prompt);
+    await logGeminiUsage('scrapeCompany', result.response.usageMetadata);
     const responseText = result.response.text();
 
     // JSONを抽出

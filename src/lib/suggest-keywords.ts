@@ -8,6 +8,7 @@
  */
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { logGeminiUsage } from "@/lib/gemini-usage-logger";
 
 /**
  * 元のキーワードから代替キーワードを3つ提案する
@@ -45,6 +46,7 @@ JSON配列のみ返してください。余計な説明は不要です。
 
   try {
     const result = await model.generateContent(prompt);
+    await logGeminiUsage('suggestKeywords', result.response.usageMetadata);
     const responseText = result.response.text();
 
     // JSON配列を抽出

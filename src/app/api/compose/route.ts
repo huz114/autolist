@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
+import { logGeminiUsage } from '@/lib/gemini-usage-logger'
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
 
@@ -34,6 +35,7 @@ ${companyInfo}
 ]`
 
     const result = await model.generateContent(prompt)
+    await logGeminiUsage('compose', result.response.usageMetadata)
     const text = result.response.text()
 
     // JSONを抽出（コードブロック対応）

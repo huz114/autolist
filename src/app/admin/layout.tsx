@@ -10,6 +10,7 @@ const navItems = [
   { href: '/admin/search-logs', label: '検索ログ' },
   { href: '/admin/exclusion-analytics', label: '除外分析' },
   { href: '/admin/unverified-companies', label: '未確認企業' },
+  { href: '/admin/gemini-usage', label: 'Geminiコスト' },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

@@ -106,12 +106,33 @@ export default function Home() {
           <span style={{ display: "block", fontSize: 11, color: "var(--text-secondary)", fontWeight: 500, letterSpacing: "0.08em", marginBottom: 2 }}>フォーム付き企業リスト自動収集</span>
           オート<span>リスト</span>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-          <span style={{ fontSize: 11, color: "var(--accent)", fontWeight: 700 }}>最初の100件は無料</span>
-          <a href={LINE_URL} className="nav-cta" target="_blank" rel="noopener noreferrer">
-            {LINE_ICON}
-            LINEで無料登録
-          </a>
+        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+          <Link
+            href="/my-lists"
+            className="nav-member-link"
+            style={{
+              color: "rgba(255,255,255,0.75)",
+              fontSize: 13,
+              fontWeight: 500,
+              textDecoration: "none",
+              transition: "all 0.2s",
+              border: "1px solid rgba(255,255,255,0.25)",
+              borderRadius: 6,
+              padding: "5px 14px",
+              background: "rgba(255,255,255,0.06)",
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = "#fff"; e.currentTarget.style.background = "rgba(255,255,255,0.12)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.4)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(255,255,255,0.75)"; e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.25)"; }}
+          >
+            会員ログイン
+          </Link>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+            <span style={{ fontSize: 11, color: "var(--accent)", fontWeight: 700 }}>最初の100件は無料</span>
+            <a href={LINE_URL} className="nav-cta" target="_blank" rel="noopener noreferrer">
+              {LINE_ICON}
+              LINEで無料登録
+            </a>
+          </div>
         </div>
       </nav>
 

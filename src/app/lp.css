@@ -681,6 +681,7 @@ body {
   .comparison-row div { padding: 14px 12px; font-size: 12px; }
   .pricing-grid { grid-template-columns: 1fr 1fr; }
   .nav-cta { font-size: 11px; padding: 7px 12px; }
+  .nav-member-link { display: none; }
   .nav-logo span[style] { font-size: 9px !important; white-space: nowrap; }
   .hero h1 { font-size: clamp(24px, 5vw, 64px); }
   .hero-cta-group { justify-content: center; }

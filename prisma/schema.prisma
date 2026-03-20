@@ -65,6 +65,7 @@ model ListJob {
   searchQueries    String?
   industryKeywords String[]
   urls             CollectedUrl[]
+  geminiUsageLogs  GeminiUsageLog[]
   user             LineUser       @relation(fields: [userId], references: [id])
 }
 
@@ -109,4 +110,16 @@ model PasswordResetToken {
   token     String   @unique
   expiresAt DateTime
   createdAt DateTime @default(now())
+}
+
+model GeminiUsageLog {
+  id               String   @id @default(cuid())
+  jobId            String?
+  source           String
+  inputTokens      Int
+  outputTokens     Int
+  estimatedCostJpy Float
+  createdAt        DateTime @default(now())
+
+  job              ListJob? @relation(fields: [jobId], references: [id])
 }

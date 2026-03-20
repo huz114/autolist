@@ -88,6 +88,18 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
       );
     }
 
+    // excludeTermsを検索クエリに適用（-keyword形式で付与）
+    const excludeSuffix = (analyzed.excludeTerms ?? [])
+      .map(term => `-"${term}"`)
+      .join(' ');
+    const searchQueriesWithExclusions = excludeSuffix
+      ? analyzed.searchQueries.map(q => `${q} ${excludeSuffix}`)
+      : analyzed.searchQueries;
+
+    if (excludeSuffix) {
+      console.log(`[Job ${job.id}] excludeTerms applied: ${analyzed.excludeTerms.join(', ')}`);
+    }
+
     // 残り0件なら収集スキップ（既に目標達成済み）
     let totalFound: number;
     let scrapedCount: number;
@@ -100,7 +112,7 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
       // URL収集を実行（remainingCountを目標件数として渡す）
       const result = await collectUrlsWithQueries(
         job.id,
-        analyzed.searchQueries,
+        searchQueriesWithExclusions,
         remainingCount,
         job.userId,
         job.industry ?? null,

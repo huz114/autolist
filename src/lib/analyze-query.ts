@@ -7,6 +7,7 @@ export interface AnalyzedQuery {
   targetCount: number;
   industryKeywords: string[];
   searchQueries: string[];
+  excludeTerms: string[];
   isDomestic: boolean;
   industrySpecified: boolean;
   locationSpecified: boolean;
@@ -64,6 +65,11 @@ export async function analyzeQuery(userMessage: string): Promise<AnalyzedQuery> 
        "ラーメン専門店" → ["ラーメン", "専門店", "飲食"]
    日本語の意味単位で分割し、検索に有効なキーワードのみ残すこと。業種未指定の場合は空配列[]。
 9. searchQueries: Google検索クエリの配列（4〜6個）
+10. excludeTerms: ユーザーが求めている業種と紛らわしい関連業種・支援業種のキーワードを配列で返してください。
+   これらの除外キーワードはGoogle検索で除外演算子(-keyword)として使用されます。
+   例えば「通販事業者」の場合、ECカート提供会社・通販代行・コンサル・物流代行などは除外すべきです。
+   「歯科医院」なら歯科材料・歯科機器・歯科コンサルなどです。
+   紛らわしい業種がない場合は空配列[]を返してください。最大10個まで。
 
 searchQueriesの生成ルール:
 - industryの完全な表現を使ったクエリ（1〜2個）
@@ -92,7 +98,8 @@ searchQueriesの生成ルール:
     "新築 不動産会社 東京 企業一覧",
     "新築住宅 不動産 東京",
     "新築 不動産 東京 contact"
-  ]
+  ],
+  "excludeTerms": ["不動産コンサル", "不動産投資", "不動産管理システム"]
 }
 
 例2:
@@ -106,7 +113,8 @@ searchQueriesの生成ルール:
   "locationSpecified": false,
   "countSpecified": false,
   "industryKeywords": ["IT", "企業", "情報通信"],
-  "searchQueries": []
+  "searchQueries": [],
+  "excludeTerms": ["IT コンサル", "SES", "システム派遣"]
 }
 
 ユーザーメッセージ: ${userMessage}`;
@@ -136,6 +144,9 @@ searchQueriesの生成ルール:
     if (!parsed.targetCount || parsed.targetCount < 0) parsed.targetCount = 0;
     if (!parsed.industryKeywords || parsed.industryKeywords.length === 0) {
       parsed.industryKeywords = parsed.industry ? [parsed.industry] : [];
+    }
+    if (!parsed.excludeTerms || !Array.isArray(parsed.excludeTerms)) {
+      parsed.excludeTerms = [];
     }
     if (!parsed.searchQueries || parsed.searchQueries.length === 0) {
       if (parsed.industry && parsed.location) {

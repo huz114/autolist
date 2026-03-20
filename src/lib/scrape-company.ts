@@ -130,14 +130,16 @@ async function extractInfoWithGemini(
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   const industryCheckInstruction = requestedIndustry
-    ? `\n\n【業種一致チェック】依頼された業種: 「${requestedIndustry}」\nこの企業が上記の業種に該当するかを判定してください。\n- isRelevantIndustry: true → 依頼業種に該当する（例: 「歯科クリニック」で歯科医院ならtrue）\n- isRelevantIndustry: false → 依頼業種に該当しない（例: 「歯科クリニック」で不用品回収業ならfalse）\n関連性が曖昧な場合はtrueにしてください。`
+    ? `\n\n【業種一致チェック】依頼された業種: 「${requestedIndustry}」\nこの企業が上記の業種に該当するかを判定してください。\n- isRelevantIndustry: true → 依頼業種に該当する（例: 「歯科クリニック」で歯科医院ならtrue）\n- isRelevantIndustry: false → 依頼業種に明らかに該当しない（例: 「歯科クリニック」で不用品回収業ならfalse）\n業種名が完全一致しなくても、事業内容が関連していればtrueにしてください。明らかに無関係な業種のみfalseにしてください。`
     : "";
 
-  const prompt = `このWebページが法人・事業者の公式サイトかどうか判定し、企業情報を抽出してJSONで返してください。
+  const prompt = `このWebページが民間の法人・事業者の公式サイトかどうか判定し、企業情報を抽出してJSONで返してください。
 
 判定基準:
-- isCompanySite: true → 法人・事業者の公式Webサイト（企業だけでなく、クリニック・医院・歯科医院・事務所・教室・サロン等の個人事業主の公式サイトも含む）（会社概要・製品・サービス等を掲載）
-- isCompanySite: false → ポータルサイト・求人サイト・ニュースサイト・口コミサイト・まとめサイト・ディレクトリ・地図サービス・SNS等
+- isCompanySite: true → 民間の法人・事業者の公式Webサイト（企業だけでなく、クリニック・医院・歯科医院・事務所・教室・サロン等の個人事業主の公式サイトも含む）（会社概要・製品・サービス等を掲載）
+- isCompanySite: false → 以下のいずれかに該当する場合:
+  - ポータルサイト・求人サイト・ニュースサイト・口コミサイト・まとめサイト・ディレクトリ・地図サービス・SNS等
+  - 官公庁・自治体・公共機関のサイト（例: 市役所・区役所・町村役場・県庁・都庁・省庁・府省・国の機関・公立学校・公立病院・公立図書館・公共施設・独立行政法人・地方公共団体・公営企業など）。ドメインが .go.jp / .lg.jp / .ed.jp の場合も該当
 
 isCompanySite: false の場合、他の項目は null で構いません。
 isCompanySite: true の場合、以下の情報を抽出してください（見つからない項目はnullにしてください）:

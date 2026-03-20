@@ -28,17 +28,22 @@ interface LineWebhookBody {
 
 const HELP_COMMANDS = ['ヘルプ', 'help', 'ヘルプ！', 'HELP', '使い方', '?', '？'];
 
-const HELP_MESSAGE = `📋 オートリスト の使い方
+const HELP_MESSAGE = `📋 オートリストの使い方
 
-メッセージ例:
-・「IT企業 東京 100社」
-・「飲食店 大阪 50社リストして」
-・「製造業 愛知県 200社お願い」
+1️⃣ 業種・地域・件数をまとめてLINEに送る
+   例：「不動産会社 渋谷区 30件」
 
-業種・地域・件数を自由に指定できます。
-収集完了後、シリョログでフォーム送信できます。
+2️⃣ 確認メッセージが届く → 「はい」で収集開始
 
-🎁 新規登録: 100件無料`;
+3️⃣ 完了したらLINE・メールに通知
+   → PCでリストを確認・精査
+
+4️⃣ フォーム送信の準備へ進む
+
+💰 最初の100件は無料！
+   追加はメニューの「チャージ」から
+
+❓ お困りの際はメニューの「問い合わせ」から`;
 
 const CHARGE_QUICK_REPLY = {
   items: [
@@ -303,7 +308,7 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
 
         case 'help':
           if (replyToken) {
-            await replyMessage(replyToken, `📋 オートリストの使い方\n\n1️⃣ 業種と地域をLINEに送る\n例：「渋谷区の不動産会社30件」\n\n2️⃣ 確認メッセージが届く\n\n3️⃣「はい」で収集開始\n\n4️⃣ 完了したらLINEに通知\n\n❓ 困ったことがあれば「問い合わせ」ボタンへ`);
+            await replyMessage(replyToken, HELP_MESSAGE);
           }
           break;
 

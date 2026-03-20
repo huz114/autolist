@@ -55,6 +55,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     try {
+      // 冪等性チェック: 同じStripeセッションで既に処理済みか確認
+      const existingPurchase = await prisma.purchase.findFirst({
+        where: { stripeId: session.id },
+      });
+
+      if (existingPurchase) {
+        console.log(`[StripeWebhook] Already processed session: ${session.id}, skipping`);
+        return NextResponse.json({ received: true, duplicate: true });
+      }
+
       // ユーザーを取得
       const user = await prisma.lineUser.findUnique({
         where: { lineUserId },

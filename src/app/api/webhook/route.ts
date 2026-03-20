@@ -309,12 +309,8 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
 
         case 'contact':
           if (replyToken) {
-            await replyMessage(replyToken, '📞 問い合わせを受け付けました。\nスタッフより折り返しご連絡いたします。');
+            await replyMessage(replyToken, '📩 お問い合わせはこちらからお願いします。\n\nhttps://autolist.shiryolog.com/contact?openExternalBrowser=1');
           }
-          await pushMessage(
-            ADMIN_LINE_USER_ID,
-            `🔔 問い合わせが来ました！\n\nユーザー: ${pbUser.displayName || '未設定'}\nLINE ID: ${pbUser.lineUserId}\n\nLINEで返信してください。`
-          );
           break;
 
         default:
@@ -338,6 +334,14 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
       if (HELP_COMMANDS.includes(messageText.toLowerCase())) {
         if (replyToken) {
           await replyMessage(replyToken, HELP_MESSAGE);
+        }
+        continue;
+      }
+
+      // 問い合わせテキストの処理
+      if (messageText.trim() === '問い合わせ' || messageText.trim() === 'お問い合わせ') {
+        if (replyToken) {
+          await replyMessage(replyToken, '📩 お問い合わせはこちらからお願いします。\n\nhttps://autolist.shiryolog.com/contact?openExternalBrowser=1');
         }
         continue;
       }

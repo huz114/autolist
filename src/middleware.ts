@@ -11,7 +11,8 @@ export default auth((req) => {
                        req.nextUrl.pathname.startsWith('/autolist/results') ||
                        req.nextUrl.pathname.startsWith('/api/') ||
                        req.nextUrl.pathname.startsWith('/legal') ||
-                       req.nextUrl.pathname.startsWith('/verify')
+                       req.nextUrl.pathname.startsWith('/verify') ||
+                       req.nextUrl.pathname.startsWith('/contact')
 
   if (!isLoggedIn && !isAuthPage && !isPublicPage) {
     return NextResponse.redirect(new URL('/login', req.url))

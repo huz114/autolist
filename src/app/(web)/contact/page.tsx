@@ -4,6 +4,7 @@ import { useState } from 'react'
 
 export default function ContactPage() {
   const [name, setName] = useState('')
+  const [company, setCompany] = useState('')
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
@@ -19,7 +20,7 @@ export default function ContactPage() {
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, message }),
+        body: JSON.stringify({ name, company, email, message }),
       })
 
       const data = await res.json()
@@ -85,6 +86,18 @@ export default function ContactPage() {
                 onChange={(e) => setName(e.target.value)}
                 required
                 placeholder="山田 太郎"
+                className="w-full bg-[#0a0a0f] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#06C755]/50 transition-colors placeholder:text-gray-600"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-gray-400 mb-1.5">
+                企業名（任意）
+              </label>
+              <input
+                type="text"
+                value={company}
+                onChange={(e) => setCompany(e.target.value)}
+                placeholder="株式会社○○"
                 className="w-full bg-[#0a0a0f] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#06C755]/50 transition-colors placeholder:text-gray-600"
               />
             </div>

@@ -8,8 +8,9 @@ const resend = process.env.RESEND_API_KEY
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    const { name, email, message } = body as {
+    const { name, company, email, message } = body as {
       name?: string
+      company?: string
       email?: string
       message?: string
     }
@@ -43,13 +44,14 @@ export async function POST(req: Request) {
       )
     }
 
-    const htmlContent = buildContactEmailHtml(name.trim(), email.trim(), message.trim())
+    const htmlContent = buildContactEmailHtml(name.trim(), email.trim(), message.trim(), company?.trim())
 
     // 開発環境（API Key未設定）はコンソール出力のみ
     if (!resend) {
       console.log('========================================')
       console.log('[DEV] お問い合わせメール')
       console.log(`Name: ${name}`)
+      if (company) console.log(`Company: ${company}`)
       console.log(`Email: ${email}`)
       console.log(`Message: ${message}`)
       console.log('========================================')
@@ -82,8 +84,9 @@ export async function POST(req: Request) {
   }
 }
 
-function buildContactEmailHtml(name: string, email: string, message: string): string {
+function buildContactEmailHtml(name: string, email: string, message: string, company?: string): string {
   const escapedName = escapeHtml(name)
+  const escapedCompany = company ? escapeHtml(company) : null
   const escapedEmail = escapeHtml(email)
   const escapedMessage = escapeHtml(message).replace(/\n/g, '<br>')
 
@@ -127,6 +130,12 @@ function buildContactEmailHtml(name: string, email: string, message: string): st
                     <div style="color:#f3f4f6;font-size:14px;">${escapedName}</div>
                   </td>
                 </tr>
+                ${escapedCompany ? `<tr>
+                  <td style="padding:12px 16px;background-color:#0a0a0f;border-bottom:1px solid rgba(255,255,255,0.06);">
+                    <div style="color:#6b7280;font-size:11px;margin-bottom:4px;">企業名</div>
+                    <div style="color:#f3f4f6;font-size:14px;">${escapedCompany}</div>
+                  </td>
+                </tr>` : ''}
                 <tr>
                   <td style="padding:12px 16px;background-color:#0a0a0f;border-bottom:1px solid rgba(255,255,255,0.06);">
                     <div style="color:#6b7280;font-size:11px;margin-bottom:4px;">メールアドレス</div>

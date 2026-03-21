@@ -112,6 +112,47 @@ export default function PrivacyPage() {
             <p>メール: <a href="mailto:info@ai-ll.co" className="text-emerald-400 hover:underline">info@ai-ll.co</a></p>
           </div>
         </section>
+
+        <section>
+          <h2 className="text-lg font-semibold text-white mt-8 mb-4">Chrome拡張機能（シリョログ - フォーム営業アシスタント）におけるデータの取り扱い</h2>
+
+          <h3 className="text-lg font-semibold text-white mt-8 mb-4">1. 拡張機能が取得するデータ</h3>
+          <p className="text-gray-300">
+            本Chrome拡張機能は、フォーム自動入力機能を提供するために、以下のデータを取得します。
+          </p>
+          <ul className="list-disc list-inside space-y-2 text-gray-300 mt-2">
+            <li>閲覧中のWebページのURL</li>
+            <li>Webページ上のフォーム要素のフィールド情報（input、textarea、select等のname属性、type属性、placeholder等）</li>
+            <li>シリョログまたはオートリストから受け渡された送信メッセージデータ（送信者名、メールアドレス、件名、本文等）</li>
+          </ul>
+          <p className="text-gray-300 mt-2">
+            本拡張機能は、フォーム入力に関係のないWebページの閲覧履歴、個人情報、パスワード、Cookie等のデータは一切取得しません。
+          </p>
+
+          <h3 className="text-lg font-semibold text-white mt-8 mb-4">2. データの使用目的</h3>
+          <ul className="list-disc list-inside space-y-2 text-gray-300">
+            <li>企業の問い合わせフォームへの営業メッセージの自動入力</li>
+            <li>フォームフィールドと送信データの適切なマッピング（どのフィールドにどの情報を入力するかの判定）</li>
+          </ul>
+
+          <h3 className="text-lg font-semibold text-white mt-8 mb-4">3. データの保持期間</h3>
+          <ul className="list-disc list-inside space-y-2 text-gray-300">
+            <li>シリョログ・オートリストから受け渡された送信メッセージデータは、拡張機能のローカルストレージに一時保存されます</li>
+            <li>送信完了時またはキャンセル時に即座に消去されます</li>
+            <li>上記操作が行われない場合でも、10分経過後にアラーム機能により自動的に消去されます</li>
+            <li>サーバーへのデータ送信・保存は行いません（全てブラウザ内で完結します）</li>
+          </ul>
+
+          <h3 className="text-lg font-semibold text-white mt-8 mb-4">4. 第三者への提供</h3>
+          <p className="text-gray-300">
+            本拡張機能が取得したデータを第三者に提供することはありません。取得したデータは全てユーザーのブラウザ内でのみ処理され、外部サーバーへの送信は行いません（シリョログ・オートリストのAPIとの通信を除く）。
+          </p>
+
+          <h3 className="text-lg font-semibold text-white mt-8 mb-4">5. ユーザーの権利</h3>
+          <p className="text-gray-300">
+            ユーザーはいつでもChrome拡張機能をアンインストールすることで、全てのローカルストレージデータを削除できます。また、Chromeの設定画面から拡張機能のストレージを個別にクリアすることも可能です。
+          </p>
+        </section>
       </div>
 
       <p className="text-gray-500 text-xs mt-10 text-center">オートリスト — powered by シリョログ</p>

@@ -177,6 +177,9 @@ export default function SendClient({
   // テンプレート
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null)
 
+  // Chrome拡張モーダル
+  const [extensionModalOpen, setExtensionModalOpen] = useState(false)
+
   // トースト
   const [toast, setToast] = useState<ToastState>(null)
 
@@ -379,6 +382,72 @@ export default function SendClient({
         </div>
       )}
 
+      {/* Chrome拡張モーダル */}
+      {extensionModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center px-4"
+          onClick={() => setExtensionModalOpen(false)}
+        >
+          {/* オーバーレイ */}
+          <div className="absolute inset-0 bg-black/60" />
+          {/* モーダル本体 */}
+          <div
+            className="relative bg-[#16161f] border border-white/10 rounded-2xl max-w-lg w-full p-6 sm:p-8 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 閉じるボタン */}
+            <button
+              onClick={() => setExtensionModalOpen(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <h2 className="text-lg font-bold text-white mb-6">Chrome拡張機能のご案内</h2>
+
+            {/* インストール手順 */}
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-[#06C755] mb-3">インストール手順</h3>
+              <ol className="list-decimal list-inside space-y-2 text-sm text-gray-300 leading-relaxed">
+                <li>下のリンクからChrome ウェブストアを開く</li>
+                <li>「Chromeに追加」ボタンをクリック</li>
+                <li>「拡張機能を追加」を選択</li>
+              </ol>
+              <a
+                // TODO: Web Store公開後にURLを差し替え
+                href="#"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 mt-4 text-sm font-medium text-[#06C755] hover:text-[#05b34a] transition-colors"
+              >
+                Chrome ウェブストアで入手
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </a>
+            </div>
+
+            {/* 使い方 */}
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-[#06C755] mb-3">使い方</h3>
+              <ol className="list-decimal list-inside space-y-2 text-sm text-gray-300 leading-relaxed">
+                <li>このページで送信者情報・メッセージを確認</li>
+                <li>「送信する」ボタンをクリック</li>
+                <li>Chrome拡張が各企業のフォームを自動で開いて送信します</li>
+                <li>送信状況はこのページでリアルタイムに確認できます</li>
+              </ol>
+            </div>
+
+            {/* 注意事項 */}
+            <p className="text-xs text-amber-300/80 leading-relaxed">
+              ※ セキュリティ保護のため、送信開始から10分経過すると送信データは自動消去されます。
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* ヘッダー */}
       <div className="mb-8">
         <Link
@@ -398,18 +467,15 @@ export default function SendClient({
           </div>
           {/* Chrome拡張インストール案内 */}
           <div className="shrink-0 text-right">
-            <a
-              // TODO: Web Store公開後にURLを差し替え
-              href="#"
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={() => setExtensionModalOpen(true)}
               className="inline-flex items-center gap-2 border border-white/20 hover:border-white/40 bg-white/5 hover:bg-white/10 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1.41 16.09V13.5H7.59L13.41 5.91V10.5h3L10.59 18.09z" />
               </svg>
               Chrome拡張をインストール
-            </a>
+            </button>
             <p className="text-[11px] text-gray-500 mt-1.5">
               フォーム送信にはChrome拡張機能が必要です
             </p>

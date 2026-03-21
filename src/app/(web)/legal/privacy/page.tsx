@@ -105,15 +105,6 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="text-lg font-semibold text-white mb-3">第11条（お問い合わせ先）</h2>
-          <div className="bg-gray-900/50 rounded-lg border border-gray-800 p-5 mt-2">
-            <p>アイル（AI'll）</p>
-            <p>代表者: 宇座 大陽</p>
-            <p>メール: <a href="mailto:info@ai-ll.co" className="text-emerald-400 hover:underline">info@ai-ll.co</a></p>
-          </div>
-        </section>
-
-        <section>
           <h2 className="text-lg font-semibold text-white mt-8 mb-4">Chrome拡張機能（シリョログ - フォーム営業アシスタント）におけるデータの取り扱い</h2>
 
           <h3 className="text-lg font-semibold text-white mt-8 mb-4">1. 拡張機能が取得するデータ</h3>
@@ -152,6 +143,15 @@ export default function PrivacyPage() {
           <p className="text-gray-300">
             ユーザーはいつでもChrome拡張機能をアンインストールすることで、全てのローカルストレージデータを削除できます。また、Chromeの設定画面から拡張機能のストレージを個別にクリアすることも可能です。
           </p>
+        </section>
+
+        <section>
+          <h2 className="text-lg font-semibold text-white mb-3">お問い合わせ先</h2>
+          <div className="bg-gray-900/50 rounded-lg border border-gray-800 p-5 mt-2">
+            <p>アイル（AI'll）</p>
+            <p>代表者: 宇座 大陽</p>
+            <p>メール: <a href="mailto:info@ai-ll.co" className="text-emerald-400 hover:underline">info@ai-ll.co</a></p>
+          </div>
         </section>
       </div>
 

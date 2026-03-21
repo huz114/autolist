@@ -660,7 +660,7 @@ ${appUrl}/my-lists?openExternalBrowser=1`
           // チャージ履歴あり
           const chargeMessageObj = {
             type: 'text',
-            text: `💳 クレジットが不足しています。\n残り: ${user.credits}件 / 必要: 依頼分\n\n${CHARGE_PRICING_TEXT}`,
+            text: `💳 クレジットが不足しています。\nチャージしてご利用ください。\n\n${CHARGE_PRICING_TEXT}`,
             quickReply: CHARGE_QUICK_REPLY,
           };
           if (replyToken) {

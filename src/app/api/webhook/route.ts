@@ -75,7 +75,7 @@ const CHARGE_PRICING_TEXT = `チャージするプランを選んでください
 
 const CHARGE_MESSAGE = {
   type: 'text',
-  text: `💳 無料枠（100件）を使い切りました。\n続けてご利用いただくにはチャージが必要です。\n\n${CHARGE_PRICING_TEXT}`,
+  text: `💳 無料枠（100件）を使い切りました。\n続けてご利用いただくにはチャージが必要です。\n\nチャージしてご利用ください。\n\n${CHARGE_PRICING_TEXT}`,
   quickReply: CHARGE_QUICK_REPLY,
 };
 
@@ -747,7 +747,7 @@ ${appUrl}/my-lists?openExternalBrowser=1`
 
           const chargeMessageObj = {
             type: 'text',
-            text: `💳 クレジットが不足しています。\n残り: ${user.credits}件 / 必要: ${analyzed.targetCount}件\n\n${CHARGE_PRICING_TEXT}`,
+            text: `💳 クレジットが不足しています。\n残り: ${user.credits}件 / 必要: ${analyzed.targetCount}件\n\nチャージしてご利用ください。\n\n${CHARGE_PRICING_TEXT}`,
             quickReply: CHARGE_QUICK_REPLY,
           };
 
@@ -764,7 +764,7 @@ ${appUrl}/my-lists?openExternalBrowser=1`
 
           const chargeMessageObj = {
             type: 'text',
-            text: `💳 クレジットが不足しています。\n残り: ${user.credits}件 / 必要: ${analyzed.targetCount}件\n\n${CHARGE_PRICING_TEXT}`,
+            text: `💳 クレジットが不足しています。\n残り: ${user.credits}件 / 必要: ${analyzed.targetCount}件\n\nチャージしてご利用ください。\n\n${CHARGE_PRICING_TEXT}`,
             quickReply: CHARGE_QUICK_REPLY,
           };
 

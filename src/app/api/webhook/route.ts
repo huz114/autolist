@@ -434,13 +434,15 @@ ${paymentUrl}
               await replyMessage(replyToken, `⚠️ 決済リンクの生成に失敗しました。しばらく後にもう一度お試しください。`);
             }
           }
+          continue;
         } else {
-          // 無効な番号が来た場合は再度案内
-          if (replyToken) {
-            await replyMessage(replyToken, CHARGE_MESSAGE);
-          }
+          // プラン番号以外のメッセージ → stateをクリアして通常フローに戻す
+          await prisma.lineUser.update({
+            where: { id: user.id },
+            data: { state: null },
+          });
+          // continueせずに後続の依頼フローに進む
         }
-        continue;
       }
 
       // --- 確認待ち状態の処理 ---

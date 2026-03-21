@@ -640,14 +640,30 @@ ${appUrl}/my-lists?openExternalBrowser=1`
 
       // --- クレジット残量チェック ---
       if (user.credits <= 0) {
+        // チャージ履歴の有無で分岐
+        const purchaseCount = await prisma.purchase.count({ where: { userId: user.id } });
+
         // stateをawaiting_chargeに更新
         await prisma.lineUser.update({
           where: { id: user.id },
           data: { state: 'awaiting_charge' },
         });
 
-        if (replyToken) {
-          await replyMessage(replyToken, CHARGE_MESSAGE);
+        if (purchaseCount === 0) {
+          // チャージ履歴なし
+          if (replyToken) {
+            await replyMessage(replyToken, CHARGE_MESSAGE);
+          }
+        } else {
+          // チャージ履歴あり
+          const chargeMessageObj = {
+            type: 'text',
+            text: `💳 クレジットが不足しています。\n残り: ${user.credits}件 / 必要: 依頼分\n\n${CHARGE_PRICING_TEXT}`,
+            quickReply: CHARGE_QUICK_REPLY,
+          };
+          if (replyToken) {
+            await replyMessage(replyToken, chargeMessageObj);
+          }
         }
         continue;
       }
@@ -716,17 +732,43 @@ ${appUrl}/my-lists?openExternalBrowser=1`
 
       // クレジット残量が依頼件数を下回る場合は警告
       if (user.credits < analyzed.targetCount) {
-        const warningMessage = `⚠️ クレジットが不足しています。
+        // チャージ履歴の有無で分岐
+        const purchaseCount = await prisma.purchase.count({ where: { userId: user.id } });
 
-残クレジット: ${user.credits}件
-依頼件数: ${analyzed.targetCount}件
+        if (purchaseCount === 0) {
+          // チャージ履歴なし（無料枠を使い切った）
+          // stateをawaiting_chargeに更新
+          await prisma.lineUser.update({
+            where: { id: user.id },
+            data: { state: 'awaiting_charge' },
+          });
 
-残クレジット分（${user.credits}件）で実行するか、チャージしてから依頼してください。
+          const chargeMessageObj = {
+            type: 'text',
+            text: `💳 無料枠（100件）を使い切りました。\n続けてご利用いただくにはチャージが必要です。\n\n${CHARGE_PRICING_TEXT}`,
+            quickReply: CHARGE_QUICK_REPLY,
+          };
 
-チャージする場合は「チャージ」と送信してください。
-このまま続ける場合は「${user.credits}件で実行」と送信してください。`;
-        if (replyToken) {
-          await replyMessage(replyToken, warningMessage);
+          if (replyToken) {
+            await replyMessage(replyToken, chargeMessageObj);
+          }
+        } else {
+          // チャージ履歴あり
+          // stateをawaiting_chargeに更新
+          await prisma.lineUser.update({
+            where: { id: user.id },
+            data: { state: 'awaiting_charge' },
+          });
+
+          const chargeMessageObj = {
+            type: 'text',
+            text: `💳 クレジットが不足しています。\n残り: ${user.credits}件 / 必要: ${analyzed.targetCount}件\n\n${CHARGE_PRICING_TEXT}`,
+            quickReply: CHARGE_QUICK_REPLY,
+          };
+
+          if (replyToken) {
+            await replyMessage(replyToken, chargeMessageObj);
+          }
         }
         continue;
       }

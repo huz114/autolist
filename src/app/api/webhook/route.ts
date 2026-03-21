@@ -49,19 +49,19 @@ const CHARGE_QUICK_REPLY = {
   items: [
     {
       type: 'action' as const,
-      action: { type: 'message' as const, label: '100件', text: '1' },
+      action: { type: 'message' as const, label: '100件', text: '100件' },
     },
     {
       type: 'action' as const,
-      action: { type: 'message' as const, label: '300件', text: '2' },
+      action: { type: 'message' as const, label: '300件', text: '300件' },
     },
     {
       type: 'action' as const,
-      action: { type: 'message' as const, label: '700件', text: '3' },
+      action: { type: 'message' as const, label: '700件', text: '700件' },
     },
     {
       type: 'action' as const,
-      action: { type: 'message' as const, label: '1,500件', text: '4' },
+      action: { type: 'message' as const, label: '1,500件', text: '1,500件' },
     },
   ],
 };
@@ -242,6 +242,11 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
 
       switch (action) {
         case 'new_request':
+          // stateをクリアして通常フローに戻す
+          await prisma.lineUser.update({
+            where: { id: pbUser.id },
+            data: { state: null },
+          });
           if (replyToken) {
             await replyMessage(replyToken, '業種と地域を送ってください。\n例：「渋谷区の不動産会社30件」');
           }
@@ -409,10 +414,17 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
 
       // --- チャージ待ち状態の処理 ---
       if (user.state === 'awaiting_charge') {
-        const planNumber = parseInt(messageText.trim(), 10);
+        // QuickReplyボタンのテキストマッチ（「100件」「300件」「700件」「1,500件」「1500件」）
+        const chargeTextMap: Record<string, number> = {
+          '100件': 0,
+          '300件': 1,
+          '700件': 2,
+          '1,500件': 3,
+          '1500件': 3,
+        };
+        const planIndex = chargeTextMap[messageText.trim()];
 
-        if (planNumber >= 1 && planNumber <= 4) {
-          const planIndex = planNumber - 1;
+        if (planIndex !== undefined) {
           const plan = CHARGE_PLANS[planIndex];
 
           try {
@@ -436,7 +448,7 @@ ${paymentUrl}
           }
           continue;
         } else {
-          // プラン番号以外のメッセージ → stateをクリアして通常フローに戻す
+          // プラン選択以外のメッセージ → stateをクリアして通常フローに戻す
           await prisma.lineUser.update({
             where: { id: user.id },
             data: { state: null },

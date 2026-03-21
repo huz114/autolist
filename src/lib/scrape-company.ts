@@ -130,7 +130,24 @@ async function extractInfoWithGemini(
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   const industryCheckInstruction = requestedIndustry
-    ? `\n\n【業種一致チェック】依頼された業種: 「${requestedIndustry}」\nこの企業が上記の業種に該当するかを判定してください。\n- isRelevantIndustry: true → 依頼業種に該当する（例: 「歯科クリニック」で歯科医院ならtrue）\n- isRelevantIndustry: false → 依頼業種に明らかに該当しない（例: 「歯科クリニック」で不用品回収業ならfalse）\n業種名が完全一致しなくても、事業内容が関連していればtrueにしてください。明らかに無関係な業種のみfalseにしてください。`
+    ? `\n\n【業種一致チェック】依頼された業種: 「${requestedIndustry}」
+この企業が依頼された業種の事業を「自社で直接行っている」場合のみ isRelevantIndustry: true にしてください。
+
+以下のような「関連サービス業」は、依頼業種とは異なるため isRelevantIndustry: false にしてください：
+- 支援・コンサルティング会社（○○業向けコンサル等）
+- 人材紹介・派遣会社（○○業界専門の人材サービス等）
+- IT・システム開発会社（○○業向けシステム・SaaS等）
+- 機器・材料・資材のメーカーや卸売（○○業向け機器販売等）
+- 比較サイト・ポータルサイト運営
+- フランチャイズ本部（加盟店ではなく本部の場合）
+- 業界団体・協会
+- 研修・教育・セミナー事業者
+
+例：
+- 依頼「病院」→ 病院・クリニック・医院 = true、医療機器メーカー・医療IT・医療人材・臨床検査業・医療機関開業支援 = false
+- 依頼「美容室」→ 美容室・ヘアサロン = true、美容ディーラー・美容求人サイト・美容機器メーカー = false
+- 依頼「通販事業者」→ 自社ECで商品販売 = true、ECカート提供・通販代行・EC支援 = false
+- 依頼「飲食店」→ レストラン・居酒屋・カフェ = true、食品卸・飲食店向けシステム・飲食コンサル = false`
     : "";
 
   const prompt = `このWebページが民間の法人・事業者の公式サイトかどうか判定し、企業情報を抽出してJSONで返してください。
@@ -222,7 +239,7 @@ JSONのみ返してください：
 /**
  * 企業サイトにアクセスして企業情報を取得する
  */
-export async function scrapeCompanyInfo(url: string, requestedIndustry?: string): Promise<CompanyInfo> {
+export async function scrapeCompanyInfo(url: string, requestedIndustry?: string, requestedLocation?: string): Promise<CompanyInfo> {
   const domain = extractDomain(url);
   const baseUrl = `https://${domain}`;
 
@@ -263,6 +280,28 @@ export async function scrapeCompanyInfo(url: string, requestedIndustry?: string)
     if (!extracted.isRelevantIndustry) {
       console.log(`  -> isRelevantIndustry: false, skipped (requested: ${requestedIndustry})`);
       return { hasForm: false };
+    }
+
+    // 地域不一致チェック: Geminiが判定した所在地が依頼地域と明らかに異なる場合はスキップ
+    // ただし所在地が不明（null）の場合はそのまま通す
+    if (requestedLocation && extracted.location) {
+      const loc = extracted.location;
+      const req = requestedLocation;
+      // 依頼地域のキーワードが所在地に含まれていなければ不一致とみなす
+      // 都道府県レベル・市区町村レベルで判定
+      const locationKeywords = req
+        .replace(/[都道府県市区町村郡]/g, (m) => m + "|")
+        .split("|")
+        .map((s) => s.trim())
+        .filter((s) => s.length >= 2);
+      const hasLocationMatch =
+        locationKeywords.length === 0 ||
+        locationKeywords.some((keyword) => loc.includes(keyword)) ||
+        loc.includes(req);
+      if (!hasLocationMatch) {
+        console.log(`  -> location mismatch: requested="${req}", found="${loc}", skipped`);
+        return { hasForm: false };
+      }
     }
 
     // フォーム検出（トップページHTMLを使用）

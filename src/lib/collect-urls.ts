@@ -361,7 +361,7 @@ export async function collectUrls(jobId: string): Promise<number> {
 
     try {
       console.log(`Scraping: ${urlData.url} (${processed}/${totalCandidates})`);
-      const companyInfo = await scrapeCompanyInfo(urlData.url, job.industry ?? undefined);
+      const companyInfo = await scrapeCompanyInfo(urlData.url, job.industry ?? undefined, job.location ?? undefined);
 
       // hasForm: true のURLのみ保存
       if (companyInfo.hasForm) {
@@ -421,10 +421,11 @@ export async function collectUrls(jobId: string): Promise<number> {
 async function scrapeAndSave(
   jobId: string,
   urlData: CollectedUrlData,
-  requestedIndustry?: string
+  requestedIndustry?: string,
+  requestedLocation?: string
 ): Promise<boolean> {
   try {
-    const companyInfo = await scrapeCompanyInfo(urlData.url, requestedIndustry);
+    const companyInfo = await scrapeCompanyInfo(urlData.url, requestedIndustry, requestedLocation);
 
     if (companyInfo.hasForm) {
       // isCompanySite: true かつ hasForm: true の場合のみここに到達
@@ -801,7 +802,7 @@ export async function collectUrlsWithQueries(
       `(scraped: ${scrapedTotal}/${MAX_SCRAPED_URLS}, saved: ${savedCount}/${targetCount})`
     );
 
-    const wasSaved = await scrapeAndSave(jobId, urlData, industry ?? undefined);
+    const wasSaved = await scrapeAndSave(jobId, urlData, industry ?? undefined, location ?? undefined);
     if (wasSaved) {
       savedCount++;
     }

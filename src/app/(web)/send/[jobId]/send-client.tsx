@@ -387,12 +387,34 @@ export default function SendClient({
         >
           &larr; リストに戻る
         </Link>
-        <h1 className="text-2xl font-bold text-white mb-1">フォーム送信</h1>
-        <p className="text-sm text-gray-400">
-          {keyword}
-          {industry ? ` / ${industry}` : ''}
-          {location ? ` / ${location}` : ''}
-        </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-white mb-1">フォーム送信</h1>
+            <p className="text-sm text-gray-400">
+              {keyword}
+              {industry ? ` / ${industry}` : ''}
+              {location ? ` / ${location}` : ''}
+            </p>
+          </div>
+          {/* Chrome拡張インストール案内 */}
+          <div className="shrink-0 text-right">
+            <a
+              // TODO: Web Store公開後にURLを差し替え
+              href="#"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 border border-white/20 hover:border-white/40 bg-white/5 hover:bg-white/10 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1.41 16.09V13.5H7.59L13.41 5.91V10.5h3L10.59 18.09z" />
+              </svg>
+              Chrome拡張をインストール
+            </a>
+            <p className="text-[11px] text-gray-500 mt-1.5">
+              フォーム送信にはChrome拡張機能が必要です
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* 送信先概要 */}

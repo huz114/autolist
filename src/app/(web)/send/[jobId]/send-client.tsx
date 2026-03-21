@@ -420,7 +420,7 @@ export default function SendClient({
                 href="#"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 mt-4 text-sm font-medium text-[#06C755] hover:text-[#05b34a] transition-colors"
+                className="inline-flex items-center justify-center gap-2 mt-4 w-full sm:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg transition-colors"
               >
                 Chrome ウェブストアで入手
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">

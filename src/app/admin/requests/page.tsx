@@ -29,6 +29,7 @@ interface Job {
   progress: number
   totalFound: number
   createdAt: string
+  updatedAt: string
   completedAt: string | null
   user: LineUser
   _count: { urls: number }
@@ -63,6 +64,31 @@ function formatJst(dateStr: string): string {
     hour: '2-digit',
     minute: '2-digit',
   })
+}
+
+function getCompletedDate(job: Job): Date | null {
+  if (job.completedAt) return new Date(job.completedAt)
+  if (job.status === 'completed') return new Date(job.updatedAt)
+  return null
+}
+
+function formatDuration(startStr: string, endDate: Date | null): string {
+  if (!endDate) return '-'
+  const start = new Date(startStr)
+  const diffSec = Math.floor((endDate.getTime() - start.getTime()) / 1000)
+  if (diffSec < 0) return '-'
+  const min = Math.floor(diffSec / 60)
+  const sec = diffSec % 60
+  return `${min}分${sec}秒`
+}
+
+function formatPerItem(startStr: string, endDate: Date | null, count: number): string {
+  if (!endDate || count <= 0) return '-'
+  const start = new Date(startStr)
+  const diffSec = Math.floor((endDate.getTime() - start.getTime()) / 1000)
+  if (diffSec < 0) return '-'
+  const secPerItem = Math.round(diffSec / count)
+  return `${secPerItem}秒/件`
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -233,6 +259,21 @@ function JobRow({ job }: { job: Job }) {
         <td className="py-3 pr-4 text-sm text-gray-200 text-right whitespace-nowrap">
           {job.totalFound.toLocaleString()}
         </td>
+        {/* 完了日時 */}
+        <td className="py-3 pr-4 text-sm text-gray-300 whitespace-nowrap">
+          {(() => {
+            const completed = getCompletedDate(job)
+            return completed ? formatJst(completed.toISOString()) : <span className="text-gray-600">-</span>
+          })()}
+        </td>
+        {/* 所要時間 */}
+        <td className="py-3 pr-4 text-sm text-gray-300 text-right whitespace-nowrap">
+          {formatDuration(job.createdAt, getCompletedDate(job))}
+        </td>
+        {/* 1件あたり */}
+        <td className="py-3 pr-4 text-sm text-gray-300 text-right whitespace-nowrap">
+          {formatPerItem(job.createdAt, getCompletedDate(job), job.totalFound)}
+        </td>
         {/* 詳細 */}
         <td className="py-3">
           <button
@@ -245,7 +286,7 @@ function JobRow({ job }: { job: Job }) {
       </tr>
       {expanded && (
         <tr className="border-b border-white/10">
-          <td colSpan={8} className="bg-[#0e0e18] px-6 py-4">
+          <td colSpan={11} className="bg-[#0e0e18] px-6 py-4">
             {job.completedAt && (
               <p className="text-xs text-gray-500 mb-3">
                 完了日時: {formatJst(job.completedAt)}
@@ -342,6 +383,9 @@ export default function RequestsPage() {
                     <th className="text-right text-xs font-medium text-gray-400 py-3 pr-4 whitespace-nowrap">件数</th>
                     <th className="text-left text-xs font-medium text-gray-400 py-3 pr-4 whitespace-nowrap">ステータス</th>
                     <th className="text-right text-xs font-medium text-gray-400 py-3 pr-4 whitespace-nowrap">収集数</th>
+                    <th className="text-left text-xs font-medium text-gray-400 py-3 pr-4 whitespace-nowrap">完了日時</th>
+                    <th className="text-right text-xs font-medium text-gray-400 py-3 pr-4 whitespace-nowrap">所要時間</th>
+                    <th className="text-right text-xs font-medium text-gray-400 py-3 pr-4 whitespace-nowrap">1件あたり</th>
                     <th className="text-left text-xs font-medium text-gray-400 py-3 whitespace-nowrap">詳細</th>
                   </tr>
                 </thead>

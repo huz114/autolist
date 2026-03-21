@@ -34,6 +34,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
               id: true,
               displayName: true,
               lineUserId: true,
+              userId: true,
             },
           },
           _count: {
@@ -45,7 +46,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     ]);
 
     // シリョログUserデータを取得（LineUser.userId = public.User.id）
-    const userIds = Array.from(new Set(jobs.map((j) => j.user.id).filter(Boolean)));
+    const userIds = Array.from(new Set(jobs.map((j) => j.user.userId).filter((id): id is string => id != null)));
     let shiryologUserMap: Record<string, ShiryologUser> = {};
 
     if (userIds.length > 0) {
@@ -68,7 +69,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       ...job,
       user: {
         ...job.user,
-        shiryologUser: shiryologUserMap[job.user.id] ?? null,
+        shiryologUser: (job.user.userId && shiryologUserMap[job.user.userId]) ?? null,
       },
     }));
 

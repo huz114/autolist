@@ -69,32 +69,28 @@ export default function Home() {
 
   const faqData = [
     {
-      q: "本当にLINEだけで完結しますか？",
-      a: "依頼はLINEで完結。リストの確認はブラウザから。フォーム送信は無料のChrome拡張で半自動化できるので、1件ずつコピペする必要はありません。",
+      q: "本当に全件フォーム付きですか？",
+      a: "はい。AIがGoogle検索で収集した企業の中から、実際に問い合わせフォームが確認できた企業のみを納品します。フォームなしの企業は自動で除外されるため、届いたリストはそのまま送信に使えます。",
     },
     {
       q: "どれくらいで収集できますか？",
-      a: "件数や業種によりますが、数時間が目安です。完了したらLINEやメールで通知しますので、依頼後は他の仕事をしていてOKです。外出中に依頼して戻ったらフォーム送信、前日の夜に依頼して翌朝フォーム送信、といった使い方がスムーズです。",
+      a: "100件あたり1〜2時間が目安です。完了したらメールで通知します。前日の夜に依頼して翌朝送信、といった使い方がスムーズです。",
     },
     {
       q: "リスト業者と何が違いますか？",
-      a: "リスト業者のデータは更新頻度が低いことも多く、フォームの有無も保証されません。オートリストはAIがリアルタイムでGoogle検索して収集するため、常に最新の情報を取得できます。さらに全件フォーム付きなので、そのままChrome拡張で送信まで完結します。",
+      a: "リスト業者のデータは更新頻度が低く、フォームの有無も保証されません。オートリストはAIがリアルタイムでGoogleから収集するため、常に最新情報。さらに全件フォーム付き保証なので、そのままChrome拡張で送信まで完結します。",
     },
     {
       q: "追加料金や月額費用はありますか？",
-      a: "一切ありません。クレジットを購入した分だけ使う、完全使い切り型です。月額課金・解約手続きなど一切不要です。",
-    },
-    {
-      q: "どんな業種・地域でも対応できますか？",
-      a: "業種・地域の指定は自由です。LINEで自由に指定できます。「新宿区の歯科医院」「大阪市のIT企業」など、あらゆる組み合わせに対応しています。",
-    },
-    {
-      q: "Chrome拡張の送信機能とは？",
-      a: "収集したリストの企業フォームに、テンプレートで作成した営業メッセージを半自動で入力・送信できるChrome拡張機能です。1件ずつコピペする手間がなくなります。",
+      a: "一切ありません。クレジットを購入した分だけ使う完全使い切り型。月額課金・解約手続きは不要です。実際に収集できた件数分のみ課金される実績課金制です。",
     },
     {
       q: "依頼をキャンセルできますか？",
-      a: "はい、LINEで「キャンセル」と送信するだけでキャンセルできます。Webのマイリスト画面からもキャンセルボタンで操作できます。収集済み分のみの課金となり、未収集分のクレジットは消費されません。",
+      a: "はい、マイリスト画面からいつでもキャンセルできます。収集済み分のみの課金で、未収集分のクレジットは消費されません。",
+    },
+    {
+      q: "LINE連携はできますか？",
+      a: "はい。無料登録後にLINE友だち追加すれば、移動中にLINEからもリスト依頼ができます。依頼結果はWebから確認できます。",
     },
   ];
 
@@ -128,10 +124,9 @@ export default function Home() {
           </Link>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
             <span style={{ fontSize: 11, color: "var(--accent)", fontWeight: 700 }}>最初の100件は無料</span>
-            <a href={LINE_URL} className="nav-cta" target="_blank" rel="noopener noreferrer">
-              {LINE_ICON}
-              LINEで無料登録
-            </a>
+            <Link href="/register" className="nav-cta">
+              100件無料でお試し
+            </Link>
           </div>
         </div>
       </nav>
@@ -141,30 +136,29 @@ export default function Home() {
         <div className="hero-inner">
           <div className="hero-badge">
             <span className="dot" />
-            AI営業リスト自動生成 × LINE完結
+            AI営業リスト自動生成 × LINE・Web対応
           </div>
           <h1>
             移動中に頼んで、<br />
             <em>着いたらリストができてた。</em>
           </h1>
           <p className="hero-sub">
-            業種と地域をLINEに送るだけ。<br />
+            業種と地域を送るだけ。<br />
             AIがGoogleから企業情報を自動収集。<br />
             届くのは、<strong style={{ color: "var(--text-primary)" }}>全件フォーム付きの企業だけ</strong>。<br />
             リスト収集からフォーム送信まで、一気通貫。<br />
             <strong style={{ color: "var(--accent)" }}>最初の100件は無料。</strong>
           </p>
           <div className="hero-cta-group">
-            <a href={LINE_URL} className="btn-primary" target="_blank" rel="noopener noreferrer">
-              {LINE_ICON}
-              LINEで無料登録する
-            </a>
-            <span className="btn-note">登録料・月額費用 無料</span>
+            <Link href="/register" className="btn-primary">
+              100件無料でお試し
+            </Link>
+            <span className="btn-note">登録料無料 · カード不要でお試し · いつでも解約</span>
           </div>
           <div className="hero-stats">
             <div>
               <div className="stat-num">1分</div>
-              <div className="stat-label">LINEで依頼するだけ</div>
+              <div className="stat-label">依頼するだけ</div>
             </div>
             <div>
               <div className="stat-num">10件〜</div>
@@ -192,16 +186,19 @@ export default function Home() {
           </div>
           <div className="problem-grid">
             {[
-              { icon: "\uD83D\uDD0D", title: "Googleで1社ずつ調べて", desc: "Excelにコピペする作業が延々と続く" },
-              { icon: "\uD83D\uDCCB", title: "100件買ったのに", desc: "フォームがある会社は半分以下" },
-              { icon: "\uD83D\uDCB8", title: "リスト業者に頼んだら", desc: "高い・古い・使えない" },
-              { icon: "\uD83D\uDEB6", title: "飛び込み先を探しながら", desc: "街を歩き回る非効率" },
+              { icon: "\uD83D\uDD0D", title: "Googleで1社ずつ調べて", desc: "Excelにコピペする作業が延々と続く", consequence: "月20時間を失い、その分だけ商談のチャンスが減っていく" },
+              { icon: "\uD83D\uDCCB", title: "100件買ったのに", desc: "フォームがある会社は半分以下", consequence: "使えないリストに払ったコスト、さらに精査する時間も無駄に" },
+              { icon: "\uD83D\uDCB8", title: "リスト業者に頼んだら", desc: "高い・古い・使えない", consequence: "1件¥30〜60、しかもフォームなしが混在。コスパが見えない" },
+              { icon: "\uD83D\uDEB6", title: "飛び込み先を探しながら", desc: "街を歩き回る非効率", consequence: "1日回れるのは10〜20社。移動時間が大半を占める" },
             ].map((item, i) => (
               <div key={i} className={`problem-card reveal reveal-delay-${i + 1}`} ref={addRevealRef}>
                 <div className="problem-icon">{item.icon}</div>
                 <div className="problem-text">
-                  <strong>{item.title}</strong>
-                  {item.desc}
+                  <div className="problem-desc">
+                    <strong>{item.title}</strong>
+                    {item.desc}
+                  </div>
+                  <span className="problem-consequence">→ {item.consequence}</span>
                 </div>
               </div>
             ))}
@@ -256,6 +253,26 @@ export default function Home() {
                 before: <>1件ずつ<br />コピペで<br />手入力</>,
                 after: <>Chrome拡張で<br />半自動送信</>,
               },
+              {
+                icon: (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: "var(--text-muted)" }}>
+                    <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                  </svg>
+                ),
+                label: "データ鮮度",
+                before: <>既存データベース<br />更新頻度は業者依存</>,
+                after: <>リアルタイム<br />Google最新情報</>,
+              },
+              {
+                icon: (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: "var(--text-muted)" }}>
+                    <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18" /><path d="M9 21V9" />
+                  </svg>
+                ),
+                label: "最低注文",
+                before: <>1,000件単位<br />少量注文不可</>,
+                after: <>10件から<br />10件単位で自由</>,
+              },
             ].map((row, i) => (
               <div key={i} className="comparison-row">
                 <div className="col-item">
@@ -282,14 +299,14 @@ export default function Home() {
               {
                 num: "01",
                 time: "わずか10秒",
-                title: "LINEで依頼",
-                desc: "「渋谷区の税理士事務所を100件」とLINEに送るだけ。業種と地域と件数を自由に指定できます。",
+                title: "リストを依頼",
+                desc: "業種と地域と件数を入力して依頼するだけ。Webから直接、またはLINE連携で移動中にも。",
               },
               {
                 num: "02",
                 time: "依頼したら放置でOK",
                 title: "AIが自動で収集",
-                desc: "Googleから企業名・URL・電話番号・フォームURLを自動収集。届くのはフォームがある企業だけ。完了したらLINEやメールで通知します。",
+                desc: "Googleから企業名・URL・電話番号・フォームURLを自動収集。届くのはフォームがある企業だけ。完了したらメールで通知します。",
               },
               {
                 num: "03",
@@ -324,7 +341,7 @@ export default function Home() {
             {[
               {
                 icon: "\uD83E\uDD16",
-                title: <>LINEで頼んだら、<br />あとは放置でいい。</>,
+                title: <>頼んだら、<br />あとは放置でいい。</>,
                 desc: "AIが自動でGoogleを検索し収集します。移動中でも、商談中でも関係なし。気づいたら出来上がっています。",
               },
               {
@@ -359,7 +376,7 @@ export default function Home() {
             </p>
           </div>
           <p style={{ marginTop: 24, textAlign: "center", fontSize: 16, color: "var(--accent)", fontWeight: 700 }}>
-            🎁 LINE友だち追加で、最初の100件は無料！
+            🎁 無料登録で、最初の100件はプレゼント！
           </p>
           <div className="pricing-grid" style={{ marginTop: 56 }}>
             {[
@@ -416,30 +433,20 @@ export default function Home() {
           <div className="final-cta-inner reveal" ref={addRevealRef}>
             <div className="section-label" style={{ textAlign: "center" }}>Get Started</div>
             <h2 className="final-cta-title">
-              今日の移動中に<br />試してみてください
+              営業の時間を、営業に使う。
             </h2>
             <p className="final-cta-sub">最初の100件は無料。<br />月額なし、いつでも始められます。</p>
             <div className="final-cta-group">
-              <a
-                href={LINE_URL}
+              <Link
+                href="/register"
                 className="btn-primary"
                 style={{ fontSize: 17, padding: "20px 40px" }}
-                target="_blank"
-                rel="noopener noreferrer"
               >
-                <svg
-                  className="line-icon"
-                  viewBox="0 0 24 24"
-                  fill="white"
-                  style={{ width: 24, height: 24, display: "inline-block", verticalAlign: "middle" }}
-                >
-                  <path d="M12 2C6.48 2 2 5.92 2 10.72c0 2.9 1.55 5.49 3.98 7.2L5 21l3.15-1.64C9.33 19.77 10.64 20 12 20c5.52 0 10-3.92 10-8.72S17.52 2 12 2zm1.1 11.47l-2.53-2.7-4.94 2.7 5.44-5.77 2.6 2.7 4.87-2.7-5.44 5.77z" />
-                </svg>
-                LINEで無料登録して試す
-              </a>
+                100件無料でお試し
+              </Link>
             </div>
             <p style={{ marginTop: 24, fontSize: 13, color: "var(--text-muted)" }}>
-              登録料無料 &middot; 月額費用なし &middot; いつでも解約可能
+              登録料無料 &middot; クレジットカード不要でお試し &middot; いつでも解約
             </p>
           </div>
         </div>

@@ -4,8 +4,8 @@ import './globals.css';
 import './lp.css';
 
 export const metadata: Metadata = {
-  title: 'オートリスト - LINEでビジネスリスト自動収集',
-  description: 'LINEでメッセージを送るだけで、AIがGoogleからビジネスリストを自動収集します。',
+  title: 'オートリスト - LINE・Webでビジネスリスト自動収集',
+  description: 'LINEまたはWebから依頼するだけで、AIがGoogleからビジネスリストを自動収集します。',
 };
 
 export default function RootLayout({

@@ -256,7 +256,7 @@ body {
   border-radius: 16px;
   padding: 28px 24px;
   display: flex;
-  align-items: flex-start;
+  align-items: stretch;
   gap: 16px;
   transition: border-color 0.3s, transform 0.3s;
 }
@@ -265,15 +265,32 @@ body {
   transform: translateY(-3px);
 }
 .problem-icon {
-  font-size: 24px;
+  align-self: flex-start;
   flex-shrink: 0;
   margin-top: 2px;
+  font-size: 24px;
 }
 .problem-text {
   font-size: 15px;
   font-weight: 500;
   line-height: 1.6;
   color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+.problem-desc {
+  min-height: 72px;
+}
+.problem-consequence {
+  padding-top: 8px;
+  font-size: 12px;
+  color: #ff6b6b;
+  font-weight: 500;
+  line-height: 1.5;
+  padding-left: 1.2em;
+  text-indent: -1.2em;
+  border-top: 1px solid rgba(255, 107, 107, 0.4);
 }
 .problem-text strong {
   display: block;

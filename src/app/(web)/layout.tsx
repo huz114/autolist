@@ -30,6 +30,12 @@ function NavBar() {
               >
                 送信履歴
               </Link>
+              <Link
+                href="/purchase"
+                className="text-sm bg-[#06C755] hover:bg-[#05b34a] text-white px-3 py-1.5 rounded-lg transition-colors"
+              >
+                クレジット購入
+              </Link>
               <button
                 onClick={() => signOut({ callbackUrl: '/login' })}
                 className="text-sm text-gray-400 hover:text-white transition-colors"

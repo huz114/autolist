@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import CancelButton from './CancelButton'
+import NewRequestButton from './NewRequestButton'
 
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   pending:    { label: '待機中',   color: 'text-gray-400 bg-gray-800' },
@@ -41,9 +42,12 @@ export default async function MyListsPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-10">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white mb-1">マイリスト</h1>
-        <p className="text-sm text-gray-400">LINEで依頼したフォーム営業リストの一覧です</p>
+      <div className="mb-8 flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white mb-1">マイリスト</h1>
+          <p className="text-sm text-gray-400">フォーム営業リストの一覧です</p>
+        </div>
+        <NewRequestButton />
       </div>
 
       {jobs.length === 0 ? (

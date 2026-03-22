@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
+import "./lp.css";
 
 const LINE_URL = "https://lin.ee/HoBQrsC";
 
@@ -366,7 +367,7 @@ export default function Home() {
       </section>
 
       {/* PRICING */}
-      <section className="lp-section pricing-section">
+      <section id="pricing" className="lp-section pricing-section">
         <div className="container">
           <div className="reveal" ref={addRevealRef} style={{ textAlign: "center" }}>
             <div className="section-label">Pricing</div>

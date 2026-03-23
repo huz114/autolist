@@ -38,11 +38,14 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  transition: background 0.4s ease, backdrop-filter 0.4s ease, border-bottom 0.4s ease;
+  background: rgba(10, 15, 28, 0.8);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid transparent;
+  transition: background 0.4s ease, border-bottom 0.4s ease;
 }
 .navbar.scrolled {
   background: rgba(10, 15, 28, 0.92);
-  backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border);
 }
 .nav-logo {
@@ -686,6 +689,9 @@ body {
 .lp-footer a { color: var(--text-muted); text-decoration: none; }
 .lp-footer a:hover { color: var(--accent); }
 
+/* ===== NAV MOBILE TEXT TOGGLE ===== */
+.nav-member-text-short { display: none; }
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
   .lp-section { padding: 72px 20px; }
@@ -697,9 +703,22 @@ body {
   .comparison-header div,
   .comparison-row div { padding: 14px 12px; font-size: 12px; }
   .pricing-grid { grid-template-columns: 1fr 1fr; }
-  .nav-cta { font-size: 11px; padding: 7px 12px; }
-  .nav-member-link { display: none; }
-  .nav-logo span[style] { font-size: 9px !important; white-space: nowrap; }
+
+  /* Mobile navbar: minimal - logo + login only */
+  .nav-subtitle { display: none !important; }
+  .nav-cta-wrap { display: none !important; }
+  .nav-free-badge { display: none !important; }
+  .nav-member-text-full { display: none; }
+  .nav-member-text-short { display: inline; }
+  .nav-member-link {
+    font-size: 13px !important;
+    padding: 0 !important;
+    border: none !important;
+    background: none !important;
+    color: rgba(255,255,255,0.7) !important;
+  }
+  .nav-right { gap: 0 !important; }
+
   .hero h1 { font-size: clamp(24px, 5vw, 64px); }
   .hero-cta-group { justify-content: center; }
   .btn-note { text-align: center; width: 100%; }

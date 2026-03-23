@@ -51,6 +51,13 @@ type Template = {
   body: string
 }
 
+const STEPS = [
+  { label: '送信者情報', shortLabel: '情報' },
+  { label: 'メッセージ', shortLabel: 'MSG' },
+  { label: '送信先確認', shortLabel: '確認' },
+  { label: '送信', shortLabel: '送信' },
+] as const
+
 const TEMPLATES: Template[] = [
   {
     id: 'service',
@@ -133,6 +140,42 @@ function findUnfilledPlaceholders(text: string): string[] {
   return matches.filter((m) => m !== '{会社名}' && m !== '{担当者名}')
 }
 
+/** 自動入力されるプレースホルダー */
+const AUTO_FILL_PLACEHOLDERS = new Set(['{会社名}', '{担当者名}'])
+
+/** テンプレートテキスト内のプレースホルダーを色分けしたReact要素に変換 */
+function renderColorCodedText(text: string): React.ReactNode[] {
+  const parts: React.ReactNode[] = []
+  const regex = /\{[^}]+\}/g
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index))
+    }
+    const placeholder = match[0]
+    const isAuto = AUTO_FILL_PLACEHOLDERS.has(placeholder)
+    parts.push(
+      <span
+        key={`${match.index}-${placeholder}`}
+        className={`inline-block rounded px-1 py-0.5 text-xs font-semibold ${
+          isAuto
+            ? 'bg-[#06C755]/15 text-[#06C755] border border-[#06C755]/30'
+            : 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+        }`}
+      >
+        {placeholder}
+      </span>
+    )
+    lastIndex = regex.lastIndex
+  }
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex))
+  }
+  return parts
+}
+
 export default function SendClient({
   jobId,
   keyword,
@@ -144,10 +187,8 @@ export default function SendClient({
   hasProfile,
   hasMessage,
 }: Props) {
-  // トグル状態（初回は開く、2回目以降は閉じる）
-  const [profileOpen, setProfileOpen] = useState(!hasProfile)
-  const [messageOpen, setMessageOpen] = useState(!hasMessage)
-  const [companiesOpen, setCompaniesOpen] = useState(false)
+  // Wizard step (0-indexed)
+  const [currentStep, setCurrentStep] = useState(0)
 
   // 送信者情報
   const [companyName, setCompanyName] = useState(initialProfile.companyName)
@@ -156,14 +197,12 @@ export default function SendClient({
   const nameInputRef = useRef<HTMLInputElement>(null)
   const compositionReadingRef = useRef('')
   const furiganaManuallyEdited = useRef(false)
-  // If profile already has furigana saved, treat as manually edited
   useEffect(() => {
     if (initialProfile.furigana) {
       furiganaManuallyEdited.current = true
     }
   }, [])
   const [senderEmail, setSenderEmail] = useState(initialProfile.senderEmail)
-
   const [phone, setPhone] = useState(initialProfile.phone)
   const [companyUrl, setCompanyUrl] = useState(initialProfile.companyUrl)
   const [title, setTitle] = useState(initialProfile.title)
@@ -176,9 +215,13 @@ export default function SendClient({
 
   // テンプレート
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null)
+  const [previewTemplate, setPreviewTemplate] = useState<Template | null>(null)
 
   // Chrome拡張モーダル
   const [extensionModalOpen, setExtensionModalOpen] = useState(false)
+
+  // 拡張機能未検出エラー
+  const [extensionNotFound, setExtensionNotFound] = useState(false)
 
   // トースト
   const [toast, setToast] = useState<ToastState>(null)
@@ -230,7 +273,6 @@ export default function SendClient({
   // テンプレート選択
   function handleSelectTemplate(template: Template) {
     setSelectedTemplate(template.id)
-    // {会社名} と {担当者名} を自動置換
     let newSubject = template.subject
     let newBody = template.body
     if (companyName.trim()) {
@@ -241,7 +283,6 @@ export default function SendClient({
       newSubject = newSubject.replace(/\{担当者名\}/g, personName.trim())
       newBody = newBody.replace(/\{担当者名\}/g, personName.trim())
     }
-    // 署名ブロックを末尾に追加
     newBody += buildSignature()
     setSubject(newSubject)
     setMessageBody(newBody)
@@ -253,7 +294,6 @@ export default function SendClient({
       showToast('件名と本文は必須です', 'error')
       return
     }
-    // 未編集プレースホルダーチェック
     const placeholders = findUnfilledPlaceholders(subject + '\n' + messageBody)
     if (placeholders.length > 0) {
       showToast(`未編集の箇所があります: ${Array.from(new Set(placeholders)).join(', ')}`, 'error')
@@ -278,8 +318,8 @@ export default function SendClient({
   }
 
   // 送信ボタンの有効状態
-  const isProfileComplete = companyName.trim() && personName.trim()
-  const isMessageComplete = subject.trim() && messageBody.trim()
+  const isProfileComplete = !!(companyName.trim() && personName.trim())
+  const isMessageComplete = !!(subject.trim() && messageBody.trim())
   const canSend = isProfileComplete && isMessageComplete
 
   const [sending, setSending] = useState(false)
@@ -287,7 +327,6 @@ export default function SendClient({
   // 送信ハンドラ
   async function handleSend() {
     if (!canSend || sending) return
-    // 未編集プレースホルダーチェック
     const placeholders = findUnfilledPlaceholders(subject + '\n' + messageBody)
     if (placeholders.length > 0) {
       const unique = Array.from(new Set(placeholders))
@@ -324,13 +363,12 @@ export default function SendClient({
 
       const { fillEntries, urls } = await res.json()
 
-      // Chrome拡張機能にデータを送信
       window.postMessage(
         { type: 'shiryolog-batch-fill-request', fillEntries, urls },
         '*'
       )
 
-      // Chrome拡張機能からの応答を待つ
+      setExtensionNotFound(false)
       let extensionResponded = false
       const handleExtensionResponse = (event: MessageEvent) => {
         if (event.data?.type === 'shiryolog-fill-ready') {
@@ -344,14 +382,10 @@ export default function SendClient({
       }
       window.addEventListener('message', handleExtensionResponse)
 
-      // 3秒待って拡張機能が応答しなければ警告
       setTimeout(() => {
         if (!extensionResponded) {
           window.removeEventListener('message', handleExtensionResponse)
-          showToast(
-            'Chrome拡張機能が検出されませんでした。拡張機能がインストールされているか確認してください。',
-            'error'
-          )
+          setExtensionNotFound(true)
         }
       }, 3000)
     } catch (err) {
@@ -364,8 +398,36 @@ export default function SendClient({
     }
   }
 
+  // Step validation for "Next" button
+  function canProceedFromStep(step: number): boolean {
+    switch (step) {
+      case 0:
+        return isProfileComplete
+      case 1:
+        return isMessageComplete
+      case 2:
+        return companies.length > 0
+      default:
+        return false
+    }
+  }
+
+  function handleNext() {
+    if (currentStep < 3 && canProceedFromStep(currentStep)) {
+      setCurrentStep(currentStep + 1)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
+
+  function handleBack() {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
+
   const inputClass =
-    'w-full bg-[#0a0a0f] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#06C755]/50 transition-colors placeholder:text-gray-600'
+    'w-full bg-[#0a0f1c] border border-[rgba(255,255,255,0.07)] text-[#f0f4f8] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[rgba(6,199,85,0.4)] transition-colors placeholder:text-[#4a6080]'
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-10">
@@ -388,29 +450,25 @@ export default function SendClient({
           className="fixed inset-0 z-50 flex items-center justify-center px-4"
           onClick={() => setExtensionModalOpen(false)}
         >
-          {/* オーバーレイ */}
           <div className="absolute inset-0 bg-black/60" />
-          {/* モーダル本体 */}
           <div
-            className="relative bg-[#16161f] border border-white/10 rounded-2xl max-w-lg w-full p-6 sm:p-8 shadow-2xl"
+            className="relative bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-2xl max-w-lg w-full p-6 sm:p-8 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* 閉じるボタン */}
             <button
               onClick={() => setExtensionModalOpen(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+              className="absolute top-4 right-4 text-[#8fa3b8] hover:text-[#f0f4f8] transition-colors cursor-pointer"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
 
-            <h2 className="text-lg font-bold text-white mb-6">Chrome拡張機能のご案内</h2>
+            <h2 className="text-lg font-bold text-[#f0f4f8] mb-6">Chrome拡張機能のご案内</h2>
 
-            {/* インストール手順 */}
             <div className="mb-6">
               <h3 className="text-sm font-semibold text-[#06C755] mb-3">インストール手順</h3>
-              <ol className="list-decimal list-inside space-y-2 text-sm text-gray-300 leading-relaxed">
+              <ol className="list-decimal list-inside space-y-2 text-sm text-[#8fa3b8] leading-relaxed">
                 <li>下のリンクからChrome ウェブストアを開く</li>
                 <li>「Chromeに追加」ボタンをクリック</li>
                 <li>「拡張機能を追加」を選択</li>
@@ -420,7 +478,7 @@ export default function SendClient({
                 href="#"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 mt-4 w-full sm:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg transition-colors"
+                className="inline-flex items-center justify-center gap-2 mt-4 w-full sm:w-auto px-6 py-3 bg-[#06C755] hover:bg-[#04a344] text-white text-sm font-semibold rounded-lg transition-colors"
               >
                 Chrome ウェブストアで入手
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -429,10 +487,9 @@ export default function SendClient({
               </a>
             </div>
 
-            {/* 使い方 */}
             <div className="mb-6">
               <h3 className="text-sm font-semibold text-[#06C755] mb-3">使い方</h3>
-              <ol className="list-decimal list-inside space-y-2 text-sm text-gray-300 leading-relaxed">
+              <ol className="list-decimal list-inside space-y-2 text-sm text-[#8fa3b8] leading-relaxed">
                 <li>このページで送信者情報・メッセージを確認</li>
                 <li>「送信する」ボタンをクリック</li>
                 <li>Chrome拡張が各企業のフォームを自動で開いて送信します</li>
@@ -440,7 +497,6 @@ export default function SendClient({
               </ol>
             </div>
 
-            {/* 注意事項 */}
             <p className="text-xs text-amber-300/80 leading-relaxed">
               ※ セキュリティ保護のため、送信開始から10分経過すると送信データは自動消去されます。
             </p>
@@ -452,300 +508,408 @@ export default function SendClient({
       <div className="mb-8">
         <Link
           href={`/autolist-results/${jobId}`}
-          className="inline-flex items-center text-sm text-gray-400 hover:text-white transition-colors mb-4"
+          className="inline-flex items-center text-sm text-[#8fa3b8] hover:text-[#f0f4f8] transition-colors mb-4"
         >
           &larr; リストに戻る
         </Link>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-white mb-1">フォーム送信</h1>
-            <p className="text-sm text-gray-400">
+            <h1 className="text-2xl font-bold text-[#f0f4f8] mb-1">フォーム送信</h1>
+            <p className="text-sm text-[#8fa3b8]">
               {keyword}
               {industry ? ` / ${industry}` : ''}
               {location ? ` / ${location}` : ''}
             </p>
           </div>
-          {/* Chrome拡張インストール案内 */}
           <div className="shrink-0 text-right">
             <button
               onClick={() => setExtensionModalOpen(true)}
-              className="inline-flex items-center gap-2 border border-white/20 hover:border-white/40 bg-white/5 hover:bg-white/10 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+              className="inline-flex items-center gap-2 border border-[rgba(255,255,255,0.1)] hover:border-[rgba(255,255,255,0.15)] bg-[rgba(255,255,255,0.04)] hover:bg-[rgba(255,255,255,0.07)] text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors cursor-pointer"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1.41 16.09V13.5H7.59L13.41 5.91V10.5h3L10.59 18.09z" />
               </svg>
               Chrome拡張をインストール
             </button>
-            <p className="text-[11px] text-gray-500 mt-1.5">
+            <p className="text-[11px] text-[#4a6080] mt-1.5">
               フォーム送信にはChrome拡張機能が必要です
             </p>
           </div>
         </div>
       </div>
 
-      {/* 送信先概要 */}
-      <div className="bg-emerald-900/20 border border-emerald-500/30 rounded-xl px-5 py-4 mb-6">
-        <p className="text-sm text-emerald-300 font-medium">
-          {companies.length}件の企業にフォーム送信します。
-          {hasProfile
-            ? 'メッセージを確認・入力して、送信ボタンを押してください。'
-            : '送信者情報とメッセージを入力して、送信ボタンを押してください。'}
-        </p>
+      {/* Progress Bar / Step Indicator */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between relative">
+          {/* Connecting line (background) */}
+          <div className="absolute top-5 left-0 right-0 h-0.5 bg-[rgba(255,255,255,0.07)]" />
+          {/* Connecting line (progress) */}
+          <div
+            className="absolute top-5 left-0 h-0.5 bg-[#06C755] transition-all duration-500"
+            style={{ width: `${(currentStep / (STEPS.length - 1)) * 100}%` }}
+          />
+
+          {STEPS.map((step, idx) => {
+            const isCompleted = idx < currentStep
+            const isCurrent = idx === currentStep
+            const isClickable = idx < currentStep || (idx === currentStep + 1 && canProceedFromStep(currentStep))
+            return (
+              <button
+                key={idx}
+                onClick={() => {
+                  if (idx < currentStep) {
+                    setCurrentStep(idx)
+                    window.scrollTo({ top: 0, behavior: 'smooth' })
+                  } else if (idx === currentStep + 1 && canProceedFromStep(currentStep)) {
+                    setCurrentStep(idx)
+                    window.scrollTo({ top: 0, behavior: 'smooth' })
+                  }
+                }}
+                className={`relative z-10 flex flex-col items-center gap-2 ${
+                  isClickable ? 'cursor-pointer' : 'cursor-default'
+                }`}
+              >
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
+                    isCompleted
+                      ? 'bg-[#06C755] text-white'
+                      : isCurrent
+                      ? 'bg-[#06C755]/20 border-2 border-[#06C755] text-[#06C755]'
+                      : 'bg-[#111827] border-2 border-[rgba(255,255,255,0.07)] text-[#4a6080]'
+                  }`}
+                >
+                  {isCompleted ? (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  ) : (
+                    idx + 1
+                  )}
+                </div>
+                <span
+                  className={`text-xs font-medium transition-colors whitespace-nowrap ${
+                    isCurrent ? 'text-[#06C755]' : isCompleted ? 'text-emerald-400' : 'text-[#4a6080]'
+                  }`}
+                >
+                  <span className="hidden sm:inline">{step.label}</span>
+                  <span className="sm:hidden">{step.shortLabel}</span>
+                </span>
+              </button>
+            )
+          })}
+        </div>
       </div>
 
-      {/* セクション1: 送信者情報（トグル） */}
-      <div className="bg-gray-800 rounded-lg mb-4 overflow-hidden">
-        <button
-          onClick={() => setProfileOpen(!profileOpen)}
-          className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-white/5 transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-bold text-[#06C755] bg-[#06C755]/10 px-2 py-1 rounded-lg">1</span>
-            <h2 className="text-base font-semibold text-white">送信者情報</h2>
-            {isProfileComplete && !profileOpen && (
-              <span className="text-xs text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded">
-                {companyName} / {personName}
-              </span>
-            )}
-          </div>
-          <span
-            className={`text-gray-400 text-sm inline-block transition-transform duration-200 ${profileOpen ? 'rotate-90' : 'rotate-0'}`}
-          >
-            &#x25B6;
-          </span>
-        </button>
+      {/* Step Content */}
+      <div className="min-h-[400px]">
+        {/* Step 1: 送信者情報 */}
+        {currentStep === 0 && (
+          <div className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-2xl p-6 sm:p-8">
+            <h2 className="text-lg font-bold text-[#f0f4f8] mb-1">送信者情報</h2>
+            <p className="text-sm text-[#8fa3b8] mb-6">
+              送信先のフォームに自動入力される情報です。正確に入力してください。
+            </p>
 
-        {profileOpen && (
-          <div className="px-5 pb-5 space-y-4">
-            <div>
-              <label className="block text-xs text-gray-500 mb-1.5">
-                会社名<span className="ml-1 text-[#06C755]">*</span>
-              </label>
-              <input
-                type="text"
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
-                placeholder="株式会社サンプル"
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1.5">
-                担当者名<span className="ml-1 text-[#06C755]">*</span>
-              </label>
-              <input
-                ref={nameInputRef}
-                type="text"
-                value={personName}
-                onChange={(e) => {
-                  setPersonName(e.target.value)
-                  if (!e.target.value) {
-                    if (!furiganaManuallyEdited.current) {
-                      setFurigana('')
-                    }
-                    furiganaManuallyEdited.current = false
-                  }
-                }}
-                onCompositionStart={() => {
-                  compositionReadingRef.current = ''
-                }}
-                onCompositionUpdate={(e) => {
-                  if (e.data && /[\u3041-\u3096]/.test(e.data)) {
-                    compositionReadingRef.current = e.data
-                  }
-                }}
-                onCompositionEnd={() => {
-                  if (compositionReadingRef.current && !furiganaManuallyEdited.current) {
-                    const katakana = toKatakana(compositionReadingRef.current)
-                    setFurigana(prev => prev + katakana)
-                  }
-                  compositionReadingRef.current = ''
-                }}
-                placeholder="山田 太郎"
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1.5">フリガナ</label>
-              <input
-                type="text"
-                value={furigana}
-                onChange={(e) => {
-                  setFurigana(e.target.value)
-                  furiganaManuallyEdited.current = true
-                }}
-                placeholder="ヤマダ タロウ"
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1.5">メールアドレス</label>
-              <input
-                type="email"
-                value={senderEmail}
-                onChange={(e) => setSenderEmail(e.target.value)}
-                placeholder="info@example.co.jp"
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1.5">電話番号</label>
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="03-0000-0000"
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1.5">会社URL</label>
-              <input
-                type="url"
-                value={companyUrl}
-                onChange={(e) => setCompanyUrl(e.target.value)}
-                placeholder="https://example.co.jp"
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1.5">役職・部署</label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="営業部 主任"
-                className={inputClass}
-              />
-            </div>
-            <button
-              onClick={handleSaveProfile}
-              disabled={savingProfile}
-              className="w-full bg-white/10 hover:bg-white/20 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg transition-colors text-sm"
-            >
-              {savingProfile ? '保存中...' : '送信者情報を保存'}
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* セクション2: メッセージ（トグル） */}
-      <div className="bg-gray-800 rounded-lg mb-4 overflow-hidden">
-        <button
-          onClick={() => setMessageOpen(!messageOpen)}
-          className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-white/5 transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-bold text-[#06C755] bg-[#06C755]/10 px-2 py-1 rounded-lg">2</span>
-            <h2 className="text-base font-semibold text-white">メッセージ</h2>
-            {isMessageComplete && !messageOpen && (
-              <span className="text-xs text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded truncate max-w-[200px]">
-                {subject}
-              </span>
-            )}
-          </div>
-          <span
-            className={`text-gray-400 text-sm inline-block transition-transform duration-200 ${messageOpen ? 'rotate-90' : 'rotate-0'}`}
-          >
-            &#x25B6;
-          </span>
-        </button>
-
-        {messageOpen && (
-          <div className="px-5 pb-5">
-            <div className="flex flex-col-reverse sm:flex-row gap-4">
-              {/* 左カラム: 件名・本文入力 */}
-              <div className="flex-1 space-y-4">
+            <div className="space-y-4 max-w-2xl">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1.5">
-                    件名<span className="ml-1 text-[#06C755]">*</span>
+                  <label className="block text-xs text-[#4a6080] mb-1.5">
+                    会社名 / 屋号<span className="ml-1 text-[#06C755]">*</span>
                   </label>
                   <input
                     type="text"
-                    value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
-                    placeholder="【ご提案】〇〇サービスのご紹介"
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    placeholder="例: 会社名 / 屋号等"
                     className={inputClass}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1.5">
-                    本文<span className="ml-1 text-[#06C755]">*</span>
+                  <label className="block text-xs text-[#4a6080] mb-1.5">
+                    担当者名<span className="ml-1 text-[#06C755]">*</span>
                   </label>
-                  <textarea
-                    value={messageBody}
-                    onChange={(e) => setMessageBody(e.target.value)}
-                    rows={10}
-                    placeholder={'はじめまして。〇〇株式会社の山田と申します。\n\nこの度はご連絡いたしました...'}
-                    className={`${inputClass} resize-none`}
+                  <input
+                    ref={nameInputRef}
+                    type="text"
+                    value={personName}
+                    onChange={(e) => {
+                      setPersonName(e.target.value)
+                      if (!e.target.value) {
+                        if (!furiganaManuallyEdited.current) {
+                          setFurigana('')
+                        }
+                        furiganaManuallyEdited.current = false
+                      }
+                    }}
+                    onCompositionStart={() => {
+                      compositionReadingRef.current = ''
+                    }}
+                    onCompositionUpdate={(e) => {
+                      if (e.data && /[\u3041-\u3096]/.test(e.data)) {
+                        compositionReadingRef.current = e.data
+                      }
+                    }}
+                    onCompositionEnd={() => {
+                      if (compositionReadingRef.current && !furiganaManuallyEdited.current) {
+                        const katakana = toKatakana(compositionReadingRef.current)
+                        setFurigana(prev => prev + katakana)
+                      }
+                      compositionReadingRef.current = ''
+                    }}
+                    placeholder="山田 太郎"
+                    className={inputClass}
                   />
                 </div>
-                <button
-                  onClick={handleSaveMessage}
-                  disabled={savingMessage}
-                  className="w-full bg-white/10 hover:bg-white/20 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg transition-colors text-sm"
-                >
-                  {savingMessage ? '保存中...' : 'メッセージを保存'}
-                </button>
               </div>
 
-              {/* 右カラム: テンプレート一覧 */}
-              <div className="sm:w-56 shrink-0 space-y-2">
-                <p className="text-xs text-gray-500 mb-1">テンプレート</p>
-                {TEMPLATES.map((tpl) => (
-                  <button
-                    key={tpl.id}
-                    onClick={() => handleSelectTemplate(tpl)}
-                    className={`w-full text-left rounded-lg p-3 transition-colors border-2 ${
-                      selectedTemplate === tpl.id
-                        ? 'border-[#06C755] bg-gray-700'
-                        : 'border-transparent bg-gray-700 hover:bg-gray-600'
-                    }`}
-                  >
-                    <p className="text-sm font-bold text-white">{tpl.title}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{tpl.description}</p>
-                  </button>
-                ))}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-[#4a6080] mb-1.5">フリガナ</label>
+                  <input
+                    type="text"
+                    value={furigana}
+                    onChange={(e) => {
+                      setFurigana(e.target.value)
+                      furiganaManuallyEdited.current = true
+                    }}
+                    placeholder="ヤマダ タロウ"
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-[#4a6080] mb-1.5">メールアドレス</label>
+                  <input
+                    type="email"
+                    value={senderEmail}
+                    onChange={(e) => setSenderEmail(e.target.value)}
+                    placeholder="info@example.co.jp"
+                    className={inputClass}
+                  />
+                </div>
               </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-[#4a6080] mb-1.5">電話番号</label>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="03-0000-0000"
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-[#4a6080] mb-1.5">役職・部署</label>
+                  <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="営業部 主任"
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs text-[#4a6080] mb-1.5">会社URL</label>
+                <input
+                  type="url"
+                  value={companyUrl}
+                  onChange={(e) => setCompanyUrl(e.target.value)}
+                  placeholder="https://example.co.jp"
+                  className={inputClass}
+                />
+              </div>
+
+              <button
+                onClick={handleSaveProfile}
+                disabled={savingProfile}
+                className="bg-[rgba(255,255,255,0.07)] hover:bg-[rgba(255,255,255,0.12)] disabled:opacity-50 text-white font-medium py-2.5 px-6 rounded-lg transition-colors text-sm cursor-pointer disabled:cursor-not-allowed"
+              >
+                {savingProfile ? '保存中...' : '送信者情報を保存'}
+              </button>
             </div>
           </div>
         )}
-      </div>
 
-      {/* セクション3: 送信先企業リスト（トグル、デフォルト閉じ） */}
-      <div className="bg-gray-800 rounded-lg mb-8 overflow-hidden">
-        <button
-          onClick={() => setCompaniesOpen(!companiesOpen)}
-          className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-white/5 transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-bold text-[#06C755] bg-[#06C755]/10 px-2 py-1 rounded-lg">3</span>
-            <h2 className="text-base font-semibold text-white">送信先企業リスト</h2>
-            <span className="text-xs text-gray-400">{companies.length}件</span>
+        {/* Step 2: メッセージ */}
+        {currentStep === 1 && (
+          <div className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-2xl p-6 sm:p-8">
+            <h2 className="text-lg font-bold text-[#f0f4f8] mb-1">メッセージ</h2>
+            <p className="text-sm text-[#8fa3b8] mb-2">
+              送信先フォームに入力するメッセージを作成してください。テンプレートから選択することもできます。
+            </p>
+            <div className="flex items-start gap-2.5 bg-[rgba(6,199,85,0.1)] border-l-4 border-[#06C755] rounded-r-xl px-5 py-4 mb-6">
+              <svg className="w-5 h-5 text-[#06C755] shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-sm text-[#c8d6e0] leading-relaxed">
+                Chrome拡張機能を使うと、このメッセージがリスト内の全企業フォームに一括で自動入力されます。一度の作成で全件に送信できるため、メッセージの内容をしっかり作り込むことをおすすめします。
+              </p>
+            </div>
+
+            <div className="space-y-6">
+              {/* 1. テンプレート一覧（2x2グリッド） */}
+              <div>
+                <p className="text-xs text-[#4a6080] mb-2">テンプレート</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {TEMPLATES.map((tpl) => (
+                    <button
+                      key={tpl.id}
+                      aria-label={`テンプレートを選択: ${tpl.title}`}
+                      onClick={() => setPreviewTemplate(previewTemplate?.id === tpl.id ? null : tpl)}
+                      className={`text-left rounded-xl p-3 transition-colors border cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#06C755] relative ${
+                        previewTemplate?.id === tpl.id
+                          ? 'border-[#06C755] bg-[#06C755]/5'
+                          : selectedTemplate === tpl.id
+                          ? 'border-[rgba(255,255,255,0.1)] bg-[#0d1320]'
+                          : 'border-[rgba(255,255,255,0.1)] bg-[#0d1320] hover:bg-[#111827] hover:border-[rgba(255,255,255,0.2)]'
+                      }`}
+                    >
+                      <p className="text-sm font-bold text-[#f0f4f8]">{tpl.title}</p>
+                      <p className="text-xs text-[#8fa3b8] mt-0.5">{tpl.description}</p>
+                      {selectedTemplate === tpl.id && previewTemplate?.id !== tpl.id && (
+                        <p className="text-[10px] text-[#06C755] mt-1">テンプレート適用中</p>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 2. テンプレートプレビュー */}
+              {previewTemplate && (
+                <div className="border border-[#06C755]/30 bg-[#06C755]/5 rounded-2xl p-5 sm:p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-bold text-[#f0f4f8]">
+                      {previewTemplate.title}
+                      <span className="ml-2 text-xs font-normal text-[#8fa3b8]">{previewTemplate.description}</span>
+                    </h3>
+                    <button
+                      onClick={() => setPreviewTemplate(null)}
+                      className="text-xs text-[#8fa3b8] hover:text-[#f0f4f8] transition-colors cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#06C755] rounded"
+                    >
+                      閉じる
+                    </button>
+                  </div>
+
+                  {/* 凡例 */}
+                  <div className="flex flex-wrap gap-3 mb-3">
+                    <span className="flex items-center gap-1.5 text-[10px] text-[#8fa3b8]">
+                      <span className="inline-block w-2.5 h-2.5 rounded-sm bg-[#06C755]/30 border border-[#06C755]/50" />
+                      自動入力（送信時に自動で差し替え）
+                    </span>
+                    <span className="flex items-center gap-1.5 text-[10px] text-[#8fa3b8]">
+                      <span className="inline-block w-2.5 h-2.5 rounded-sm bg-amber-500/30 border border-amber-500/50" />
+                      手動入力（ご自身で入力してください）
+                    </span>
+                  </div>
+
+                  {/* 件名プレビュー */}
+                  <div className="mb-3">
+                    <p className="text-[10px] text-[#4a6080] mb-1">件名</p>
+                    <div className="text-sm text-[#c8d6e0] bg-[#0a0f1c] rounded-lg px-4 py-2.5 border border-[rgba(255,255,255,0.07)]">
+                      {renderColorCodedText(previewTemplate.subject)}
+                    </div>
+                  </div>
+
+                  {/* 本文プレビュー */}
+                  <div className="mb-4">
+                    <p className="text-[10px] text-[#4a6080] mb-1">本文</p>
+                    <div className="text-sm text-[#c8d6e0] bg-[#0a0f1c] rounded-lg px-4 py-3 border border-[rgba(255,255,255,0.07)] whitespace-pre-wrap leading-relaxed max-h-[300px] overflow-y-auto">
+                      {renderColorCodedText(previewTemplate.body)}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      handleSelectTemplate(previewTemplate)
+                      setPreviewTemplate(null)
+                      setTimeout(() => {
+                        const subjectInput = document.querySelector<HTMLInputElement>('input[placeholder="【ご提案】〇〇サービスのご紹介"]')
+                        subjectInput?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                      }, 100)
+                    }}
+                    className="bg-[#06C755] hover:bg-[#04a344] text-white text-sm font-medium px-6 py-2.5 rounded-lg transition-colors cursor-pointer"
+                  >
+                    このテンプレートを使う
+                  </button>
+                </div>
+              )}
+
+              {/* 3. 件名 */}
+              <div>
+                <label className="block text-xs text-[#4a6080] mb-1.5">
+                  件名<span className="ml-1 text-[#06C755]">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder="【ご提案】〇〇サービスのご紹介"
+                  className={inputClass}
+                />
+              </div>
+
+              {/* 4. 本文 */}
+              <div>
+                <label className="block text-xs text-[#4a6080] mb-1.5">
+                  本文<span className="ml-1 text-[#06C755]">*</span>
+                </label>
+                <textarea
+                  value={messageBody}
+                  onChange={(e) => setMessageBody(e.target.value)}
+                  rows={12}
+                  placeholder={'はじめまして。〇〇株式会社の山田と申します。\n\nこの度はご連絡いたしました...'}
+                  className={`${inputClass} resize-none`}
+                />
+              </div>
+
+              {/* 5. 手動入力警告 */}
+              {(() => {
+                const unfilled = findUnfilledPlaceholders(messageBody)
+                return unfilled.length > 0 ? (
+                  <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-2.5 text-sm">
+                    <span className="text-amber-400 font-medium">手動入力が必要な箇所があります: </span>
+                    <span className="text-amber-300">{unfilled.join(', ')}</span>
+                  </div>
+                ) : null
+              })()}
+
+              {/* 6. メッセージを保存 */}
+              <button
+                onClick={handleSaveMessage}
+                disabled={savingMessage}
+                className="bg-[rgba(255,255,255,0.07)] hover:bg-[rgba(255,255,255,0.12)] disabled:opacity-50 text-white font-medium py-2.5 px-6 rounded-lg transition-colors text-sm cursor-pointer disabled:cursor-not-allowed"
+              >
+                {savingMessage ? '保存中...' : 'メッセージを保存'}
+              </button>
+            </div>
           </div>
-          <span
-            className={`text-gray-400 text-sm inline-block transition-transform duration-200 ${companiesOpen ? 'rotate-90' : 'rotate-0'}`}
-          >
-            &#x25B6;
-          </span>
-        </button>
+        )}
 
-        {companiesOpen && (
-          <div className="px-5 pb-5">
-            <div className="space-y-2 max-h-80 overflow-y-auto">
+        {/* Step 3: 送信先確認 */}
+        {currentStep === 2 && (
+          <div className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-2xl p-6 sm:p-8">
+            <h2 className="text-lg font-bold text-[#f0f4f8] mb-1">送信先確認</h2>
+            <p className="text-sm text-[#8fa3b8] mb-6">
+              以下の {companies.length}件 の企業にフォーム送信します。内容を確認してください。
+            </p>
+
+            <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2">
               {companies.map((c, idx) => (
                 <div
                   key={c.id}
-                  className="flex items-center gap-3 py-2 border-b border-white/5 last:border-0"
+                  className="flex items-center gap-3 py-2.5 px-3 rounded-lg bg-white/[0.02] border border-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.07)] transition-colors"
                 >
-                  <span className="text-xs text-gray-600 tabular-nums shrink-0 w-6 text-right">
+                  <span className="text-xs text-[#4a6080] tabular-nums shrink-0 w-8 text-right font-mono">
                     {idx + 1}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm text-white truncate">
+                    <p className="text-sm text-[#f0f4f8] truncate">
                       {c.companyName ?? c.url}
                     </p>
-                    <div className="flex gap-2 text-xs text-gray-500">
+                    <div className="flex gap-2 text-xs text-[#4a6080]">
                       {c.industry && <span>{c.industry}</span>}
                       {c.location && <span>{c.location}</span>}
                     </div>
@@ -755,34 +919,217 @@ export default function SendClient({
             </div>
           </div>
         )}
-      </div>
 
-      {/* セキュリティ注意事項 */}
-      <div className="bg-amber-900/15 border border-amber-500/25 rounded-xl px-5 py-3.5 mb-6">
-        <p className="text-xs text-amber-300/80 leading-relaxed">
-          ※ セキュリティ保護のため、一括送信を開始してから10分経過すると、Chrome拡張機能内の送信データは自動的に消去されます。その場合は、このページから再度送信を開始してください。
-        </p>
-      </div>
+        {/* Step 4: 送信 */}
+        {currentStep === 3 && (
+          <div className="space-y-6">
+            {/* 最終確認サマリー */}
+            <div className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-2xl p-6 sm:p-8">
+              <h2 className="text-lg font-bold text-[#f0f4f8] mb-6">送信内容の最終確認</h2>
 
-      {/* 送信ボタン */}
-      <div>
-        {!canSend && (
-          <p className="text-xs text-gray-500 text-center mb-3">
-            送信者情報（会社名・担当者名）とメッセージ（件名・本文）を入力してから送信できます
-          </p>
+              {/* 送信者情報サマリー */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-[#06C755]">送信者情報</h3>
+                  <button
+                    onClick={() => { setCurrentStep(0); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                    className="text-xs text-[#8fa3b8] hover:text-[#f0f4f8] transition-colors cursor-pointer"
+                  >
+                    編集する
+                  </button>
+                </div>
+                <div className="bg-white/[0.03] rounded-lg p-4 space-y-1.5 text-sm">
+                  <div className="flex gap-2">
+                    <span className="text-[#4a6080] w-24 shrink-0">会社名</span>
+                    <span className="text-[#f0f4f8]">{companyName || '-'}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="text-[#4a6080] w-24 shrink-0">担当者名</span>
+                    <span className="text-[#f0f4f8]">{personName || '-'}{furigana ? ` (${furigana})` : ''}</span>
+                  </div>
+                  {title && (
+                    <div className="flex gap-2">
+                      <span className="text-[#4a6080] w-24 shrink-0">役職</span>
+                      <span className="text-[#f0f4f8]">{title}</span>
+                    </div>
+                  )}
+                  {senderEmail && (
+                    <div className="flex gap-2">
+                      <span className="text-[#4a6080] w-24 shrink-0">メール</span>
+                      <span className="text-[#f0f4f8]">{senderEmail}</span>
+                    </div>
+                  )}
+                  {phone && (
+                    <div className="flex gap-2">
+                      <span className="text-[#4a6080] w-24 shrink-0">電話番号</span>
+                      <span className="text-[#f0f4f8]">{phone}</span>
+                    </div>
+                  )}
+                  {companyUrl && (
+                    <div className="flex gap-2">
+                      <span className="text-[#4a6080] w-24 shrink-0">会社URL</span>
+                      <span className="text-[#f0f4f8]">{companyUrl}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* メッセージサマリー */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-[#06C755]">メッセージ</h3>
+                  <button
+                    onClick={() => { setCurrentStep(1); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                    className="text-xs text-[#8fa3b8] hover:text-[#f0f4f8] transition-colors cursor-pointer"
+                  >
+                    編集する
+                  </button>
+                </div>
+                <div className="bg-white/[0.03] rounded-lg p-4 space-y-2">
+                  <p className="text-sm text-white font-medium">{subject}</p>
+                  <p className="text-sm text-[#8fa3b8] whitespace-pre-wrap line-clamp-6">{messageBody}</p>
+                </div>
+              </div>
+
+              {/* 送信先サマリー */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-[#06C755]">
+                    送信先 <span className="text-white ml-1">{companies.length}件</span>
+                  </h3>
+                  <button
+                    onClick={() => { setCurrentStep(2); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                    className="text-xs text-[#8fa3b8] hover:text-[#f0f4f8] transition-colors cursor-pointer"
+                  >
+                    確認する
+                  </button>
+                </div>
+                <div className="bg-white/[0.03] rounded-lg p-4">
+                  <div className="flex flex-wrap gap-2">
+                    {companies.slice(0, 5).map((c) => (
+                      <span key={c.id} className="text-xs bg-[rgba(255,255,255,0.04)] text-[#8fa3b8] px-2.5 py-1 rounded-full">
+                        {c.companyName ?? c.url}
+                      </span>
+                    ))}
+                    {companies.length > 5 && (
+                      <span className="text-xs text-[#4a6080] px-2.5 py-1">
+                        ...他 {companies.length - 5}件
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* セキュリティ注意事項 */}
+            <div className="bg-amber-900/15 border border-amber-500/25 rounded-xl px-5 py-3.5">
+              <p className="text-xs text-amber-300/80 leading-relaxed">
+                ※ セキュリティ保護のため、一括送信を開始してから10分経過すると、Chrome拡張機能内の送信データは自動的に消去されます。その場合は、このページから再度送信を開始してください。
+              </p>
+            </div>
+
+            {/* 送信ボタン */}
+            <div>
+              {!canSend && (
+                <p className="text-xs text-[#4a6080] text-center mb-3">
+                  送信者情報（会社名・担当者名）とメッセージ（件名・本文）を入力してから送信できます
+                </p>
+              )}
+              {extensionNotFound && (
+                <div className="text-center mb-3 space-y-2">
+                  <p className="text-xs text-red-400">
+                    Chrome拡張機能が検出できません。インストールしてからページをリロードしてください。
+                  </p>
+                  <button
+                    onClick={() => setExtensionModalOpen(true)}
+                    className="inline-flex items-center gap-2 text-sm font-medium text-[#06C755] hover:text-[#04a344] transition-colors cursor-pointer"
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1.41 16.09V13.5H7.59L13.41 5.91V10.5h3L10.59 18.09z" />
+                    </svg>
+                    Chrome拡張をインストール
+                  </button>
+                </div>
+              )}
+              <button
+                onClick={handleSend}
+                disabled={!canSend || sending}
+                className={`w-full font-medium py-4 rounded-xl transition-colors text-base ${
+                  canSend && !sending
+                    ? 'bg-[#06C755] hover:bg-[#04a344] text-white cursor-pointer'
+                    : 'bg-gray-700 text-[#4a6080] cursor-not-allowed'
+                }`}
+              >
+                {sending
+                  ? '送信準備中...'
+                  : `${companies.length}件に送信する`}
+              </button>
+              <a
+                href="/send-history"
+                className="block text-center text-sm text-[#8fa3b8] hover:text-[#06C755] transition-colors mt-3 cursor-pointer"
+              >
+                送信履歴を見る →
+              </a>
+            </div>
+          </div>
         )}
-        <button
-          onClick={handleSend}
-          disabled={!canSend || sending}
-          className={`w-full font-medium py-4 rounded-xl transition-colors text-base ${
-            canSend && !sending
-              ? 'bg-[#06C755] hover:bg-[#05b34a] text-white cursor-pointer'
-              : 'bg-gray-700 text-gray-500 cursor-not-allowed'
-          }`}
-        >
-          {sending ? '送信準備中...' : `${companies.length}件に送信する`}
-        </button>
       </div>
+
+      {/* Navigation Buttons (Steps 0-2) */}
+      {currentStep < 3 && (
+        <div className="flex items-center justify-between mt-8">
+          <div>
+            {currentStep > 0 && (
+              <button
+                onClick={handleBack}
+                className="inline-flex items-center gap-2 text-sm text-[#8fa3b8] hover:text-[#f0f4f8] transition-colors px-5 py-2.5 rounded-lg border border-[rgba(255,255,255,0.07)] hover:border-[rgba(255,255,255,0.1)] cursor-pointer"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+                戻る
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            {!canProceedFromStep(currentStep) && (
+              <p className="text-xs text-[#4a6080] hidden sm:block">
+                {currentStep === 0 ? '会社名と担当者名を入力してください' : '件名と本文を入力してください'}
+              </p>
+            )}
+            <button
+              onClick={handleNext}
+              disabled={!canProceedFromStep(currentStep)}
+              className={`inline-flex items-center gap-2 text-sm font-medium px-6 py-2.5 rounded-lg transition-colors ${
+                canProceedFromStep(currentStep)
+                  ? 'bg-[#06C755] hover:bg-[#04a344] text-white cursor-pointer'
+                  : 'bg-gray-700 text-[#4a6080] cursor-not-allowed'
+              }`}
+            >
+              次へ
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Back button on step 4 */}
+      {currentStep === 3 && (
+        <div className="mt-6">
+          <button
+            onClick={handleBack}
+            className="inline-flex items-center gap-2 text-sm text-[#8fa3b8] hover:text-[#f0f4f8] transition-colors px-5 py-2.5 rounded-lg border border-[rgba(255,255,255,0.07)] hover:border-[rgba(255,255,255,0.1)]"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+            戻る
+          </button>
+        </div>
+      )}
+
     </div>
   )
 }

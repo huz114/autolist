@@ -121,7 +121,7 @@ export default function NewRequestButton() {
     <>
       <button
         onClick={handleOpen}
-        className="bg-[#06C755] hover:bg-[#05b34a] text-white font-medium px-5 py-2.5 rounded-lg transition-colors text-sm"
+        className="bg-[#06C755] hover:bg-[#04a344] text-white font-bold px-5 py-2.5 rounded-full transition-all text-sm hover:shadow-[0_0_20px_rgba(6,199,85,0.3)]"
       >
         + 新規依頼
       </button>
@@ -133,28 +133,28 @@ export default function NewRequestButton() {
             if (e.target === e.currentTarget) handleClose()
           }}
         >
-          <div className="bg-[#16161f] border border-white/10 rounded-2xl w-full max-w-md mx-4 p-6 shadow-2xl">
+          <div className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-2xl w-full max-w-md mx-4 p-6 shadow-2xl">
             {success ? (
               <div className="text-center py-8">
-                <div className="text-emerald-400 text-4xl mb-3">&#10003;</div>
-                <p className="text-white font-medium text-lg">依頼を受け付けました</p>
-                <p className="text-gray-400 text-sm mt-1">リスト収集を開始します</p>
+                <div className="text-[#06C755] text-4xl mb-3">&#10003;</div>
+                <p className="text-[#f0f4f8] font-medium text-lg">依頼を受け付けました</p>
+                <p className="text-[#8fa3b8] text-sm mt-1">リスト収集を開始します</p>
               </div>
             ) : view === 'plans' ? (
               <>
                 <div className="flex items-center gap-3 mb-1">
                   <button
                     onClick={() => { setView('form'); setError(null); }}
-                    className="text-gray-400 hover:text-white transition-colors"
+                    className="text-[#8fa3b8] hover:text-[#f0f4f8] transition-colors"
                     aria-label="戻る"
                   >
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                       <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </button>
-                  <h2 className="text-lg font-bold text-white">クレジットを購入</h2>
+                  <h2 className="text-lg font-bold text-[#f0f4f8]">クレジットを購入</h2>
                 </div>
-                <p className="text-sm text-gray-400 mb-5 ml-8">
+                <p className="text-sm text-[#8fa3b8] mb-5 ml-8">
                   プランを選択して購入してください
                 </p>
 
@@ -164,10 +164,10 @@ export default function NewRequestButton() {
                       key={plan.id}
                       onClick={() => handleCheckout(plan.id)}
                       disabled={checkoutLoading !== null}
-                      className={`w-full text-left relative rounded-xl border px-4 py-3.5 transition-all ${
+                      className={`w-full text-left relative rounded-2xl border px-4 py-3.5 transition-all ${
                         plan.popular
-                          ? 'border-[#06C755]/50 bg-[#06C755]/5 hover:bg-[#06C755]/10'
-                          : 'border-white/10 bg-[#0a0a0f] hover:bg-white/5'
+                          ? 'border-[rgba(6,199,85,0.4)] bg-[rgba(6,199,85,0.05)] hover:bg-[rgba(6,199,85,0.1)]'
+                          : 'border-[rgba(255,255,255,0.07)] bg-[#0a0f1c] hover:bg-[#152035]'
                       } ${
                         checkoutLoading === plan.id ? 'opacity-70' : ''
                       } disabled:cursor-not-allowed`}
@@ -180,18 +180,18 @@ export default function NewRequestButton() {
                       <div className="flex items-center justify-between">
                         <div>
                           <div className="flex items-baseline gap-1.5">
-                            <span className="text-white font-bold text-lg">
+                            <span className="text-[#f0f4f8] font-bold text-lg">
                               &yen;{plan.price.toLocaleString()}
                             </span>
-                            <span className="text-gray-400 text-sm">
+                            <span className="text-[#8fa3b8] text-sm">
                               / {plan.credits.toLocaleString()}件
                             </span>
                           </div>
-                          <p className="text-gray-500 text-xs mt-0.5">
+                          <p className="text-[#4a6080] text-xs mt-0.5">
                             &yen;{plan.unitPrice}/件
                           </p>
                         </div>
-                        <div className="text-gray-400">
+                        <div className="text-[#8fa3b8]">
                           {checkoutLoading === plan.id ? (
                             <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
                               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
@@ -209,26 +209,26 @@ export default function NewRequestButton() {
                 </div>
 
                 {error && (
-                  <div className="bg-red-900/20 border border-red-500/20 rounded-lg px-4 py-2.5 mt-4">
-                    <p className="text-red-400 text-sm">{error}</p>
+                  <div className="bg-[rgba(255,71,87,0.1)] border border-[rgba(255,71,87,0.3)] rounded-xl px-4 py-2.5 mt-4">
+                    <p className="text-[#ff4757] text-sm">{error}</p>
                   </div>
                 )}
 
-                <p className="text-gray-600 text-xs text-center mt-4">
+                <p className="text-[#4a6080] text-xs text-center mt-4">
                   Stripeの安全な決済ページに移動します
                 </p>
               </>
             ) : (
               <>
-                <h2 className="text-lg font-bold text-white mb-1">新規リスト依頼</h2>
-                <p className="text-sm text-gray-400 mb-6">
+                <h2 className="text-lg font-bold text-[#f0f4f8] mb-1">新規リスト依頼</h2>
+                <p className="text-sm text-[#8fa3b8] mb-6">
                   業種・地域・件数を指定してリストを作成します
                 </p>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1.5">
-                      業種 <span className="text-red-400">*</span>
+                    <label className="block text-sm font-medium text-[#8fa3b8] mb-1.5">
+                      業種 <span className="text-[#ff4757]">*</span>
                     </label>
                     <input
                       type="text"
@@ -236,13 +236,13 @@ export default function NewRequestButton() {
                       onChange={(e) => setIndustry(e.target.value)}
                       placeholder="例: 整体院、美容室、不動産会社"
                       required
-                      className="w-full bg-[#0a0a0f] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-[#06C755]/50 focus:ring-1 focus:ring-[#06C755]/30 transition-colors"
+                      className="w-full bg-[#0a0f1c] border border-[rgba(255,255,255,0.07)] rounded-xl px-4 py-2.5 text-[#f0f4f8] text-sm placeholder:text-[#4a6080] focus:outline-none focus:border-[rgba(6,199,85,0.4)] transition-colors"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1.5">
-                      地域 <span className="text-red-400">*</span>
+                    <label className="block text-sm font-medium text-[#8fa3b8] mb-1.5">
+                      地域 <span className="text-[#ff4757]">*</span>
                     </label>
                     <input
                       type="text"
@@ -250,18 +250,18 @@ export default function NewRequestButton() {
                       onChange={(e) => setLocation(e.target.value)}
                       placeholder="例: 東京都、大阪市、福岡県"
                       required
-                      className="w-full bg-[#0a0a0f] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:border-[#06C755]/50 focus:ring-1 focus:ring-[#06C755]/30 transition-colors"
+                      className="w-full bg-[#0a0f1c] border border-[rgba(255,255,255,0.07)] rounded-xl px-4 py-2.5 text-[#f0f4f8] text-sm placeholder:text-[#4a6080] focus:outline-none focus:border-[rgba(6,199,85,0.4)] transition-colors"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1.5">
+                    <label className="block text-sm font-medium text-[#8fa3b8] mb-1.5">
                       件数
                     </label>
                     <select
                       value={targetCount}
                       onChange={(e) => setTargetCount(Number(e.target.value))}
-                      className="w-full bg-[#0a0a0f] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#06C755]/50 focus:ring-1 focus:ring-[#06C755]/30 transition-colors appearance-none cursor-pointer"
+                      className="w-full bg-[#0a0f1c] border border-[rgba(255,255,255,0.07)] rounded-xl px-4 py-2.5 text-[#f0f4f8] text-sm focus:outline-none focus:border-[rgba(6,199,85,0.4)] transition-colors appearance-none cursor-pointer"
                     >
                       {COUNT_OPTIONS.map((n) => (
                         <option key={n} value={n}>
@@ -272,29 +272,29 @@ export default function NewRequestButton() {
                   </div>
 
                   {/* クレジット表示 */}
-                  <div className="bg-[#0a0a0f] border border-white/10 rounded-lg px-4 py-3">
+                  <div className="bg-[#0a0f1c] border border-[rgba(255,255,255,0.07)] rounded-xl px-4 py-3">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-400">残りクレジット</span>
+                      <span className="text-[#8fa3b8]">残りクレジット</span>
                       {credits !== null ? (
-                        <span className={`font-medium ${insufficientCredits ? 'text-red-400' : 'text-white'}`}>
+                        <span className={`font-medium ${insufficientCredits ? 'text-[#ff4757]' : 'text-[#f0f4f8]'}`}>
                           {credits}件
                         </span>
                       ) : creditsError ? (
-                        <span className="text-red-400 text-xs">{creditsError}</span>
+                        <span className="text-[#ff4757] text-xs">{creditsError}</span>
                       ) : (
-                        <span className="text-gray-500">読み込み中...</span>
+                        <span className="text-[#4a6080]">読み込み中...</span>
                       )}
                     </div>
                     {insufficientCredits && (
-                      <p className="text-red-400 text-xs mt-1.5">
+                      <p className="text-[#ff4757] text-xs mt-1.5">
                         クレジットが不足しています（必要: {targetCount}件）
                       </p>
                     )}
                   </div>
 
                   {error && (
-                    <div className="bg-red-900/20 border border-red-500/20 rounded-lg px-4 py-2.5">
-                      <p className="text-red-400 text-sm">{error}</p>
+                    <div className="bg-[rgba(255,71,87,0.1)] border border-[rgba(255,71,87,0.3)] rounded-xl px-4 py-2.5">
+                      <p className="text-[#ff4757] text-sm">{error}</p>
                     </div>
                   )}
 
@@ -303,14 +303,14 @@ export default function NewRequestButton() {
                       type="button"
                       onClick={handleClose}
                       disabled={submitting}
-                      className="flex-1 bg-transparent border border-white/10 text-gray-300 hover:text-white hover:border-white/20 font-medium py-2.5 rounded-lg transition-colors text-sm disabled:opacity-50"
+                      className="flex-1 bg-transparent border border-[rgba(255,255,255,0.07)] text-[#8fa3b8] hover:text-[#f0f4f8] hover:border-[rgba(255,255,255,0.15)] font-medium py-2.5 rounded-full transition-colors text-sm disabled:opacity-50"
                     >
                       キャンセル
                     </button>
                     <button
                       type="submit"
                       disabled={submitting || insufficientCredits || !industry.trim() || !location.trim()}
-                      className="flex-1 bg-[#06C755] hover:bg-[#05b34a] disabled:bg-gray-700 disabled:text-gray-500 text-white font-medium py-2.5 rounded-lg transition-colors text-sm disabled:cursor-not-allowed"
+                      className="flex-1 bg-[#06C755] hover:bg-[#04a344] disabled:bg-[#0d1526] disabled:text-[#4a6080] text-white font-bold py-2.5 rounded-full transition-all text-sm disabled:cursor-not-allowed hover:shadow-[0_0_20px_rgba(6,199,85,0.3)]"
                     >
                       {submitting ? '送信中...' : '依頼する'}
                     </button>
@@ -321,7 +321,7 @@ export default function NewRequestButton() {
                       <button
                         type="button"
                         onClick={() => { setView('plans'); setError(null); }}
-                        className="inline-flex items-center gap-1 text-[#06C755] hover:text-[#05b34a] text-sm font-medium transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1 text-[#06C755] hover:text-[#04a344] text-sm font-medium transition-colors cursor-pointer"
                       >
                         クレジットを購入する &rarr;
                       </button>

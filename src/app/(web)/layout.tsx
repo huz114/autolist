@@ -1,44 +1,50 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { signOut, useSession } from 'next-auth/react'
 import { SessionProvider } from 'next-auth/react'
 
 function NavBar() {
   const { data: session } = useSession()
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  const closeMenu = () => setMenuOpen(false)
 
   return (
-    <header className="border-b border-white/10 bg-[#0a0a0f]/80 backdrop-blur-sm sticky top-0 z-50">
+    <header className="border-b border-[rgba(255,255,255,0.07)] bg-[#0a0f1c]/92 backdrop-blur-xl sticky top-0 z-50">
       <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="text-lg font-bold text-white">
+        <Link href={session ? "/my-lists" : "/"} className="flex items-center gap-2" onClick={closeMenu}>
+          <span className="text-lg font-black text-[#f0f4f8]" style={{ letterSpacing: '-0.5px' }}>
             オート<span className="text-[#06C755]">リスト</span>
           </span>
         </Link>
-        <nav className="flex items-center gap-4">
+
+        {/* Desktop nav */}
+        <nav className="hidden md:flex items-center gap-4">
           {session ? (
             <>
               <Link
                 href="/my-lists"
-                className="text-sm text-gray-300 hover:text-white transition-colors"
+                className="text-sm text-[#8fa3b8] hover:text-[#f0f4f8] transition-colors"
               >
                 マイリスト
               </Link>
               <Link
                 href="/send-history"
-                className="text-sm text-gray-300 hover:text-white transition-colors"
+                className="text-sm text-[#8fa3b8] hover:text-[#f0f4f8] transition-colors"
               >
                 送信履歴
               </Link>
               <Link
                 href="/purchase"
-                className="text-sm bg-[#06C755] hover:bg-[#05b34a] text-white px-3 py-1.5 rounded-lg transition-colors"
+                className="text-sm bg-[#06C755] hover:bg-[#04a344] text-white px-4 py-1.5 rounded-full font-bold transition-all hover:shadow-[0_0_20px_rgba(6,199,85,0.5)]"
               >
                 クレジット購入
               </Link>
               <button
                 onClick={() => signOut({ callbackUrl: '/login' })}
-                className="text-sm text-gray-400 hover:text-white transition-colors"
+                className="text-sm text-[#4a6080] hover:text-[#f0f4f8] transition-colors"
               >
                 ログアウト
               </button>
@@ -47,13 +53,105 @@ function NavBar() {
             <>
               <Link
                 href="/login"
-                className="text-sm text-gray-300 hover:text-white transition-colors"
+                className="text-sm text-[#8fa3b8] hover:text-[#f0f4f8] transition-colors"
               >
                 ログイン
               </Link>
               <Link
                 href="/register"
-                className="text-sm bg-[#06C755] hover:bg-[#05b34a] text-white px-4 py-1.5 rounded-lg transition-colors"
+                className="text-sm bg-[#06C755] hover:bg-[#04a344] text-white px-5 py-1.5 rounded-full font-bold transition-all hover:shadow-[0_0_20px_rgba(6,199,85,0.5)]"
+              >
+                登録
+              </Link>
+            </>
+          )}
+        </nav>
+
+        {/* Hamburger button (mobile) */}
+        <button
+          className="md:hidden relative w-8 h-8 flex items-center justify-center"
+          onClick={() => setMenuOpen(!menuOpen)}
+          aria-label="メニューを開く"
+        >
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#f0f4f8"
+            strokeWidth="2"
+            strokeLinecap="round"
+            className="overflow-visible"
+          >
+            {menuOpen ? (
+              <>
+                <line x1="4" y1="4" x2="20" y2="20" />
+                <line x1="20" y1="4" x2="4" y2="20" />
+              </>
+            ) : (
+              <>
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </>
+            )}
+          </svg>
+        </button>
+      </div>
+
+      {/* Mobile menu */}
+      <div
+        className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
+          menuOpen ? 'max-h-80 opacity-100' : 'max-h-0 opacity-0'
+        }`}
+      >
+        <nav className="border-t border-[rgba(255,255,255,0.07)] px-4 py-4 flex flex-col gap-3 bg-[#0a0f1c]/95 backdrop-blur-xl">
+          {session ? (
+            <>
+              <Link
+                href="/my-lists"
+                onClick={closeMenu}
+                className="text-sm text-[#8fa3b8] hover:text-[#f0f4f8] transition-colors py-2 border-b border-[rgba(255,255,255,0.07)]"
+              >
+                マイリスト
+              </Link>
+              <Link
+                href="/send-history"
+                onClick={closeMenu}
+                className="text-sm text-[#8fa3b8] hover:text-[#f0f4f8] transition-colors py-2 border-b border-[rgba(255,255,255,0.07)]"
+              >
+                送信履歴
+              </Link>
+              <Link
+                href="/purchase"
+                onClick={closeMenu}
+                className="text-sm text-[#06C755] hover:text-[#04a344] font-bold transition-colors py-2 border-b border-[rgba(255,255,255,0.07)]"
+              >
+                クレジット購入
+              </Link>
+              <button
+                onClick={() => {
+                  closeMenu()
+                  signOut({ callbackUrl: '/login' })
+                }}
+                className="text-sm text-[#4a6080] hover:text-[#f0f4f8] transition-colors py-2 text-left"
+              >
+                ログアウト
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                onClick={closeMenu}
+                className="text-sm text-[#8fa3b8] hover:text-[#f0f4f8] transition-colors py-2 border-b border-[rgba(255,255,255,0.07)]"
+              >
+                ログイン
+              </Link>
+              <Link
+                href="/register"
+                onClick={closeMenu}
+                className="text-sm text-center bg-[#06C755] hover:bg-[#04a344] text-white px-4 py-2.5 rounded-full transition-all font-bold hover:shadow-[0_0_20px_rgba(6,199,85,0.5)]"
               >
                 登録
               </Link>
@@ -68,21 +166,20 @@ function NavBar() {
 export default function WebLayout({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider>
-      <div className="min-h-screen bg-[#0a0a0f] text-white flex flex-col">
+      <div className="min-h-screen bg-[#0a0f1c] text-[#f0f4f8] flex flex-col">
         <NavBar />
         <main className="flex-1">{children}</main>
-        <footer className="border-t border-white/10 py-6 text-center text-gray-500">
-          {/* TODO: 公開前に法的ページの内容を作成すること */}
-          <div className="flex items-center justify-center gap-2 text-xs text-gray-400 mb-2">
-            <Link href="/legal/tokushoho" className="hover:text-white transition-colors">特定商取引法に基づく表記</Link>
+        <footer className="border-t border-[rgba(255,255,255,0.07)] bg-[#060a14] py-6 text-center">
+          <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-[#4a6080] mb-2">
+            <Link href="/legal/tokushoho" className="hover:text-[#06C755] transition-colors">特定商取引法に基づく表記</Link>
             <span>|</span>
-            <Link href="/legal/privacy" className="hover:text-white transition-colors">プライバシーポリシー</Link>
+            <Link href="/legal/privacy" className="hover:text-[#06C755] transition-colors">プライバシーポリシー</Link>
             <span>|</span>
-            <Link href="/legal/terms" className="hover:text-white transition-colors">利用規約</Link>
+            <Link href="/legal/terms" className="hover:text-[#06C755] transition-colors">利用規約</Link>
             <span>|</span>
-            <Link href="/legal/company" className="hover:text-white transition-colors">運営者情報</Link>
+            <Link href="/legal/company" className="hover:text-[#06C755] transition-colors">運営者情報</Link>
           </div>
-          <div className="text-sm">
+          <div className="text-sm text-[#4a6080]">
             &copy; 2026 オートリスト — powered by{' '}
             <a
               href="https://shiryolog.com"

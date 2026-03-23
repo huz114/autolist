@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { prisma } from '@/lib/prisma';
-import { sendMessage } from '@/lib/line';
+// import { sendMessage } from '@/lib/line'; // 無効化: 2026-03-23
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2026-02-25.clover',
@@ -99,16 +99,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         `Credits added: lineUserId=${lineUserId}, added=${creditsToAdd}, newTotal=${updatedUser.credits}`
       );
 
-      // LINE完了通知
-      const completionMessage = `✅ チャージ完了しました！
-
-💳 ${creditsToAdd}件のクレジットが付与されました。
-残クレジット: ${updatedUser.credits}件
-
-引き続きリスト収集をご利用いただけます。
-業種・地域・件数を送信してください。`;
-
-      await sendMessage(lineUserId, completionMessage);
+      // LINE完了通知（無効化: 2026-03-23）
+      // const completionMessage = `✅ チャージ完了しました！
+      //
+      // 💳 ${creditsToAdd}件のクレジットが付与されました。
+      // 残クレジット: ${updatedUser.credits}件
+      //
+      // 引き続きリスト収集をご利用いただけます。
+      // 業種・地域・件数を送信してください。`;
+      //
+      // await sendMessage(lineUserId, completionMessage);
     } catch (dbError) {
       console.error('Database error:', dbError);
       return NextResponse.json({ error: 'Database error' }, { status: 500 });

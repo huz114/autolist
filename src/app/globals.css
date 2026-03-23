@@ -3,11 +3,24 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 255, 255, 255;
-  --background-rgb: 10, 10, 15;
+  --foreground-rgb: 240, 244, 248;
+  --background-rgb: 10, 15, 28;
+  /* LP-aligned design tokens */
+  --bg-primary: #0a0f1c;
+  --bg-secondary: #0d1526;
+  --bg-card: #111827;
+  --bg-card-hover: #152035;
+  --accent: #06C755;
+  --accent-dark: #04a344;
+  --text-primary: #f0f4f8;
+  --text-secondary: #8fa3b8;
+  --text-muted: #4a6080;
+  --border-color: rgba(255, 255, 255, 0.07);
+  --border-accent: rgba(6, 199, 85, 0.4);
 }
 
 body {
+  font-family: 'Noto Sans JP', sans-serif;
   color: rgb(var(--foreground-rgb));
   background-color: rgb(var(--background-rgb));
 }

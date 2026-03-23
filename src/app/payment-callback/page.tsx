@@ -14,8 +14,8 @@ function PaymentCallbackContent() {
 
   useEffect(() => {
     const status = searchParams.get('status') || 'success';
-    router.replace(`/my-lists?payment=${status}`);
-  }, [router, searchParams]);
+    window.location.href = `/my-lists?payment=${status}`;
+  }, [searchParams]);
 
   return (
     <div className="text-center">

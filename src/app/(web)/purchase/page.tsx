@@ -55,64 +55,67 @@ export default function PurchasePage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-10">
-      <h1 className="text-2xl font-bold text-white mb-2">クレジット購入</h1>
-      <p className="text-gray-400 text-sm mb-8">
-        プランを選択してクレジットを購入してください。購入したクレジットでリスト収集を依頼できます。
+    <div className="max-w-3xl mx-auto px-4 py-4 sm:py-10">
+      <h1 className="text-lg sm:text-2xl font-bold text-[#f0f4f8] mb-1 sm:mb-2">クレジット購入</h1>
+      <p className="text-[#8fa3b8] text-xs sm:text-sm mb-3 sm:mb-8">
+        プランを選択してクレジットを購入できます。
       </p>
 
       {/* Current credit balance */}
-      <div className="bg-[#16161f] border border-white/10 rounded-xl px-5 py-4 mb-8">
+      <div className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-xl sm:rounded-2xl px-3 sm:px-5 py-2.5 sm:py-4 mb-3 sm:mb-8">
         <div className="flex items-center justify-between">
-          <span className="text-gray-400 text-sm">現在の残りクレジット</span>
+          <span className="text-[#8fa3b8] text-xs sm:text-sm">残りクレジット</span>
           {credits !== null ? (
-            <span className="text-white font-bold text-xl">{credits.toLocaleString()}件</span>
+            <span className="text-[#f0f4f8] font-bold text-base sm:text-xl">{credits.toLocaleString()}件</span>
           ) : creditsError ? (
-            <span className="text-red-400 text-sm">{creditsError}</span>
+            <span className="text-[#ff4757] text-xs sm:text-sm">{creditsError}</span>
           ) : (
-            <span className="text-gray-500 text-sm">読み込み中...</span>
+            <span className="text-[#4a6080] text-xs sm:text-sm">読み込み中...</span>
           )}
         </div>
       </div>
 
       {/* Plan cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-2 sm:gap-4">
         {PLANS.map((plan) => (
           <div
             key={plan.id}
-            className={`relative rounded-2xl border p-6 transition-all ${
+            className={`relative rounded-xl sm:rounded-2xl border p-3 sm:p-6 transition-all ${
               plan.popular
-                ? 'border-[#06C755]/30 bg-[#16161f]'
-                : 'border-white/10 bg-[#16161f]'
+                ? 'border-[#06C755] bg-[#111827] shadow-[0_0_40px_rgba(6,199,85,0.2),0_0_0_1px_#06C755]'
+                : 'border-[rgba(255,255,255,0.07)] bg-[#111827] hover:border-[rgba(6,199,85,0.4)]'
             }`}
           >
             {plan.popular && (
-              <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-[#06C755]/80 text-white text-[10px] font-medium px-2 py-0.5 rounded-full">
-                人気
+              <span className="absolute -top-2.5 sm:-top-3 left-1/2 -translate-x-1/2 bg-[#06C755] text-white text-[9px] sm:text-[11px] font-extrabold px-2 sm:px-3 py-0.5 sm:py-1 rounded-full whitespace-nowrap tracking-wide">
+                おすすめ
               </span>
             )}
 
-            <div className="text-center mb-4 pt-1">
-              <div className="text-3xl font-bold text-white">
+            <div className="text-center mb-2 sm:mb-4 pt-0.5 sm:pt-1">
+              <div className="text-[#4a6080] text-[11px] sm:text-sm mb-0.5 sm:mb-2">{plan.credits.toLocaleString()}件分</div>
+              <div className="text-xl sm:text-3xl font-black text-[#f0f4f8]">
                 &yen;{plan.price.toLocaleString()}
               </div>
-              <div className="text-gray-400 text-sm mt-1">
-                {plan.credits.toLocaleString()}件分
+              <div className="text-[#06C755] text-[11px] sm:text-sm font-bold mt-0.5 sm:mt-1">
+                &yen;{plan.unitPrice} / 件
               </div>
             </div>
 
-            <div className="text-center text-gray-500 text-xs mb-5">
-              1件あたり &yen;{plan.unitPrice}
-            </div>
+            <div className="h-px bg-[rgba(255,255,255,0.07)] my-2 sm:my-4" />
 
             <button
               onClick={() => handleCheckout(plan.id)}
               disabled={checkoutLoading !== null}
-              className="w-full py-2.5 rounded-lg font-medium text-sm transition-colors disabled:cursor-not-allowed bg-white/10 hover:bg-white/15 text-white disabled:opacity-50"
+              className={`w-full py-1.5 sm:py-2.5 rounded-full font-bold text-xs sm:text-sm transition-all disabled:cursor-not-allowed ${
+                plan.popular
+                  ? 'bg-[#06C755] hover:bg-[#04a344] text-white hover:shadow-[0_0_20px_rgba(6,199,85,0.5)] disabled:opacity-50'
+                  : 'bg-[rgba(255,255,255,0.07)] hover:bg-[rgba(255,255,255,0.12)] text-[#f0f4f8] disabled:opacity-50'
+              }`}
             >
               {checkoutLoading === plan.id ? (
-                <span className="inline-flex items-center gap-2">
-                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                <span className="inline-flex items-center gap-1 sm:gap-2">
+                  <svg className="animate-spin h-3 w-3 sm:h-4 sm:w-4" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
@@ -127,14 +130,23 @@ export default function PurchasePage() {
       </div>
 
       {error && (
-        <div className="bg-red-900/20 border border-red-500/20 rounded-lg px-4 py-3 mt-6">
-          <p className="text-red-400 text-sm">{error}</p>
+        <div className="bg-[rgba(255,71,87,0.1)] border border-[rgba(255,71,87,0.3)] rounded-xl px-4 py-3 mt-4 sm:mt-6">
+          <p className="text-[#ff4757] text-xs sm:text-sm">{error}</p>
         </div>
       )}
 
-      <p className="text-gray-600 text-xs text-center mt-8">
+      <p className="text-[#4a6080] text-[10px] sm:text-xs text-center mt-4 sm:mt-8">
         Stripeの安全な決済ページに移動します
       </p>
+
+      <div className="text-center mt-3 sm:mt-4">
+        <a
+          href="/purchase-history"
+          className="text-[#06C755] hover:text-[#04a344] text-xs sm:text-sm font-medium transition-colors"
+        >
+          購入履歴を見る →
+        </a>
+      </div>
     </div>
   )
 }

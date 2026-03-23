@@ -43,25 +43,25 @@ function RegisterForm() {
   if (registered) {
     return (
       <div className="w-full max-w-md">
-        <div className="bg-[#16161f] border border-white/10 rounded-2xl p-8">
+        <div className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-2xl p-8">
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 rounded-full bg-[#06C755]/10 border border-[#06C755]/20 flex items-center justify-center">
+            <div className="w-16 h-16 rounded-full bg-[rgba(6,199,85,0.1)] border border-[rgba(6,199,85,0.4)] flex items-center justify-center">
               <svg className="w-8 h-8 text-[#06C755]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
             </div>
           </div>
-          <h1 className="text-lg font-bold text-white text-center mb-3">確認メールを送信しました</h1>
-          <p className="text-sm text-gray-400 text-center mb-2">
+          <h1 className="text-lg font-bold text-[#f0f4f8] text-center mb-3">確認メールを送信しました</h1>
+          <p className="text-sm text-[#8fa3b8] text-center mb-2">
             <span className="text-[#06C755] font-medium">{email}</span> に確認メールを送信しました。
           </p>
-          <p className="text-sm text-gray-400 text-center mb-6">
+          <p className="text-sm text-[#8fa3b8] text-center mb-6">
             メール内のリンクをクリックして、アカウントを有効化してください。
           </p>
-          <Link href="/login" className="block w-full bg-[#06C755] hover:bg-[#05b34a] text-white font-medium py-2.5 rounded-lg transition-colors text-center">
+          <Link href="/login" className="block w-full bg-[#06C755] hover:bg-[#04a344] text-white font-bold py-2.5 rounded-full transition-all hover:shadow-[0_0_20px_rgba(6,199,85,0.3)] text-center">
             ログインページへ
           </Link>
-          <p className="mt-4 text-center text-xs text-gray-500">
+          <p className="mt-4 text-center text-xs text-[#4a6080]">
             メールが届かない場合は、迷惑メールフォルダをご確認ください。
           </p>
         </div>
@@ -71,14 +71,14 @@ function RegisterForm() {
 
   return (
     <div className="w-full max-w-md">
-      <div className="bg-[#16161f] border border-white/10 rounded-2xl p-8">
-        <h1 className="text-2xl font-bold text-white mb-2">アカウント登録</h1>
-        <p className="text-sm text-gray-400 mb-8">
+      <div className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-2xl p-8">
+        <h1 className="text-2xl font-bold text-[#f0f4f8] mb-2">アカウント登録</h1>
+        <p className="text-sm text-[#8fa3b8] mb-8">
           登録後、リスト確認・フォーム送信が利用可能になります
         </p>
 
         {error && (
-          <div className="mb-6 bg-red-900/30 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg">
+          <div className="mb-6 bg-[rgba(255,71,87,0.1)] border border-[rgba(255,71,87,0.3)] text-[#ff4757] text-sm px-4 py-3 rounded-xl">
             {error}
           </div>
         )}
@@ -88,7 +88,7 @@ function RegisterForm() {
             <input type="hidden" name="jobId" value={jobId} />
           )}
           <div>
-            <label className="block text-sm text-gray-400 mb-1.5">
+            <label className="block text-sm text-[#8fa3b8] mb-1.5">
               お名前
             </label>
             <input
@@ -96,11 +96,11 @@ function RegisterForm() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="山田 太郎"
-              className="w-full bg-[#0a0a0f] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#06C755]/50 transition-colors placeholder:text-gray-600"
+              className="w-full bg-[#0a0f1c] border border-[rgba(255,255,255,0.07)] text-[#f0f4f8] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[rgba(6,199,85,0.4)] transition-colors placeholder:text-[#4a6080]"
             />
           </div>
           <div>
-            <label className="block text-sm text-gray-400 mb-1.5">
+            <label className="block text-sm text-[#8fa3b8] mb-1.5">
               メールアドレス <span className="text-[#06C755]">*</span>
             </label>
             <input
@@ -109,11 +109,11 @@ function RegisterForm() {
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="example@email.com"
-              className="w-full bg-[#0a0a0f] border border-white/10 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#06C755]/50 transition-colors placeholder:text-gray-600"
+              className="w-full bg-[#0a0f1c] border border-[rgba(255,255,255,0.07)] text-[#f0f4f8] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[rgba(6,199,85,0.4)] transition-colors placeholder:text-[#4a6080]"
             />
           </div>
           <div>
-            <label className="block text-sm text-gray-400 mb-1.5">
+            <label className="block text-sm text-[#8fa3b8] mb-1.5">
               パスワード <span className="text-[#06C755]">*</span>
             </label>
             <div className="relative">
@@ -124,12 +124,12 @@ function RegisterForm() {
                 required
                 minLength={8}
                 placeholder="8文字以上"
-                className="w-full bg-[#0a0a0f] border border-white/10 text-white rounded-lg px-4 py-2.5 pr-10 text-sm focus:outline-none focus:border-[#06C755]/50 transition-colors placeholder:text-gray-600"
+                className="w-full bg-[#0a0f1c] border border-[rgba(255,255,255,0.07)] text-[#f0f4f8] rounded-xl px-4 py-2.5 pr-10 text-sm focus:outline-none focus:border-[rgba(6,199,85,0.4)] transition-colors placeholder:text-[#4a6080]"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#4a6080] hover:text-[#8fa3b8] transition-colors"
                 tabIndex={-1}
               >
                 {showPassword ? (
@@ -150,13 +150,13 @@ function RegisterForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#06C755] hover:bg-[#05b34a] disabled:opacity-60 text-white font-medium py-2.5 rounded-lg transition-colors"
+            className="w-full bg-[#06C755] hover:bg-[#04a344] disabled:opacity-60 text-white font-bold py-2.5 rounded-full transition-all hover:shadow-[0_0_20px_rgba(6,199,85,0.3)]"
           >
             {loading ? '登録中...' : '無料で登録する'}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-gray-500">
+        <p className="mt-6 text-center text-sm text-[#4a6080]">
           既にアカウントをお持ちの方は{' '}
           <Link href="/login" className="text-[#06C755] hover:underline">
             ログイン
@@ -170,7 +170,7 @@ function RegisterForm() {
 export default function RegisterPage() {
   return (
     <div className="min-h-[calc(100vh-120px)] flex items-center justify-center px-4 py-12">
-      <Suspense fallback={<div className="text-gray-400">読み込み中...</div>}>
+      <Suspense fallback={<div className="text-[#8fa3b8]">読み込み中...</div>}>
         <RegisterForm />
       </Suspense>
     </div>

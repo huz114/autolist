@@ -32,7 +32,7 @@ export default function CancelButton({ jobId }: { jobId: string }) {
     <button
       onClick={handleCancel}
       disabled={loading}
-      className="text-red-400 hover:text-red-300 text-xs font-medium transition-colors disabled:opacity-50"
+      className="text-[#ff4757] hover:text-[#ff6b7a] text-xs font-medium transition-colors disabled:opacity-50"
     >
       {loading ? 'キャンセル中...' : 'キャンセル'}
     </button>

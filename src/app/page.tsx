@@ -100,10 +100,10 @@ export default function Home() {
       {/* NAVBAR */}
       <nav className={`navbar${navScrolled ? " scrolled" : ""}`}>
         <div className="nav-logo">
-          <span style={{ display: "block", fontSize: 11, color: "var(--text-secondary)", fontWeight: 500, letterSpacing: "0.08em", marginBottom: 2 }}>フォーム付き企業リスト自動収集</span>
+          <span className="nav-subtitle" style={{ display: "block", fontSize: 11, color: "var(--text-secondary)", fontWeight: 500, letterSpacing: "0.08em", marginBottom: 2 }}>フォーム付き企業リスト自動収集</span>
           オート<span>リスト</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+        <div className="nav-right" style={{ display: "flex", alignItems: "center", gap: 20 }}>
           <Link
             href="/my-lists"
             className="nav-member-link"
@@ -121,10 +121,11 @@ export default function Home() {
             onMouseEnter={(e) => { e.currentTarget.style.color = "#fff"; e.currentTarget.style.background = "rgba(255,255,255,0.12)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.4)"; }}
             onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(255,255,255,0.75)"; e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.25)"; }}
           >
-            会員ログイン
+            <span className="nav-member-text-full">会員ログイン</span>
+            <span className="nav-member-text-short">ログイン</span>
           </Link>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-            <span style={{ fontSize: 11, color: "var(--accent)", fontWeight: 700 }}>最初の100件は無料</span>
+          <div className="nav-cta-wrap" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+            <span className="nav-free-badge" style={{ fontSize: 11, color: "var(--accent)", fontWeight: 700 }}>最初の100件は無料</span>
             <Link href="/register" className="nav-cta">
               100件無料でお試し
             </Link>

@@ -15,6 +15,11 @@ export default auth((req) => {
                        req.nextUrl.pathname.startsWith('/contact') ||
                        req.nextUrl.pathname.startsWith('/payment-callback')
 
+  // Redirect logged-in users away from auth pages (login/register)
+  if (isLoggedIn && isAuthPage) {
+    return NextResponse.redirect(new URL('/my-lists', req.url))
+  }
+
   if (!isLoggedIn && !isAuthPage && !isPublicPage) {
     return NextResponse.redirect(new URL('/login', req.url))
   }

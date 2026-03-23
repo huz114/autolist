@@ -14,9 +14,7 @@ export default async function AutolistResultsPage({ params }: { params: { jobId:
   const job = await prisma.listJob.findFirst({
     where: {
       id: params.jobId,
-      user: {
-        userId: session.user.id,
-      },
+      userId: session.user.id,
     },
     include: {
       urls: {

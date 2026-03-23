@@ -1,4 +1,5 @@
 import { prisma } from './prisma';
+import { prismaShiryolog } from './prisma-shiryolog';
 import { collectUrlsWithQueries } from './collect-urls';
 import { sendMessage } from './line';
 import { analyzeQuery } from './analyze-query';
@@ -6,6 +7,18 @@ import { importJobToShiryolog } from './import-to-shiryolog';
 import { sendJobCompletedEmail } from './mailer';
 import { getAdjacentPrefectures } from './adjacent-prefectures';
 import { suggestAlternativeKeywords } from './suggest-keywords';
+
+/**
+ * LineUser から lineUserId を取得するヘルパー
+ * job.userId は User.id なので、LineUser.userId で逆引きする
+ */
+async function getLineUserIdForUser(userId: string): Promise<string | null> {
+  const lineUser = await prisma.lineUser.findFirst({
+    where: { userId },
+    select: { lineUserId: true },
+  });
+  return lineUser?.lineUserId ?? null;
+}
 
 /**
  * pendingのジョブを1件取得して処理する
@@ -18,14 +31,13 @@ import { suggestAlternativeKeywords } from './suggest-keywords';
 export async function processNextJob(): Promise<{ processed: boolean; jobId?: string }> {
   // 楽観的ロック: pendingジョブの取得とrunningへの更新をアトミックに行う
   // 他プロセスに取られた場合はスキップして次のpendingジョブを探す
-  let job: Awaited<ReturnType<typeof prisma.listJob.findFirst<{ include: { user: true } }>>> = null;
+  let job: Awaited<ReturnType<typeof prisma.listJob.findFirst>> = null;
 
   while (true) {
     // pendingのジョブを1件取得（古い順）
     const candidate = await prisma.listJob.findFirst({
       where: { status: 'pending' },
       orderBy: { createdAt: 'asc' },
-      include: { user: true },
     });
 
     if (!candidate) {
@@ -50,6 +62,12 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
   }
 
   console.log(`Processing job: ${job.id}, keyword: ${job.keyword}`);
+
+  // job.userId は User.id
+  const userId = job.userId;
+
+  // LINE通知用の lineUserId を取得
+  const lineUserId = await getLineUserIdForUser(userId);
 
   try {
     // クエリを解析して検索クエリを生成
@@ -136,8 +154,9 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
 
     const autolistUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3007';
     const targetCount = job.targetCount;
-    const lineUserId = job.user.lineUserId;
-    const loginUrl = `${autolistUrl}/login?lineUserId=${lineUserId}&callbackUrl=/my-lists`;
+    const loginUrl = lineUserId
+      ? `${autolistUrl}/login?lineUserId=${lineUserId}&callbackUrl=/my-lists`
+      : `${autolistUrl}/my-lists`;
 
     if (finalJob?.status === 'cancelled') {
       // キャンセル：仮押さえ分から実績分を引いた差額を返却
@@ -155,49 +174,40 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
         },
       });
 
-      // 仮押さえ済みのクレジットから差分を返却 + monthlyCount更新
+      // 仮押さえ済みのクレジットから差分を返却 + monthlyCount更新（User テーブル）
       if (refundCredits > 0 || actualCount > 0) {
-        await prisma.lineUser.update({
-          where: { id: job.userId },
+        await prismaShiryolog.user.update({
+          where: { id: userId },
           data: {
-            monthlyCount: { increment: actualCount },
-            credits: { increment: refundCredits },
+            autolistMonthlyCount: { increment: actualCount },
+            autolistCredits: { increment: refundCredits },
           },
         });
       }
 
       // キャンセル完了通知
-      const updatedUserAfterCancel = await prisma.lineUser.findUnique({
-        where: { id: job.userId },
-        select: { credits: true },
+      const updatedUser = await prismaShiryolog.user.findUnique({
+        where: { id: userId },
+        select: { autolistCredits: true, name: true, email: true },
       });
-      const remainingCredits = updatedUserAfterCancel?.credits ?? 0;
+      const remainingCredits = updatedUser?.autolistCredits ?? 0;
 
-      const lineUser = await prisma.lineUser.findUnique({
-        where: { id: job.userId },
-        select: { lineUserId: true, displayName: true, userId: true },
-      });
-
-      if (lineUser?.userId) {
+      if (updatedUser?.email) {
         // シリョログ登録済み → メール通知
-        const shiryologUser = await prisma.$queryRaw<Array<{email: string, name: string | null}>>`
-          SELECT email, name FROM "public"."User" WHERE id = ${lineUser.userId} LIMIT 1
-        `;
-        if (shiryologUser.length > 0) {
-          const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3007';
-          await sendJobCompletedEmail({
-            to: shiryologUser[0].email,
-            userName: shiryologUser[0].name || lineUser.displayName || 'お客様',
-            keyword: job.keyword,
-            industry: job.industry,
-            location: job.location,
-            totalFound: actualCount,
-            myListsUrl: `${appUrl}/my-lists`,
-          });
-        }
-      } else {
-        // 未登録 → LINE Push通知
-        await sendMessage(job.user.lineUserId,
+        await sendJobCompletedEmail({
+          to: updatedUser.email,
+          userName: updatedUser.name || 'お客様',
+          keyword: job.keyword,
+          industry: job.industry,
+          location: job.location,
+          totalFound: actualCount,
+          myListsUrl: `${autolistUrl}/my-lists`,
+        });
+      }
+
+      if (lineUserId) {
+        // LINE Push通知
+        await sendMessage(lineUserId,
           `❌ リスト収集をキャンセルしました。\n\n` +
           `収集済み: ${actualCount}社\n` +
           `消費: ${actualCount}クレジット` + (refundCredits > 0 ? `（${refundCredits}クレジット返却）` : '') + `\n` +
@@ -225,36 +235,36 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
         },
       });
 
-      // 仮押さえ差分を返却 + monthlyCount更新
-      const updateData: { credits?: { increment: number }; monthlyCount?: { increment: number } } = {};
+      // 仮押さえ差分を返却 + monthlyCount更新（User テーブル）
+      const updateData: { autolistCredits?: { increment: number }; autolistMonthlyCount?: { increment: number } } = {};
       if (refundCredits > 0) {
-        updateData.credits = { increment: refundCredits };
+        updateData.autolistCredits = { increment: refundCredits };
       }
       if (formCount > 0) {
-        updateData.monthlyCount = { increment: formCount };
+        updateData.autolistMonthlyCount = { increment: formCount };
       }
       if (Object.keys(updateData).length > 0) {
-        await prisma.lineUser.update({
-          where: { id: job.userId },
+        await prismaShiryolog.user.update({
+          where: { id: userId },
           data: updateData,
         });
       }
 
-      const updatedLineUser = await prisma.lineUser.findUnique({
-        where: { id: job.userId },
-        select: { credits: true, lineUserId: true, displayName: true, userId: true },
+      const updatedUser = await prismaShiryolog.user.findUnique({
+        where: { id: userId },
+        select: { autolistCredits: true, name: true, email: true },
       });
-      if (!updatedLineUser) throw new Error('User not found');
-      const remainingCreditsAfterCompletion = updatedLineUser.credits;
+      if (!updatedUser) throw new Error('User not found');
+      const remainingCreditsAfterCompletion = updatedUser.autolistCredits ?? 0;
 
       // ── 完了通知（4パターン分岐） ──
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3007';
       const registerUrl = `${appUrl}/register`;
-      const isShiryologUser = !!updatedLineUser.userId;
+      const isShiryologUser = !!updatedUser.email;
 
       // 完了済みジョブ数カウント（今回のジョブを除く）
       const completedJobCount = await prisma.listJob.count({
-        where: { userId: job.userId, status: 'completed', id: { not: job.id } },
+        where: { userId, status: 'completed', id: { not: job.id } },
       });
       const isFirstTime = completedJobCount === 0;
 
@@ -293,13 +303,10 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
 
       // メール送信ヘルパー（登録済みユーザー共通）
       const sendCompletionEmail = async () => {
-        const shiryologUser = await prisma.$queryRaw<Array<{email: string, name: string | null}>>`
-          SELECT email, name FROM "public"."User" WHERE id = ${updatedLineUser.userId} LIMIT 1
-        `;
-        if (shiryologUser.length > 0) {
+        if (updatedUser.email) {
           await sendJobCompletedEmail({
-            to: shiryologUser[0].email,
-            userName: shiryologUser[0].name || updatedLineUser.displayName || 'お客様',
+            to: updatedUser.email,
+            userName: updatedUser.name || 'お客様',
             keyword: job.keyword,
             industry: job.industry,
             location: job.location,
@@ -309,7 +316,7 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
         }
       };
 
-      if (!isShiryologUser) {
+      if (!isShiryologUser && lineUserId) {
         // ── パターンA: 未登録（初回・2回目以降共通） ──
         let lineMessage: string;
         if (!isUnderTarget) {
@@ -335,9 +342,9 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
             `ログインしてリストを確認 🔗\n` +
             loginUrl + keywordSuggestion;
         }
-        await sendMessage(job.user.lineUserId, lineMessage);
+        await sendMessage(lineUserId, lineMessage);
 
-      } else if (isFirstTime) {
+      } else if (isFirstTime && lineUserId) {
         // ── パターンB: 初回 × 登録済み ──
         let lineMessage: string;
         if (!isUnderTarget) {
@@ -357,32 +364,23 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
             `Chrome拡張をインストールすると、フォーム送信が半自動化できます。\n\n` +
             `📧 メールでもリストURLをお送りしました。` + keywordSuggestion;
         }
-        await sendMessage(job.user.lineUserId, lineMessage);
+        await sendMessage(lineUserId, lineMessage);
         await sendCompletionEmail();
 
       } else {
         // ── パターンD: 2回目以降 × 登録済み ──
         // LINE通知は送信しない（未達成時のみLINEも送る）
-        if (isUnderTarget) {
+        if (isUnderTarget && lineUserId) {
           const { suggestionBlock, keywordSuggestion, detailLine } = await generateSuggestionBlocks();
           const lineMessage = `✅ リストが完成しました！\n` +
             `📋 ${formCount}社のフォームあり企業リストを収集しました${detailLine}\n` +
             `💳 ${formCount}クレジット使用 → 残り${remainingCreditsAfterCompletion}クレジット\n` +
             `${suggestionBlock}\n` +
             `📧 メールでもリストURLをお送りしました。` + keywordSuggestion;
-          await sendMessage(job.user.lineUserId, lineMessage);
+          await sendMessage(lineUserId, lineMessage);
         }
         await sendCompletionEmail();
       }
-
-      // シリョログの Company テーブルへの自動インポート（一時無効化）
-      // TODO: データ品質改善後に再有効化する
-      // try {
-      //   const imported = await importJobToShiryolog(job.id);
-      //   console.log(`Imported ${imported} companies to Shiryolog from job ${job.id}`);
-      // } catch (e) {
-      //   console.error('Failed to import to Shiryolog:', e);
-      // }
 
       console.log(`Job ${job.id} completed. Found ${totalFound} URLs.`);
     }
@@ -406,15 +404,15 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
       // リトライ可能
 
       // 収集済みが1件以上ある場合は中間通知を送信
-      if (partialCount > 0) {
+      if (partialCount > 0 && lineUserId) {
         try {
           const autolistUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3007';
-          const loginUrl = `${autolistUrl}/login?lineUserId=${job.user.lineUserId}&callbackUrl=/my-lists`;
+          const retryLoginUrl = `${autolistUrl}/login?lineUserId=${lineUserId}&callbackUrl=/my-lists`;
 
-          await sendMessage(job.user.lineUserId,
+          await sendMessage(lineUserId,
             `📋 「${job.keyword}」の収集状況をお知らせします。\n\n` +
             `現在${partialCount}件の企業を収集できました。\n` +
-            `リストはこちらから確認できます：\n${loginUrl}\n\n` +
+            `リストはこちらから確認できます：\n${retryLoginUrl}\n\n` +
             `残りは引き続き収集中です。完了したら改めてお知らせします。`
           );
         } catch (lineError) {
@@ -449,17 +447,17 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
         },
       });
 
-      // 仮押さえ差分を返却 + monthlyCount更新
+      // 仮押さえ差分を返却 + monthlyCount更新（User テーブル）
       if (refundCreditsForFail > 0 || partialCount > 0) {
-        const failUpdateData: { credits?: { increment: number }; monthlyCount?: { increment: number } } = {};
+        const failUpdateData: { autolistCredits?: { increment: number }; autolistMonthlyCount?: { increment: number } } = {};
         if (refundCreditsForFail > 0) {
-          failUpdateData.credits = { increment: refundCreditsForFail };
+          failUpdateData.autolistCredits = { increment: refundCreditsForFail };
         }
         if (partialCount > 0) {
-          failUpdateData.monthlyCount = { increment: partialCount };
+          failUpdateData.autolistMonthlyCount = { increment: partialCount };
         }
-        await prisma.lineUser.update({
-          where: { id: job.userId },
+        await prismaShiryolog.user.update({
+          where: { id: userId },
           data: failUpdateData,
         });
       }
@@ -477,34 +475,39 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
       }
 
       // LINE通知（収集済み件数に応じてメッセージを変える）
-      try {
-        const autolistUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3007';
-        const loginUrl = `${autolistUrl}/login?lineUserId=${job.user.lineUserId}&callbackUrl=/my-lists`;
+      if (lineUserId) {
+        try {
+          const autolistUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3007';
+          const failLoginUrl = `${autolistUrl}/login?lineUserId=${lineUserId}&callbackUrl=/my-lists`;
 
-        let errorMessage: string;
-        if (partialCount > 0) {
-          errorMessage = additionalCount > 0
-            ? `📋 「${job.keyword}」の追加収集が完了しました。\n\n` +
-              `さらに${additionalCount}件収集できました。合計${partialCount}件になりました。\n\n` +
-              `これ以上の収集が難しいため、こちらが最終結果となります。\n` +
-              `リストはこちらから確認できます：\n${loginUrl}\n\n` +
-              `除外した企業分のクレジットは返却されます。${keywordSuggestion}`
-            : `📋 「${job.keyword}」の追加収集を試みましたが、これ以上見つかりませんでした。\n\n` +
-              `最終結果は${partialCount}件です。\n` +
-              `リストはこちらから確認できます：\n${loginUrl}\n\n` +
-              `除外した企業分のクレジットは返却されます。${keywordSuggestion}`;
-        } else {
-          const updatedUserAfterFail = await prisma.lineUser.findUnique({ where: { id: job.userId }, select: { credits: true } });
-          const remainingAfterFail = updatedUserAfterFail?.credits ?? 0;
-          errorMessage = `申し訳ございません。「${job.keyword}」の条件で収集を試みましたが、問い合わせフォーム付きの企業が見つかりませんでした。\n\n` +
-            `💳 仮押さえした${reservedCreditsForFail}クレジットは全額返却しました。\n残り${remainingAfterFail}クレジット` +
-            `${keywordSuggestion}` +
-            `\n\n別のキーワードで再度お試しください。`;
+          let errorMessage: string;
+          if (partialCount > 0) {
+            errorMessage = additionalCount > 0
+              ? `📋 「${job.keyword}」の追加収集が完了しました。\n\n` +
+                `さらに${additionalCount}件収集できました。合計${partialCount}件になりました。\n\n` +
+                `これ以上の収集が難しいため、こちらが最終結果となります。\n` +
+                `リストはこちらから確認できます：\n${failLoginUrl}\n\n` +
+                `除外した企業分のクレジットは返却されます。${keywordSuggestion}`
+              : `📋 「${job.keyword}」の追加収集を試みましたが、これ以上見つかりませんでした。\n\n` +
+                `最終結果は${partialCount}件です。\n` +
+                `リストはこちらから確認できます：\n${failLoginUrl}\n\n` +
+                `除外した企業分のクレジットは返却されます。${keywordSuggestion}`;
+          } else {
+            const updatedUserAfterFail = await prismaShiryolog.user.findUnique({
+              where: { id: userId },
+              select: { autolistCredits: true },
+            });
+            const remainingAfterFail = updatedUserAfterFail?.autolistCredits ?? 0;
+            errorMessage = `申し訳ございません。「${job.keyword}」の条件で収集を試みましたが、問い合わせフォーム付きの企業が見つかりませんでした。\n\n` +
+              `💳 仮押さえした${reservedCreditsForFail}クレジットは全額返却しました。\n残り${remainingAfterFail}クレジット` +
+              `${keywordSuggestion}` +
+              `\n\n別のキーワードで再度お試しください。`;
+          }
+
+          await sendMessage(lineUserId, errorMessage);
+        } catch (lineError) {
+          console.error('Failed to send error message via LINE:', lineError);
         }
-
-        await sendMessage(job.user.lineUserId, errorMessage);
-      } catch (lineError) {
-        console.error('Failed to send error message via LINE:', lineError);
       }
 
       console.log(

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 
 // ========================================
 // Types
@@ -40,8 +41,8 @@ interface ApiResponse {
 // ========================================
 
 const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string }> = {
-  submitted: { label: '送信済み', bg: 'bg-[rgba(6,199,85,0.1)]', text: 'text-[#06C755]' },
-  confirmed: { label: '確認済み', bg: 'bg-blue-900/30', text: 'text-blue-400' },
+  submitted: { label: '送信処理中', bg: 'bg-[rgba(245,158,11,0.1)]', text: 'text-amber-400' },
+  confirmed: { label: '送信完了', bg: 'bg-[rgba(6,199,85,0.1)]', text: 'text-[#06C755]' },
   bounced: { label: '失敗', bg: 'bg-[rgba(255,71,87,0.1)]', text: 'text-[#ff4757]' },
   replied: { label: '返信あり', bg: 'bg-[rgba(6,199,85,0.15)]', text: 'text-[#06C755]' },
 }
@@ -157,9 +158,41 @@ export default function SendHistoryClient() {
 
       {/* Content */}
       {loading ? (
-        <div className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-2xl p-12 flex flex-col items-center">
-          <div className="w-8 h-8 border-2 border-[#06C755] border-t-transparent rounded-full animate-spin mb-3" />
-          <p className="text-sm text-[#8fa3b8]">読み込み中...</p>
+        <div className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-2xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[rgba(255,255,255,0.07)]">
+                  <th className="text-left text-xs text-[#8fa3b8] font-medium px-4 py-3">送信日時</th>
+                  <th className="text-left text-xs text-[#8fa3b8] font-medium px-4 py-3">企業名</th>
+                  <th className="text-left text-xs text-[#8fa3b8] font-medium px-4 py-3">フォームURL</th>
+                  <th className="text-left text-xs text-[#8fa3b8] font-medium px-4 py-3">ステータス</th>
+                  <th className="text-left text-xs text-[#8fa3b8] font-medium px-4 py-3">営業文</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...Array(5)].map((_, i) => (
+                  <tr key={i} className="border-b border-[rgba(255,255,255,0.04)]">
+                    <td className="px-4 py-3">
+                      <div className="h-4 w-20 bg-[#1a2332] rounded animate-pulse" />
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="h-4 w-32 bg-[#1a2332] rounded animate-pulse" />
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="h-4 w-36 bg-[#1a2332] rounded animate-pulse" />
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="h-5 w-16 bg-[#1a2332] rounded-full animate-pulse" />
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="h-4 w-44 bg-[#1a2332] rounded animate-pulse" />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : error ? (
         <div className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-2xl p-12 text-center">
@@ -180,6 +213,12 @@ export default function SendHistoryClient() {
               ? '検索条件に一致する履歴がありません'
               : 'リストを確定してフォーム送信を行ってください'}
           </p>
+          <Link
+            href="/my-lists"
+            className="inline-block mt-4 text-sm text-[#06C755] hover:text-[#2ad96e] transition-colors"
+          >
+            ← マイリストを見る
+          </Link>
         </div>
       ) : (
         <>

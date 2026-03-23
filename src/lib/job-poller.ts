@@ -21,6 +21,17 @@ let isProcessing = false;
 const MAX_RETRY_COUNT = 1;
 
 /**
+ * LineUser から lineUserId を取得するヘルパー
+ */
+async function getLineUserIdForUser(userId: string): Promise<string | null> {
+  const lineUser = await prisma.lineUser.findFirst({
+    where: { userId },
+    select: { lineUserId: true },
+  });
+  return lineUser?.lineUserId ?? null;
+}
+
+/**
  * ポーリング初期化（instrumentation.ts から呼ばれる）
  */
 export function initJobPoller() {
@@ -104,22 +115,11 @@ export async function startProcessingIfNeeded() {
  * - 残り50件 → 120分（2時間）
  * - 残り100件 → 220分（3.7時間）
  * - 最低でも20分は確保
- *
- * スタック検知ロジック:
- * - 収集済み0件 & retryCount < 1 → pending に戻してリトライ
- * - 収集済み0件 & retryCount >= 1 → failed + LINE通知
- * - 収集済み1件以上 & retryCount < 1 → LINE中間通知 + pending に戻してリトライ
- * - 収集済み1件以上 & retryCount >= 1 → failed + LINE最終通知 + キーワード提案
- *
- * 途中再開:
- * - pending に戻されたジョブは processNextJob で再処理される
- * - 既に収集済みの CollectedUrl は job-processor.ts 側でスキップされる
  */
 async function handleStuckJobs() {
-  // running 状態のジョブを全件取得して、個別にタイムアウト判定する
+  // running 状態のジョブを全件取得
   const runningJobs = await prisma.listJob.findMany({
     where: { status: 'running' },
-    include: { user: true },
   });
 
   if (runningJobs.length === 0) {
@@ -148,9 +148,14 @@ async function handleStuckJobs() {
       `timeout: ${timeoutMinutes}min, retryCount: ${job.retryCount}, collected: ${collectedCount})`
     );
 
+    // LINE通知用の lineUserId を取得
+    const lineUserId = await getLineUserIdForUser(job.userId);
+
     try {
       const autolistUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3007';
-      const loginUrl = `${autolistUrl}/login?lineUserId=${job.user.lineUserId}&callbackUrl=/my-lists`;
+      const loginUrl = lineUserId
+        ? `${autolistUrl}/login?lineUserId=${lineUserId}&callbackUrl=/my-lists`
+        : `${autolistUrl}/my-lists`;
 
       if (collectedCount === 0) {
         // ── 収集済み0件のケース ──
@@ -177,25 +182,27 @@ async function handleStuckJobs() {
             },
           });
 
-          try {
-            let keywordSuggestion = '';
+          if (lineUserId) {
             try {
-              const suggestions = await suggestAlternativeKeywords(job.keyword);
-              if (suggestions.length > 0) {
-                keywordSuggestion = '\n\n以下のキーワードで追加収集できる可能性があります：\n' +
-                  suggestions.map(s => `・${s}`).join('\n');
+              let keywordSuggestion = '';
+              try {
+                const suggestions = await suggestAlternativeKeywords(job.keyword);
+                if (suggestions.length > 0) {
+                  keywordSuggestion = '\n\n以下のキーワードで追加収集できる可能性があります：\n' +
+                    suggestions.map(s => `・${s}`).join('\n');
+                }
+              } catch (e) {
+                console.error(`[JobPoller] Failed to generate keyword suggestions:`, e);
               }
-            } catch (e) {
-              console.error(`[JobPoller] Failed to generate keyword suggestions:`, e);
-            }
 
-            await sendMessage(job.user.lineUserId,
-              `申し訳ありません。「${job.keyword}」の収集を試みましたが、条件に合う企業が見つかりませんでした。\n\n` +
-              `クレジットは消費されていません。${keywordSuggestion}\n\n` +
-              `別のキーワードで再度お試しください。`
-            );
-          } catch (lineError) {
-            console.error(`[JobPoller] Failed to send LINE notification for job ${job.id}:`, lineError);
+              await sendMessage(lineUserId,
+                `申し訳ありません。「${job.keyword}」の収集を試みましたが、条件に合う企業が見つかりませんでした。\n\n` +
+                `クレジットは消費されていません。${keywordSuggestion}\n\n` +
+                `別のキーワードで再度お試しください。`
+              );
+            } catch (lineError) {
+              console.error(`[JobPoller] Failed to send LINE notification for job ${job.id}:`, lineError);
+            }
           }
 
           console.log(
@@ -206,15 +213,17 @@ async function handleStuckJobs() {
         // ── 収集済み1件以上のケース ──
         if (job.retryCount < MAX_RETRY_COUNT) {
           // 中間通知を送信してからリトライ
-          try {
-            await sendMessage(job.user.lineUserId,
-              `📋 「${job.keyword}」の収集状況をお知らせします。\n\n` +
-              `現在${collectedCount}件の企業を収集できました。\n` +
-              `リストはこちらから確認できます：\n${loginUrl}\n\n` +
-              `残りは引き続き収集中です。完了したら改めてお知らせします。`
-            );
-          } catch (lineError) {
-            console.error(`[JobPoller] Failed to send interim LINE notification for job ${job.id}:`, lineError);
+          if (lineUserId) {
+            try {
+              await sendMessage(lineUserId,
+                `📋 「${job.keyword}」の収集状況をお知らせします。\n\n` +
+                `現在${collectedCount}件の企業を収集できました。\n` +
+                `リストはこちらから確認できます：\n${loginUrl}\n\n` +
+                `残りは引き続き収集中です。完了したら改めてお知らせします。`
+              );
+            } catch (lineError) {
+              console.error(`[JobPoller] Failed to send interim LINE notification for job ${job.id}:`, lineError);
+            }
           }
 
           // totalFoundを中間更新（マイリストで件数を表示できるように）
@@ -244,32 +253,34 @@ async function handleStuckJobs() {
             },
           });
 
-          try {
-            let keywordSuggestion = '';
+          if (lineUserId) {
             try {
-              const suggestions = await suggestAlternativeKeywords(job.keyword);
-              if (suggestions.length > 0) {
-                keywordSuggestion = '\n\n以下のキーワードで追加収集できる可能性があります：\n' +
-                  suggestions.map(s => `・${s}`).join('\n');
+              let keywordSuggestion = '';
+              try {
+                const suggestions = await suggestAlternativeKeywords(job.keyword);
+                if (suggestions.length > 0) {
+                  keywordSuggestion = '\n\n以下のキーワードで追加収集できる可能性があります：\n' +
+                    suggestions.map(s => `・${s}`).join('\n');
+                }
+              } catch (e) {
+                console.error(`[JobPoller] Failed to generate keyword suggestions:`, e);
               }
-            } catch (e) {
-              console.error(`[JobPoller] Failed to generate keyword suggestions:`, e);
+
+              const message = additionalCount > 0
+                ? `📋 「${job.keyword}」の追加収集が完了しました。\n\n` +
+                  `さらに${additionalCount}件収集できました。合計${collectedCount}件になりました。\n\n` +
+                  `これ以上の収集が難しいため、こちらが最終結果となります。\n` +
+                  `リストはこちらから確認できます：\n${loginUrl}\n\n` +
+                  `クレジットはリスト確定時に実績分のみ課金されます。${keywordSuggestion}`
+                : `📋 「${job.keyword}」の追加収集を試みましたが、これ以上見つかりませんでした。\n\n` +
+                  `最終結果は${collectedCount}件です。\n` +
+                  `リストはこちらから確認できます：\n${loginUrl}\n\n` +
+                  `クレジットはリスト確定時に実績分のみ課金されます。${keywordSuggestion}`;
+
+              await sendMessage(lineUserId, message);
+            } catch (lineError) {
+              console.error(`[JobPoller] Failed to send LINE notification for job ${job.id}:`, lineError);
             }
-
-            const message = additionalCount > 0
-              ? `📋 「${job.keyword}」の追加収集が完了しました。\n\n` +
-                `さらに${additionalCount}件収集できました。合計${collectedCount}件になりました。\n\n` +
-                `これ以上の収集が難しいため、こちらが最終結果となります。\n` +
-                `リストはこちらから確認できます：\n${loginUrl}\n\n` +
-                `クレジットはリスト確定時に実績分のみ課金されます。${keywordSuggestion}`
-              : `📋 「${job.keyword}」の追加収集を試みましたが、これ以上見つかりませんでした。\n\n` +
-                `最終結果は${collectedCount}件です。\n` +
-                `リストはこちらから確認できます：\n${loginUrl}\n\n` +
-                `クレジットはリスト確定時に実績分のみ課金されます。${keywordSuggestion}`;
-
-            await sendMessage(job.user.lineUserId, message);
-          } catch (lineError) {
-            console.error(`[JobPoller] Failed to send LINE notification for job ${job.id}:`, lineError);
           }
 
           console.log(

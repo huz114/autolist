@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
+import { prismaShiryolog } from '@/lib/prisma-shiryolog'
 import { startProcessingIfNeeded } from '@/lib/job-poller'
 
 export async function POST(request: NextRequest) {
@@ -33,62 +34,62 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  // session.user.id は shiryolog の User ID
-  // LineUser.userId でリンクされている
-  const lineUser = await prisma.lineUser.findFirst({
-    where: { userId: session.user.id },
+  // User からクレジット取得
+  const user = await prismaShiryolog.user.findUnique({
+    where: { id: session.user.id },
+    select: { autolistCredits: true },
   })
 
-  if (!lineUser) {
+  if (!user) {
     return NextResponse.json(
-      { error: 'LINEアカウントが連携されていません' },
+      { error: 'ユーザーが見つかりません' },
       { status: 400 }
     )
   }
 
   // クレジット残量チェック
-  if (lineUser.credits < targetCount) {
+  if ((user.autolistCredits ?? 0) < targetCount) {
     return NextResponse.json(
       {
         error: 'クレジットが不足しています',
-        credits: lineUser.credits,
+        credits: user.autolistCredits ?? 0,
         required: targetCount,
       },
       { status: 400 }
     )
   }
 
-  // ジョブ作成 + クレジット仮押さえ（トランザクション）
+  // ジョブ作成 + クレジット仮押さえ
   const keyword = `${location} ${industry}`
   const reservedCredits = targetCount
 
-  const [job] = await prisma.$transaction([
-    prisma.listJob.create({
-      data: {
-        userId: lineUser.id,
-        keyword,
-        industry,
-        location,
-        targetCount,
-        reservedCredits,
-        status: 'pending',
-        source: 'web',
-        originalMessage: `[Web] ${industry} ${location} ${targetCount}件`,
-        industryKeywords: [],
-      },
-    }),
-    prisma.lineUser.update({
-      where: { id: lineUser.id },
-      data: {
-        credits: { decrement: reservedCredits },
-      },
-    }),
-  ])
+  const job = await prisma.listJob.create({
+    data: {
+      userId: session.user.id,
+      keyword,
+      industry,
+      location,
+      targetCount,
+      reservedCredits,
+      status: 'pending',
+      source: 'web',
+      originalMessage: `[Web] ${industry} ${location} ${targetCount}件`,
+      industryKeywords: [],
+    },
+  })
+
+  // クレジット仮押さえ（User テーブル）
+  await prismaShiryolog.user.update({
+    where: { id: session.user.id },
+    data: {
+      autolistCredits: { decrement: reservedCredits },
+    },
+  })
 
   // SearchLog記録
   await prisma.searchLog.create({
     data: {
-      userId: lineUser.id,
+      userId: session.user.id,
       keyword,
       industry,
       location,

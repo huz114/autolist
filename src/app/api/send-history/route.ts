@@ -15,25 +15,9 @@ export async function GET(request: NextRequest) {
   const companyName = searchParams.get('company_name') || ''
   const status = searchParams.get('status') || ''
 
-  // 1. Get domains from user's confirmed jobs
-  const lineUsers = await prisma.lineUser.findMany({
-    where: { userId: session.user.id },
-    select: { id: true },
-  })
-
-  if (lineUsers.length === 0) {
-    return NextResponse.json({
-      submissions: [],
-      pagination: { page, per_page: perPage, total: 0, total_pages: 0 },
-      stats: { thisWeek: 0, thisMonth: 0, allTime: 0 },
-    })
-  }
-
-  const lineUserIds = lineUsers.map((u) => u.id)
-
-  // Get all domains from user's jobs
+  // User.id で直接 ListJob を検索
   const jobs = await prisma.listJob.findMany({
-    where: { userId: { in: lineUserIds } },
+    where: { userId: session.user.id },
     select: { id: true },
   })
 

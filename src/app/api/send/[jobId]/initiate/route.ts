@@ -42,11 +42,11 @@ export async function POST(
     return NextResponse.json({ error: '送信者情報（会社名・担当者名）は必須です' }, { status: 400 })
   }
 
-  // ジョブの所有権確認（確定済みジョブのみ）
+  // ジョブの所有権確認（User.id で直接検索、確定済みジョブのみ）
   const job = await prisma.listJob.findFirst({
     where: {
       id: jobId,
-      user: { userId: session.user.id },
+      userId: session.user.id,
       status: 'completed',
       confirmedAt: { not: null },
     },

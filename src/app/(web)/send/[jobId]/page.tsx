@@ -16,9 +16,7 @@ export default async function SendPage({ params }: { params: { jobId: string } }
   const job = await prisma.listJob.findFirst({
     where: {
       id: params.jobId,
-      user: {
-        userId: session.user.id,
-      },
+      userId: session.user.id,
     },
     select: {
       id: true,

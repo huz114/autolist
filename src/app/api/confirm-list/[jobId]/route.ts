@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
+import { prismaShiryolog } from '@/lib/prisma-shiryolog'
 
 export async function POST(
   request: NextRequest,
@@ -15,11 +16,11 @@ export async function POST(
   const body = await request.json()
   const excludedIds: string[] = body.excludedIds || []
 
-  // ジョブの所有権確認
+  // ジョブの所有権確認（User.id で直接検索）
   const job = await prisma.listJob.findFirst({
     where: {
       id: jobId,
-      user: { userId: session.user.id },
+      userId: session.user.id,
       status: { in: ['completed', 'failed'] },
       confirmedAt: null, // 未確定のみ
     },
@@ -28,7 +29,6 @@ export async function POST(
         where: { hasForm: true, companyVerified: true },
         select: { id: true },
       },
-      user: true,
     },
   })
 
@@ -64,29 +64,25 @@ export async function POST(
   // クレジットは依頼時に仮押さえ済み → 除外分だけ返却
   const refundCredits = excludedIds.length
 
-  const transactionOps = [
-    prisma.listJob.update({
-      where: { id: jobId },
-      data: {
-        confirmedAt: new Date(),
-        totalFound: confirmedCount,
-      },
-    }),
-  ]
+  // ListJob の確定更新
+  await prisma.listJob.update({
+    where: { id: jobId },
+    data: {
+      confirmedAt: new Date(),
+      totalFound: confirmedCount,
+    },
+  })
 
+  // クレジット返却（User テーブル）
   if (refundCredits > 0) {
-    transactionOps.push(
-      prisma.lineUser.update({
-        where: { id: job.userId },
-        data: {
-          credits: { increment: refundCredits },
-          monthlyCount: { decrement: refundCredits },
-        },
-      }) as any
-    )
+    await prismaShiryolog.user.update({
+      where: { id: session.user.id },
+      data: {
+        autolistCredits: { increment: refundCredits },
+        autolistMonthlyCount: { decrement: refundCredits },
+      },
+    })
   }
-
-  await prisma.$transaction(transactionOps)
 
   return NextResponse.json({
     success: true,

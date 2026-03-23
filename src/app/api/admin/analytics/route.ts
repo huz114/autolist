@@ -45,7 +45,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         where: { createdAt: { gte: monthStart } },
         _sum: { amount: true },
       }),
-      // LineUser総数
+      // LineUser総数（LINE経由ユーザー数として維持）
       prisma.lineUser.count(),
       // Purchase総件数
       prisma.purchase.count(),

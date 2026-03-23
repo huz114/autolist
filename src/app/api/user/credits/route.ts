@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/auth'
-import { prisma } from '@/lib/prisma'
+import { prismaShiryolog } from '@/lib/prisma-shiryolog'
 
 export async function GET() {
   const session = await auth()
@@ -8,18 +8,17 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // session.user.id は shiryolog の User ID
-  // LineUser.userId でリンクされている
-  const lineUser = await prisma.lineUser.findFirst({
-    where: { userId: session.user.id },
+  const user = await prismaShiryolog.user.findUnique({
+    where: { id: session.user.id },
+    select: { autolistCredits: true },
   })
 
-  if (!lineUser) {
+  if (!user) {
     return NextResponse.json(
-      { error: 'LINEアカウントが連携されていません', credits: 0 },
+      { error: 'ユーザーが見つかりません', credits: 0 },
       { status: 400 }
     )
   }
 
-  return NextResponse.json({ credits: lineUser.credits })
+  return NextResponse.json({ credits: user.autolistCredits })
 }

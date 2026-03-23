@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifySignature, replyMessage } from '@/lib/line';
 import { analyzeQuery, checkAmbiguousLocation } from '@/lib/analyze-query';
 import { prisma } from '@/lib/prisma';
+import { prismaShiryolog } from '@/lib/prisma-shiryolog';
 import { startProcessingIfNeeded } from '@/lib/job-poller';
 import Stripe from 'stripe';
 
@@ -155,6 +156,72 @@ async function createPaymentLink(planIndex: number, lineUserId: string): Promise
 }
 
 /**
+ * lineUserId から LineUser を取得し、紐づく User の情報を返すヘルパー
+ * LineUser が存在しない場合は作成する
+ * User が紐づいていない場合は autolistCredits=100 の新規 User を作成して紐づける
+ */
+async function getOrCreateUserForLine(lineUserId: string): Promise<{
+  lineUser: { id: string; lineUserId: string; displayName: string | null; state: string | null; userId: string | null };
+  userId: string;
+  credits: number;
+}> {
+  let lineUser = await prisma.lineUser.findUnique({ where: { lineUserId } });
+
+  if (!lineUser) {
+    lineUser = await prisma.lineUser.create({
+      data: {
+        lineUserId,
+        displayName: null,
+        state: null,
+      },
+    });
+  }
+
+  if (lineUser.userId) {
+    // 既に User に紐づいている
+    const user = await prismaShiryolog.user.findUnique({
+      where: { id: lineUser.userId },
+      select: { autolistCredits: true },
+    });
+    return {
+      lineUser,
+      userId: lineUser.userId,
+      credits: user?.autolistCredits ?? 0,
+    };
+  }
+
+  // User 未紐づけ → 新規 User を作成して紐づける（LINE-only ユーザー）
+  // email は一意制約があるため、lineUserId ベースの仮メールを使用
+  const tempEmail = `line_${lineUserId}@autolist.local`;
+  let user = await prismaShiryolog.user.findUnique({ where: { email: tempEmail } });
+
+  if (!user) {
+    user = await prismaShiryolog.user.create({
+      data: {
+        email: tempEmail,
+        name: lineUser.displayName,
+        autolistCredits: 100,
+        autolistPlan: 'free',
+        autolistMonthlyCount: 0,
+      },
+    });
+  }
+
+  // LineUser に userId を設定
+  await prisma.lineUser.update({
+    where: { id: lineUser.id },
+    data: { userId: user.id },
+  });
+  lineUser = { ...lineUser, userId: user.id };
+
+  return {
+    lineUser,
+    userId: user.id,
+    credits: user.autolistCredits ?? 0,
+  };
+}
+
+/**
  * POST /api/webhook
  * LINE Webhookエンドポイント
  */
@@ -208,9 +275,15 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
     if (event.type === 'follow') {
       if (event.replyToken) {
         const lineUserId = event.source.userId;
-        const existingUser = lineUserId ? await prisma.lineUser.findUnique({ where: { lineUserId } }) : null;
-        if (existingUser) {
-          await replyMessage(event.replyToken, `おかえりなさい！👋\n\nオートリストをまたご利用いただきありがとうございます。\n\n💳 残りクレジット: ${existingUser.credits}件\n\nさっそく依頼してみてください！\n例: 「渋谷区の不動産会社 30件」`);
+        const { credits } = await getOrCreateUserForLine(lineUserId);
+        if (credits > 0) {
+          // 既存ユーザー（おかえり）
+          const existingLineUser = await prisma.lineUser.findUnique({ where: { lineUserId } });
+          if (existingLineUser?.userId) {
+            await replyMessage(event.replyToken, `おかえりなさい！👋\n\nオートリストをまたご利用いただきありがとうございます。\n\n💳 残りクレジット: ${credits}件\n\nさっそく依頼してみてください！\n例: 「渋谷区の不動産会社 30件」`);
+          } else {
+            await replyMessage(event.replyToken, WELCOME_MESSAGE);
+          }
         } else {
           await replyMessage(event.replyToken, WELCOME_MESSAGE);
         }
@@ -226,25 +299,13 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
       const action = data.get('action');
 
       // ユーザーを取得または作成
-      let pbUser = await prisma.lineUser.findUnique({ where: { lineUserId } });
-      if (!pbUser) {
-        pbUser = await prisma.lineUser.create({
-          data: {
-            lineUserId,
-            displayName: null,
-            plan: 'free',
-            monthlyCount: 0,
-            credits: 100,
-            state: null,
-          },
-        });
-      }
+      const { lineUser: pbLineUser, userId: pbUserId, credits: pbCredits } = await getOrCreateUserForLine(lineUserId);
 
       switch (action) {
         case 'new_request':
           // stateをクリアして通常フローに戻す
           await prisma.lineUser.update({
-            where: { id: pbUser.id },
+            where: { id: pbLineUser.id },
             data: { state: null },
           });
           if (replyToken) {
@@ -254,22 +315,21 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
 
         case 'check_credits':
           if (replyToken) {
-            await replyMessage(replyToken, `💳 残クレジット: ${pbUser.credits}件`);
+            await replyMessage(replyToken, `💳 残クレジット: ${pbCredits}件`);
           }
           break;
 
         case 'charge': {
           // stateをawaiting_chargeに更新してチャージ案内
           await prisma.lineUser.update({
-            where: { id: pbUser.id },
+            where: { id: pbLineUser.id },
             data: { state: 'awaiting_charge' },
           });
-          const credits = pbUser.credits ?? 0;
-          const chargeReplyObj = credits <= 0
+          const chargeReplyObj = pbCredits <= 0
             ? CHARGE_MESSAGE
             : {
                 type: 'text',
-                text: `💳 現在の残クレジット: ${credits}件\n\nさらにチャージすることもできます。\n\n${CHARGE_PRICING_TEXT}`,
+                text: `💳 現在の残クレジット: ${pbCredits}件\n\nさらにチャージすることもできます。\n\n${CHARGE_PRICING_TEXT}`,
                 quickReply: CHARGE_QUICK_REPLY,
               };
           if (replyToken) {
@@ -281,7 +341,7 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
         case 'history': {
           if (replyToken) {
             const jobs = await prisma.listJob.findMany({
-              where: { userId: pbUser.id },
+              where: { userId: pbUserId },
               orderBy: { createdAt: 'desc' },
               take: 5,
             });
@@ -340,6 +400,66 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
     const replyToken = event.replyToken;
 
     try {
+      // --- LINE連携コマンドの処理 ---
+      const linkMatch = messageText.match(/^連携\s*(\d{6})$/);
+      if (linkMatch) {
+        const linkCode = linkMatch[1];
+        const now = new Date();
+
+        const linkRecord = await prisma.lineLinkCode.findFirst({
+          where: {
+            code: linkCode,
+            expiresAt: { gt: now },
+            usedAt: null,
+          },
+        });
+
+        if (linkRecord) {
+          // LineUserを取得または作成
+          let lineUser = await prisma.lineUser.findUnique({ where: { lineUserId } });
+          if (!lineUser) {
+            // LINE表示名を取得
+            let displayName: string | null = null;
+            try {
+              const profileRes = await fetch(`https://api.line.me/v2/bot/profile/${lineUserId}`, {
+                headers: { Authorization: `Bearer ${process.env.LINE_CHANNEL_ACCESS_TOKEN}` },
+              });
+              if (profileRes.ok) {
+                const profile = await profileRes.json();
+                displayName = profile.displayName || null;
+              }
+            } catch {
+              // プロフィール取得失敗は無視
+            }
+
+            lineUser = await prisma.lineUser.create({
+              data: { lineUserId, displayName, state: null },
+            });
+          }
+
+          // LineUser.userIdをLineLinkCode.userIdに設定
+          await prisma.lineUser.update({
+            where: { id: lineUser.id },
+            data: { userId: linkRecord.userId },
+          });
+
+          // LineLinkCode.usedAtを更新
+          await prisma.lineLinkCode.update({
+            where: { id: linkRecord.id },
+            data: { usedAt: now },
+          });
+
+          if (replyToken) {
+            await replyMessage(replyToken, '連携が完了しました！Webアカウントと紐づけされました。');
+          }
+        } else {
+          if (replyToken) {
+            await replyMessage(replyToken, '連携コードが無効または期限切れです。Webページから再発行してください。');
+          }
+        }
+        continue;
+      }
+
       // ヘルプコマンドの処理
       if (HELP_COMMANDS.includes(messageText.toLowerCase())) {
         if (replyToken) {
@@ -357,34 +477,21 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
       }
 
       // ユーザーを取得または作成
-      let user = await prisma.lineUser.findUnique({
-        where: { lineUserId },
-      });
-
-      if (!user) {
-        user = await prisma.lineUser.create({
-          data: {
-            lineUserId,
-            displayName: null,
-            plan: 'free',
-            monthlyCount: 0,
-            credits: 100,
-            state: null,
-          },
-        });
-      }
+      const { lineUser: userLineUser, userId, credits: userCredits } = await getOrCreateUserForLine(lineUserId);
+      // lineUser の state は LineUser テーブルで管理
+      const userState = userLineUser.state;
 
       // --- 実行中キャンセルコマンドの処理 ---
       // awaiting_confirmation / awaiting_charge 以外の状態でキャンセルが送信された場合
       if (
         (messageText.trim() === 'キャンセル' || messageText.trim() === 'cancel') &&
-        !user.state?.startsWith('{') &&
-        user.state !== 'awaiting_charge'
+        !userState?.startsWith('{') &&
+        userState !== 'awaiting_charge'
       ) {
         // 処理中のジョブを探す
         const runningJob = await prisma.listJob.findFirst({
           where: {
-            userId: user.id,
+            userId,
             status: 'running',
           },
           orderBy: { createdAt: 'desc' },
@@ -413,7 +520,7 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
       }
 
       // --- チャージ待ち状態の処理 ---
-      if (user.state === 'awaiting_charge') {
+      if (userState === 'awaiting_charge') {
         // QuickReplyボタンのテキストマッチ（「100件」「300件」「700件」「1,500件」「1500件」）
         const chargeTextMap: Record<string, number> = {
           '100件': 0,
@@ -450,7 +557,7 @@ ${paymentUrl}
         } else {
           // プラン選択以外のメッセージ → stateをクリアして通常フローに戻す
           await prisma.lineUser.update({
-            where: { id: user.id },
+            where: { id: userLineUser.id },
             data: { state: null },
           });
           // continueせずに後続の依頼フローに進む
@@ -458,9 +565,11 @@ ${paymentUrl}
       }
 
       // --- 確認待ち状態の処理 ---
+      // credits を最新で取得し直す（stateクリア後に進んだ場合のため）
+      let currentCredits = userCredits;
       let skipConfirmationBlock = false;
-      if (user.state?.startsWith('{')) {
-        const pendingState = JSON.parse(user.state);
+      if (userState?.startsWith('{')) {
+        const pendingState = JSON.parse(userState);
 
         if (pendingState.status === 'awaiting_confirmation') {
           const answer = messageText.trim();
@@ -468,38 +577,38 @@ ${paymentUrl}
           if (answer === 'はい' || answer === 'yes' || answer === 'YES' || answer === 'ハイ') {
             // state をクリア
             await prisma.lineUser.update({
-              where: { id: user.id },
+              where: { id: userLineUser.id },
               data: { state: null },
             });
 
-            // ジョブ作成 + クレジット仮押さえ（トランザクション）
+            // ジョブ作成
             const reservedCredits = pendingState.targetCount;
-            const [job] = await prisma.$transaction([
-              prisma.listJob.create({
-                data: {
-                  userId: user.id,
-                  keyword: pendingState.keyword,
-                  industry: pendingState.industry,
-                  location: pendingState.location,
-                  targetCount: pendingState.targetCount,
-                  reservedCredits: reservedCredits,
-                  status: 'pending',
-                  originalMessage: pendingState.originalMessage,
-                  industryKeywords: pendingState.industryKeywords || [],
-                },
-              }),
-              prisma.lineUser.update({
-                where: { id: user.id },
-                data: {
-                  credits: { decrement: reservedCredits },
-                },
-              }),
-            ]);
+            const job = await prisma.listJob.create({
+              data: {
+                userId,
+                keyword: pendingState.keyword,
+                industry: pendingState.industry,
+                location: pendingState.location,
+                targetCount: pendingState.targetCount,
+                reservedCredits: reservedCredits,
+                status: 'pending',
+                originalMessage: pendingState.originalMessage,
+                industryKeywords: pendingState.industryKeywords || [],
+              },
+            });
+
+            // クレジット仮押さえ（User テーブル）
+            await prismaShiryolog.user.update({
+              where: { id: userId },
+              data: {
+                autolistCredits: { decrement: reservedCredits },
+              },
+            });
 
             // SearchLog記録
             await prisma.searchLog.create({
               data: {
-                userId: user.id,
+                userId,
                 lineUserId: lineUserId,
                 keyword: pendingState.keyword,
                 industry: pendingState.industry,
@@ -510,9 +619,9 @@ ${paymentUrl}
             });
 
             // クレジット仮押さえ済み（完了時に差分返却）
-            const remainingAfterReserve = user.credits - reservedCredits;
+            const remainingAfterReserve = currentCredits - reservedCredits;
 
-            const isShiryologUser = !!user.userId;
+            const isShiryologUser = !!userLineUser.userId;
             const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3007';
             const acceptanceMessage = isShiryologUser
               ? `✅ リスト収集を開始します！
@@ -561,7 +670,7 @@ ${appUrl}/my-lists?openExternalBrowser=1`
           ) {
             // キャンセル
             await prisma.lineUser.update({
-              where: { id: user.id },
+              where: { id: userLineUser.id },
               data: { state: null },
             });
 
@@ -587,9 +696,9 @@ ${appUrl}/my-lists?openExternalBrowser=1`
               }
 
               // クレジット残量チェック
-              if (user.credits < newCount) {
+              if (currentCredits < newCount) {
                 if (replyToken) {
-                  await replyMessage(replyToken, `⚠️ クレジットが不足しています。\n残クレジット: ${user.credits}件\n\nチャージ後に再度お試しください。`);
+                  await replyMessage(replyToken, `⚠️ クレジットが不足しています。\n残クレジット: ${currentCredits}件\n\nチャージ後に再度お試しください。`);
                 }
                 continue;
               }
@@ -600,12 +709,12 @@ ${appUrl}/my-lists?openExternalBrowser=1`
                 targetCount: newCount,
               });
               await prisma.lineUser.update({
-                where: { id: user.id },
+                where: { id: userLineUser.id },
                 data: { state: updatedState },
               });
 
               // 更新した確認メッセージを再送
-              const remainingAfter = user.credits - newCount;
+              const remainingAfter = currentCredits - newCount;
               const updatedConfirmMessageObj = {
                 type: 'text',
                 text: `以下の条件でリストを収集してよいですか？\n\n🏢 業種：${pendingState.industry || '指定なし'}\n📍 地域：${pendingState.location || '指定なし'}\n📊 件数：${newCount}社\n\n💳 最大${newCount}クレジット消費予定（開始時に仮押さえ、未使用分は返却）`,
@@ -639,10 +748,9 @@ ${appUrl}/my-lists?openExternalBrowser=1`
 
             // 「はい」「いいえ」以外 → 新しい依頼として処理する
             await prisma.lineUser.update({
-              where: { id: user.id },
+              where: { id: userLineUser.id },
               data: { state: null },
             });
-            user.state = null;
             skipConfirmationBlock = true;
           }
 
@@ -652,14 +760,21 @@ ${appUrl}/my-lists?openExternalBrowser=1`
         }
       }
 
+      // 最新のクレジットを再取得（state処理でクリアした場合も含む）
+      const latestUser = await prismaShiryolog.user.findUnique({
+        where: { id: userId },
+        select: { autolistCredits: true },
+      });
+      currentCredits = latestUser?.autolistCredits ?? 0;
+
       // --- クレジット残量チェック ---
-      if (user.credits <= 0) {
+      if (currentCredits <= 0) {
         // チャージ履歴の有無で分岐
-        const purchaseCount = await prisma.purchase.count({ where: { userId: user.id } });
+        const purchaseCount = await prisma.purchase.count({ where: { userId } });
 
         // stateをawaiting_chargeに更新
         await prisma.lineUser.update({
-          where: { id: user.id },
+          where: { id: userLineUser.id },
           data: { state: 'awaiting_charge' },
         });
 
@@ -672,7 +787,7 @@ ${appUrl}/my-lists?openExternalBrowser=1`
           // チャージ履歴あり
           const chargeMessageObj = {
             type: 'text',
-            text: `💳 クレジットが不足しています。\n残り: ${user.credits}件\n\nチャージしてご利用ください。\n\n${CHARGE_PRICING_TEXT}`,
+            text: `💳 クレジットが不足しています。\n残り: ${currentCredits}件\n\nチャージしてご利用ください。\n\n${CHARGE_PRICING_TEXT}`,
             quickReply: CHARGE_QUICK_REPLY,
           };
           if (replyToken) {
@@ -745,44 +860,24 @@ ${appUrl}/my-lists?openExternalBrowser=1`
       }
 
       // クレジット残量が依頼件数を下回る場合は警告
-      if (user.credits < analyzed.targetCount) {
+      if (currentCredits < analyzed.targetCount) {
         // チャージ履歴の有無で分岐
-        const purchaseCount = await prisma.purchase.count({ where: { userId: user.id } });
+        const purchaseCount = await prisma.purchase.count({ where: { userId } });
 
-        if (purchaseCount === 0) {
-          // チャージ履歴なし（無料枠を使い切った）
-          // stateをawaiting_chargeに更新
-          await prisma.lineUser.update({
-            where: { id: user.id },
-            data: { state: 'awaiting_charge' },
-          });
+        // stateをawaiting_chargeに更新
+        await prisma.lineUser.update({
+          where: { id: userLineUser.id },
+          data: { state: 'awaiting_charge' },
+        });
 
-          const chargeMessageObj = {
-            type: 'text',
-            text: `💳 クレジットが不足しています。\n残り: ${user.credits}件 / 必要: ${analyzed.targetCount}件\n\nチャージしてご利用ください。\n\n${CHARGE_PRICING_TEXT}`,
-            quickReply: CHARGE_QUICK_REPLY,
-          };
+        const chargeMessageObj = {
+          type: 'text',
+          text: `💳 クレジットが不足しています。\n残り: ${currentCredits}件 / 必要: ${analyzed.targetCount}件\n\nチャージしてご利用ください。\n\n${CHARGE_PRICING_TEXT}`,
+          quickReply: CHARGE_QUICK_REPLY,
+        };
 
-          if (replyToken) {
-            await replyMessage(replyToken, chargeMessageObj);
-          }
-        } else {
-          // チャージ履歴あり
-          // stateをawaiting_chargeに更新
-          await prisma.lineUser.update({
-            where: { id: user.id },
-            data: { state: 'awaiting_charge' },
-          });
-
-          const chargeMessageObj = {
-            type: 'text',
-            text: `💳 クレジットが不足しています。\n残り: ${user.credits}件 / 必要: ${analyzed.targetCount}件\n\nチャージしてご利用ください。\n\n${CHARGE_PRICING_TEXT}`,
-            quickReply: CHARGE_QUICK_REPLY,
-          };
-
-          if (replyToken) {
-            await replyMessage(replyToken, chargeMessageObj);
-          }
+        if (replyToken) {
+          await replyMessage(replyToken, chargeMessageObj);
         }
         continue;
       }
@@ -799,11 +894,11 @@ ${appUrl}/my-lists?openExternalBrowser=1`
       });
 
       await prisma.lineUser.update({
-        where: { id: user.id },
+        where: { id: userLineUser.id },
         data: { state: confirmationState },
       });
 
-      const remainingAfter = user.credits - analyzed.targetCount;
+      const remainingAfter = currentCredits - analyzed.targetCount;
       const confirmMessageObj = {
         type: 'text',
         text: `以下の条件でリストを収集してよいですか？\n\n🏢 業種：${analyzed.industry || '指定なし'}\n📍 地域：${analyzed.location || '指定なし'}\n📊 件数：${analyzed.targetCount}社\n\n💳 最大${analyzed.targetCount}クレジット消費予定（開始時に仮押さえ、未使用分は返却）`,

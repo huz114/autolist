@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import CancelButton from './CancelButton'
 import NewRequestButton from './NewRequestButton'
+import LineLinkButton from './LineLinkButton'
 
 function getStatusBadge(job: { status: string; confirmedAt: Date | null }) {
   if (job.status === 'completed' && job.confirmedAt) {
@@ -30,37 +31,33 @@ export default async function MyListsPage() {
     redirect('/login?callbackUrl=/my-lists')
   }
 
-  const lineUsers = await prisma.lineUser.findMany({
+  // User.id で直接 ListJob を検索
+  const jobs = await prisma.listJob.findMany({
     where: { userId: session.user.id },
+    orderBy: { createdAt: 'desc' },
     include: {
-      jobs: {
-        orderBy: { createdAt: 'desc' },
-        include: {
-          urls: {
-            select: { hasForm: true, companyVerified: true, excluded: true },
-          },
-          _count: {
-            select: {
-              urls: { where: { excluded: true } },
-            },
-          },
+      urls: {
+        select: { hasForm: true, companyVerified: true, excluded: true },
+      },
+      _count: {
+        select: {
+          urls: { where: { excluded: true } },
         },
       },
     },
   })
 
-  const jobs = lineUsers.flatMap((u) => u.jobs).sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  )
-
   return (
     <div className="max-w-5xl mx-auto px-4 py-10">
-      <div className="mb-8 flex items-start justify-between">
+      <div className="mb-4 flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-[#f0f4f8] mb-1">マイリスト</h1>
           <p className="text-sm text-[#8fa3b8]">フォーム営業リストの一覧です</p>
         </div>
         <NewRequestButton />
+      </div>
+      <div className="mb-8">
+        <LineLinkButton />
       </div>
 
       {jobs.length === 0 ? (

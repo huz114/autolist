@@ -13,7 +13,7 @@ type ShiryologUser = {
 
 /**
  * GET /api/admin/requests?page=1&limit=20
- * ListJob一覧をLineUser（displayName）とCollectedUrl数とともに返す
+ * ListJob一覧をUser情報とCollectedUrl数とともに返す
  * 新しい順でページネーション
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
@@ -29,14 +29,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         skip,
         take: limit,
         include: {
-          user: {
-            select: {
-              id: true,
-              displayName: true,
-              lineUserId: true,
-              userId: true,
-            },
-          },
           _count: {
             select: { urls: true },
           },
@@ -45,8 +37,17 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       prisma.listJob.count(),
     ]);
 
-    // シリョログUserデータを取得（LineUser.userId = public.User.id）
-    const userIds = Array.from(new Set(jobs.map((j) => j.user.userId).filter((id): id is string => id != null)));
+    // ユーザーIDを収集
+    const userIds = Array.from(new Set(jobs.map((j) => j.userId)));
+
+    // LineUser 情報を取得（displayName, lineUserId）
+    const lineUsers = await prisma.lineUser.findMany({
+      where: { userId: { in: userIds } },
+      select: { userId: true, lineUserId: true, displayName: true },
+    });
+    const lineUserMap = new Map(lineUsers.map((lu) => [lu.userId, lu]));
+
+    // シリョログUserデータを取得（User.id = ListJob.userId）
     let shiryologUserMap: Record<string, ShiryologUser> = {};
 
     if (userIds.length > 0) {
@@ -65,16 +66,22 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       }
     }
 
-    const jobsWithShiryologUser = jobs.map((job) => ({
-      ...job,
-      user: {
-        ...job.user,
-        shiryologUser: (job.user.userId && shiryologUserMap[job.user.userId]) ?? null,
-      },
-    }));
+    const jobsWithUser = jobs.map((job) => {
+      const lu = lineUserMap.get(job.userId);
+      return {
+        ...job,
+        user: {
+          id: job.userId,
+          displayName: lu?.displayName ?? null,
+          lineUserId: lu?.lineUserId ?? null,
+          userId: job.userId,
+          shiryologUser: shiryologUserMap[job.userId] ?? null,
+        },
+      };
+    });
 
     return NextResponse.json({
-      jobs: jobsWithShiryologUser,
+      jobs: jobsWithUser,
       total,
       page,
     });

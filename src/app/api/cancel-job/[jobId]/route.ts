@@ -17,7 +17,7 @@ export async function POST(
   const job = await prisma.listJob.findFirst({
     where: {
       id: jobId,
-      user: { userId: session.user.id },
+      userId: session.user.id,
       status: { in: ['running', 'pending'] },
     },
   })

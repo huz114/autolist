@@ -24,17 +24,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // LineUserを取得（lineUserIdが必要 - webhookでの照合用）
+  // LineUser の lineUserId を取得（Stripe webhook での照合用フォールバック）
   const lineUser = await prisma.lineUser.findFirst({
     where: { userId: session.user.id },
+    select: { lineUserId: true },
   });
-
-  if (!lineUser) {
-    return NextResponse.json(
-      { error: 'LINEアカウントが連携されていません' },
-      { status: 400 }
-    );
-  }
 
   try {
     const body = await request.json();
@@ -64,8 +58,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         },
       ],
       metadata: {
-        lineUserId: lineUser.lineUserId,
+        userId: session.user.id,
         credits: String(plan.credits),
+        // 旧方式との互換性のため lineUserId も含める
+        ...(lineUser ? { lineUserId: lineUser.lineUserId } : {}),
       },
       success_url: `${appUrl}/payment-callback?status=success`,
       cancel_url: `${appUrl}/payment-callback?status=cancelled`,

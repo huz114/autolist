@@ -14,7 +14,7 @@ interface ShiryologUser {
 interface LineUser {
   id: string
   displayName: string | null
-  lineUserId: string
+  lineUserId: string | null
   shiryologUser: ShiryologUser | null
 }
 
@@ -198,7 +198,7 @@ function JobRow({ job }: { job: Job }) {
               <span className="inline-block text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-green-900/40 text-green-400 mb-0.5">
                 ✓ シリョログ登録済
               </span>
-              <p className="truncate text-gray-200">{job.user.displayName ?? job.user.lineUserId}</p>
+              <p className="truncate text-gray-200">{job.user.displayName ?? job.user.lineUserId ?? '(不明)'}</p>
               {job.user.shiryologUser.name && (
                 <p className="text-xs text-gray-400 truncate">{job.user.shiryologUser.name}</p>
               )}
@@ -217,7 +217,7 @@ function JobRow({ job }: { job: Job }) {
               <span className="inline-block text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-gray-800 text-gray-400 mb-0.5">
                 未登録
               </span>
-              <p className="truncate text-gray-200">{job.user.displayName ?? job.user.lineUserId}</p>
+              <p className="truncate text-gray-200">{job.user.displayName ?? job.user.lineUserId ?? '(不明)'}</p>
             </div>
           )}
         </td>

@@ -12,14 +12,9 @@ model LineUser {
   id           String     @id @default(cuid())
   lineUserId   String     @unique
   displayName  String?
-  plan         String     @default("free")
-  monthlyCount Int        @default(0)
   createdAt    DateTime   @default(now())
-  credits      Int        @default(100)
   state        String?
   userId       String?
-  jobs         ListJob[]
-  purchases    Purchase[]
 }
 
 model Purchase {
@@ -29,7 +24,6 @@ model Purchase {
   credits   Int
   stripeId  String?
   createdAt DateTime @default(now())
-  user      LineUser @relation(fields: [userId], references: [id])
 }
 
 model AdMetrics {
@@ -67,7 +61,6 @@ model ListJob {
   industryKeywords String[]
   urls             CollectedUrl[]
   geminiUsageLogs  GeminiUsageLog[]
-  user             LineUser       @relation(fields: [userId], references: [id])
 }
 
 model CollectedUrl {
@@ -123,4 +116,13 @@ model GeminiUsageLog {
   createdAt        DateTime @default(now())
 
   job              ListJob? @relation(fields: [jobId], references: [id])
+}
+
+model LineLinkCode {
+  id        String    @id @default(cuid())
+  userId    String
+  code      String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
 }

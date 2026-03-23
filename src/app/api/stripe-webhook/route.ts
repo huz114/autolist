@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { prisma } from '@/lib/prisma';
-// import { sendMessage } from '@/lib/line'; // 無効化: 2026-03-23
+import { prismaShiryolog } from '@/lib/prisma-shiryolog';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2026-02-25.clover',
@@ -40,10 +40,23 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session;
 
-    const lineUserId = session.metadata?.lineUserId;
+    // metadata から userId を取得（新方式）。旧方式の lineUserId もフォールバック対応
+    let userId = session.metadata?.userId;
     const creditsStr = session.metadata?.credits;
 
-    if (!lineUserId || !creditsStr) {
+    if (!userId) {
+      // 旧方式: lineUserId から User.id を解決
+      const lineUserId = session.metadata?.lineUserId;
+      if (lineUserId) {
+        const lineUser = await prisma.lineUser.findUnique({
+          where: { lineUserId },
+          select: { userId: true },
+        });
+        userId = lineUser?.userId ?? undefined;
+      }
+    }
+
+    if (!userId || !creditsStr) {
       console.error('Missing metadata in Stripe session:', session.id);
       return NextResponse.json({ error: 'Missing metadata' }, { status: 400 });
     }
@@ -65,50 +78,39 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         return NextResponse.json({ received: true, duplicate: true });
       }
 
-      // ユーザーを取得
-      const user = await prisma.lineUser.findUnique({
-        where: { lineUserId },
-      });
-
-      if (!user) {
-        console.error('User not found for lineUserId:', lineUserId);
-        return NextResponse.json({ error: 'User not found' }, { status: 404 });
-      }
-
       // Purchaseレコードを作成
       const amount = session.amount_total ?? 0;
       await prisma.purchase.create({
         data: {
-          userId: user.id,
+          userId,
           amount,
           credits: creditsToAdd,
           stripeId: session.id,
         },
       });
 
-      // クレジットを加算 & stateをリセット
-      const updatedUser = await prisma.lineUser.update({
-        where: { lineUserId },
+      // User のクレジットを加算
+      const updatedUser = await prismaShiryolog.user.update({
+        where: { id: userId },
         data: {
-          credits: { increment: creditsToAdd },
-          state: null,
+          autolistCredits: { increment: creditsToAdd },
         },
       });
 
-      console.log(
-        `Credits added: lineUserId=${lineUserId}, added=${creditsToAdd}, newTotal=${updatedUser.credits}`
-      );
+      // LineUser の state をリセット（LINE経由のチャージの場合）
+      const lineUserId = session.metadata?.lineUserId;
+      if (lineUserId) {
+        await prisma.lineUser.update({
+          where: { lineUserId },
+          data: { state: null },
+        }).catch(() => {
+          // LineUser が存在しない場合は無視
+        });
+      }
 
-      // LINE完了通知（無効化: 2026-03-23）
-      // const completionMessage = `✅ チャージ完了しました！
-      //
-      // 💳 ${creditsToAdd}件のクレジットが付与されました。
-      // 残クレジット: ${updatedUser.credits}件
-      //
-      // 引き続きリスト収集をご利用いただけます。
-      // 業種・地域・件数を送信してください。`;
-      //
-      // await sendMessage(lineUserId, completionMessage);
+      console.log(
+        `Credits added: userId=${userId}, added=${creditsToAdd}, newTotal=${updatedUser.autolistCredits}`
+      );
     } catch (dbError) {
       console.error('Database error:', dbError);
       return NextResponse.json({ error: 'Database error' }, { status: 500 });

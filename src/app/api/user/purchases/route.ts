@@ -8,19 +8,9 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const lineUser = await prisma.lineUser.findFirst({
-    where: { userId: session.user.id },
-  })
-
-  if (!lineUser) {
-    return NextResponse.json(
-      { error: 'LINEアカウントが連携されていません', purchases: [] },
-      { status: 400 }
-    )
-  }
-
+  // Purchase.userId は User.id を格納している
   const purchases = await prisma.purchase.findMany({
-    where: { userId: lineUser.id },
+    where: { userId: session.user.id },
     orderBy: { createdAt: 'desc' },
     select: {
       id: true,

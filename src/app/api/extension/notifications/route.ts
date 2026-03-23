@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma'
  * GET /api/extension/notifications
  * Chrome拡張向け: 最近完了したジョブの通知を返す
  * - 過去24時間以内に完了したジョブ
- * - ユーザーのLINEアカウントに紐づくジョブのみ
+ * - ユーザーのジョブのみ
  * - seenAt が null のもの（未読）をカウント
  */
 export async function GET() {
@@ -15,24 +15,12 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // session.user.id は shiryolog の User ID
-  const lineUser = await prisma.lineUser.findFirst({
-    where: { userId: session.user.id },
-  })
-
-  if (!lineUser) {
-    return NextResponse.json({
-      notifications: [],
-      unreadCount: 0,
-    })
-  }
-
   const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
 
-  // 過去24時間以内に完了したジョブを取得
+  // User.id で直接 ListJob を検索
   const completedJobs = await prisma.listJob.findMany({
     where: {
-      userId: lineUser.id,
+      userId: session.user.id,
       status: 'completed',
       completedAt: {
         gte: oneDayAgo,

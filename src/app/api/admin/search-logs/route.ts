@@ -29,18 +29,32 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           totalFound: true,
           searchQueries: true,
           createdAt: true,
-          user: {
-            select: {
-              displayName: true,
-              lineUserId: true,
-            },
-          },
+          userId: true,
         },
       }),
       prisma.listJob.count(),
     ]);
 
-    return NextResponse.json({ jobs, total, page });
+    // userId から LineUser 情報を取得
+    const userIds = Array.from(new Set(jobs.map((j) => j.userId)));
+    const lineUsers = await prisma.lineUser.findMany({
+      where: { userId: { in: userIds } },
+      select: { userId: true, displayName: true, lineUserId: true },
+    });
+    const lineUserMap = new Map(lineUsers.map((lu) => [lu.userId, lu]));
+
+    const jobsWithUser = jobs.map((job) => {
+      const lu = lineUserMap.get(job.userId);
+      return {
+        ...job,
+        user: {
+          displayName: lu?.displayName ?? null,
+          lineUserId: lu?.lineUserId ?? null,
+        },
+      };
+    });
+
+    return NextResponse.json({ jobs: jobsWithUser, total, page });
   } catch (error) {
     console.error('GET /api/admin/search-logs error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

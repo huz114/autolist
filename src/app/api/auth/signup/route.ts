@@ -65,15 +65,27 @@ export async function POST(req: NextRequest) {
       console.error('Verification email failed:', emailResult.error)
     }
 
-    // jobIdがある場合、そのジョブのLineUserと紐づける
+    // jobIdがある場合、そのジョブのユーザーのLineUserと紐づける
     if (jobId) {
       const job = await prisma.listJob.findUnique({
         where: { id: jobId },
-        include: { user: true },
+        select: { userId: true },
       })
-      if (job?.user) {
-        await prisma.lineUser.update({
-          where: { id: job.user.id },
+      if (job?.userId) {
+        // ジョブの userId で LineUser を検索して紐づける
+        // （LINE-only ユーザーの仮 User → 正式 User への移行）
+        await prisma.lineUser.updateMany({
+          where: { userId: job.userId },
+          data: { userId: user.id },
+        })
+        // ジョブの userId も新しい User.id に更新
+        await prisma.listJob.updateMany({
+          where: { userId: job.userId },
+          data: { userId: user.id },
+        })
+        // Purchase も同様に更新
+        await prisma.purchase.updateMany({
+          where: { userId: job.userId },
           data: { userId: user.id },
         })
       }

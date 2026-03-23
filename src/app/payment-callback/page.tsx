@@ -18,8 +18,8 @@ function PaymentCallbackContent() {
   }, [searchParams]);
 
   return (
-    <div className="text-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-4" />
+    <div className="text-center" role="status" aria-label="読み込み中">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-4" aria-hidden="true" />
       <p className="text-gray-600">リダイレクト中...</p>
     </div>
   );

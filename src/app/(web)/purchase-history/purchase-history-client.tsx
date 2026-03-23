@@ -24,7 +24,7 @@ function formatDate(dateStr: string): string {
 
 function SkeletonRow() {
   return (
-    <div className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-xl p-4 animate-pulse">
+    <div className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-xl p-4 animate-pulse" role="status" aria-label="読み込み中">
       <div className="flex items-center justify-between">
         <div className="space-y-2">
           <div className="h-4 w-32 bg-[#1e293b] rounded" />
@@ -45,14 +45,20 @@ export default function PurchaseHistoryClient() {
     async function fetchPurchases() {
       try {
         const res = await fetch('/api/user/purchases')
-        const data = await res.json()
-        if (res.ok) {
-          setPurchases(data.purchases)
-        } else {
-          setError(data.error || '購入履歴の取得に失敗しました')
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => null)
+          const message = errorData?.error || (res.status === 401 ? 'ログインが必要です。再度ログインしてください。' : res.status >= 500 ? 'サーバーエラーが発生しました。しばらく時間をおいて再度お試しください。' : `購入履歴の取得に失敗しました (${res.status})`)
+          setError(message)
+          return
         }
-      } catch {
-        setError('購入履歴の取得に失敗しました')
+        const data = await res.json()
+        setPurchases(data.purchases)
+      } catch (err) {
+        if (err instanceof TypeError && (err as TypeError).message === 'Failed to fetch') {
+          setError('ネットワークに接続できません。インターネット接続を確認してください。')
+        } else {
+          setError('購入履歴の取得に失敗しました。しばらく時間をおいて再度お試しください。')
+        }
       } finally {
         setLoading(false)
       }
@@ -76,8 +82,15 @@ export default function PurchaseHistoryClient() {
           <SkeletonRow />
         </div>
       ) : error ? (
-        <div className="bg-[rgba(255,71,87,0.1)] border border-[rgba(255,71,87,0.3)] rounded-xl px-4 py-3">
-          <p className="text-[#ff4757] text-xs sm:text-sm">{error}</p>
+        <div className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-2xl p-12 text-center">
+          <p className="text-sm text-[#ff4757] mb-2">購入履歴の取得に失敗しました</p>
+          <p className="text-xs text-[#8494a7] mb-4">{error}</p>
+          <button
+            onClick={() => { setLoading(true); setError(null); window.location.reload() }}
+            className="bg-[#06C755] hover:bg-[#04a344] text-white text-sm font-bold px-4 py-2 rounded-full transition-all hover:shadow-[0_0_20px_rgba(6,199,85,0.3)] cursor-pointer"
+          >
+            再試行
+          </button>
         </div>
       ) : purchases.length === 0 ? (
         <div className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-2xl p-12 text-center">
@@ -88,7 +101,7 @@ export default function PurchaseHistoryClient() {
             </svg>
           </div>
           <p className="text-[#f0f4f8] font-medium mb-2">購入履歴がありません</p>
-          <p className="text-sm text-[#4a6080] mb-6">
+          <p className="text-sm text-[#8494a7] mb-6">
             クレジットを購入すると、ここに履歴が表示されます
           </p>
           <Link
@@ -120,7 +133,7 @@ export default function PurchaseHistoryClient() {
                     <div className="text-[#f0f4f8] font-medium text-sm sm:text-base">
                       {purchase.credits.toLocaleString()}件 / &yen;{purchase.amount.toLocaleString()}
                     </div>
-                    <div className="text-[#4a6080] text-xs sm:text-sm mt-0.5">
+                    <div className="text-[#8494a7] text-xs sm:text-sm mt-0.5">
                       {formatDate(purchase.createdAt)}
                     </div>
                   </div>
@@ -130,7 +143,7 @@ export default function PurchaseHistoryClient() {
                     </span>
                   </div>
                 </div>
-                <p className="text-[#4a6080] text-[10px] sm:text-xs mt-2">
+                <p className="text-[#8494a7] text-[10px] sm:text-xs mt-2">
                   領収書はメールで送信されます
                 </p>
               </div>

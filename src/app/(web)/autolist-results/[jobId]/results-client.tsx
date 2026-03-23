@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useFocusTrap } from '@/lib/useFocusTrap'
 
 type UrlItem = {
   id: string
@@ -38,6 +39,7 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
   const [confirmed, setConfirmed] = useState(isConfirmed)
   const [error, setError] = useState<string | null>(null)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
+  const confirmModalRef = useFocusTrap(showConfirmModal, () => { if (!confirming) setShowConfirmModal(false) })
   const [currentCredits, setCurrentCredits] = useState<number | null>(null)
   const [creditsLoading, setCreditsLoading] = useState(false)
 
@@ -101,8 +103,12 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
       }
 
       router.push(`/send/${jobId}`)
-    } catch {
-      setError('通信エラーが発生しました')
+    } catch (err) {
+      if (err instanceof TypeError && (err as TypeError).message === 'Failed to fetch') {
+        setError('ネットワークに接続できません。インターネット接続を確認してください。')
+      } else {
+        setError('通信エラーが発生しました。しばらく時間をおいて再度お試しください。')
+      }
     } finally {
       setConfirming(false)
     }
@@ -115,9 +121,12 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
       <div className="mb-6">
         <Link
           href="/my-lists"
-          className="inline-flex items-center text-sm text-[#8fa3b8] hover:text-[#f0f4f8] transition-colors mb-4"
+          className="inline-flex items-center gap-2 text-sm text-[#06C755] hover:text-[#04a344] font-medium bg-[rgba(6,199,85,0.08)] hover:bg-[rgba(6,199,85,0.15)] border border-[rgba(6,199,85,0.2)] hover:border-[rgba(6,199,85,0.4)] px-4 py-2 rounded-full transition-all mb-4"
         >
-          &larr; マイリストに戻る
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+          マイリストに戻る
         </Link>
         <h1 className="text-2xl font-bold text-[#f0f4f8] mb-1">企業リスト</h1>
         <p className="text-sm text-[#8fa3b8]">
@@ -128,23 +137,23 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
       {/* Job情報バナー */}
       <div className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-2xl px-5 py-4 mb-6 flex flex-wrap gap-4 items-center">
         <div>
-          <span className="text-xs text-[#4a6080] block mb-0.5">キーワード</span>
+          <span className="text-xs text-[#8494a7] block mb-0.5">キーワード</span>
           <span className="text-[#f0f4f8] font-medium">{keyword}</span>
         </div>
         {industry && (
           <div>
-            <span className="text-xs text-[#4a6080] block mb-0.5">業種</span>
+            <span className="text-xs text-[#8494a7] block mb-0.5">業種</span>
             <span className="text-[#f0f4f8]">{industry}</span>
           </div>
         )}
         {location && (
           <div>
-            <span className="text-xs text-[#4a6080] block mb-0.5">エリア</span>
+            <span className="text-xs text-[#8494a7] block mb-0.5">エリア</span>
             <span className="text-[#f0f4f8]">{location}</span>
           </div>
         )}
         <div>
-          <span className="text-xs text-[#4a6080] block mb-0.5">
+          <span className="text-xs text-[#8494a7] block mb-0.5">
             {confirmed ? 'フォームあり企業' : '収集企業数'}
           </span>
           <span className="text-[#06C755] font-medium">{urls.length}件</span>
@@ -152,11 +161,11 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
         {!confirmed && excludedCount > 0 && (
           <>
             <div>
-              <span className="text-xs text-[#4a6080] block mb-0.5">除外</span>
+              <span className="text-xs text-[#8494a7] block mb-0.5">除外</span>
               <span className="text-[#ff4757] font-medium">{excludedCount}件</span>
             </div>
             <div>
-              <span className="text-xs text-[#4a6080] block mb-0.5">残り</span>
+              <span className="text-xs text-[#8494a7] block mb-0.5">残り</span>
               <span className="text-[#06C755] font-medium">{activeCount}件</span>
             </div>
           </>
@@ -195,7 +204,7 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
             </svg>
           </div>
           <p className="text-[#f0f4f8] font-medium mb-2">企業データがありません</p>
-          <p className="text-sm text-[#4a6080] mb-6">
+          <p className="text-sm text-[#8494a7] mb-6">
             この検索条件ではフォームのある企業が見つかりませんでした。別の業種・地域で再度お試しください。
           </p>
           <Link
@@ -212,21 +221,11 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
             <div
               className="pointer-events-none fixed inset-0 z-50 overflow-hidden"
               aria-hidden="true"
-            >
-              <div
-                className="absolute inset-[-50%] flex flex-wrap items-center justify-center gap-x-24 gap-y-16"
-                style={{ transform: 'rotate(-30deg)' }}
-              >
-                {Array.from({ length: 60 }).map((_, i) => (
-                  <span
-                    key={i}
-                    className="text-white/[0.06] text-lg font-bold whitespace-nowrap select-none"
-                  >
-                    オートリスト
-                  </span>
-                ))}
-              </div>
-            </div>
+              style={{
+                backgroundImage: `url("data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="260" height="120"><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="18" font-weight="bold" fill="rgba(255,255,255,0.06)" transform="rotate(-30,130,60)">オートリスト</text></svg>')}")`,
+                backgroundRepeat: 'repeat',
+              }}
+            />
           )}
           {urls.map((u, idx) => {
             const isExcluded = excludedIds.has(u.id)
@@ -236,38 +235,50 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
             return (
               <div
                 key={u.id}
-                className={`bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-2xl px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 transition-all hover:border-[rgba(6,199,85,0.4)] ${
-                  isExcluded ? 'opacity-40' : ''
+                className={`bg-[#111827] border rounded-2xl px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 transition-all ${
+                  isExcluded
+                    ? 'opacity-50 border-[rgba(255,71,87,0.2)] bg-[rgba(255,71,87,0.02)]'
+                    : 'border-[rgba(255,255,255,0.07)] hover:border-[rgba(6,199,85,0.4)]'
                 }`}
               >
                 <div className="flex items-start gap-3 flex-1 min-w-0">
-                  <span className="text-xs text-[#4a6080] tabular-nums mt-0.5 shrink-0">
+                  <span className={`text-xs tabular-nums mt-0.5 shrink-0 ${isExcluded ? 'text-[#ff4757]/50' : 'text-[#8494a7]'}`}>
                     {String(idx + 1).padStart(2, '0')}
                   </span>
                   <div className="min-w-0">
-                    <p className="text-[#f0f4f8] font-medium truncate">
-                      {u.companyName ?? u.url}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className={`font-medium truncate ${isExcluded ? 'text-[#8fa3b8] line-through' : 'text-[#f0f4f8]'}`}>
+                        {u.companyName ?? u.url}
+                      </p>
+                      {isExcluded && (
+                        <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-[rgba(255,71,87,0.15)] text-[#ff4757] border border-[rgba(255,71,87,0.25)]">
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                          </svg>
+                          除外
+                        </span>
+                      )}
+                    </div>
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
                       {u.industry && (
-                        <span className="text-xs text-[#4a6080]">{u.industry}</span>
+                        <span className="text-xs text-[#8494a7]">{u.industry}</span>
                       )}
                       {u.location && (
-                        <span className="text-xs text-[#4a6080]">{u.location}</span>
+                        <span className="text-xs text-[#8494a7]">{u.location}</span>
                       )}
                       {u.employeeCount && confirmed && (
-                        <span className="text-xs text-[#4a6080]">従業員: {u.employeeCount}</span>
+                        <span className="text-xs text-[#8494a7]">従業員: {u.employeeCount}</span>
                       )}
                       {/* 電話番号は確定後のみ表示 */}
                       {u.phoneNumber && confirmed && (
-                        <span className="text-xs text-[#4a6080]">{u.phoneNumber}</span>
+                        <span className="text-xs text-[#8494a7]">{u.phoneNumber}</span>
                       )}
                     </div>
                     <a
                       href={u.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs text-[#06C755] hover:text-[#04a344] transition-colors truncate block mt-0.5"
+                      className={`text-xs transition-colors truncate block mt-0.5 ${isExcluded ? 'text-[#8494a7] hover:text-[#8fa3b8]' : 'text-[#06C755] hover:text-[#04a344]'}`}
                     >
                       {u.url}
                     </a>
@@ -277,18 +288,18 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
                 {!confirmed && (
                   <button
                     onClick={() => toggleExclude(u.id)}
-                    className={`shrink-0 text-xs px-3 py-1.5 rounded-full transition-colors whitespace-nowrap ${
+                    className={`shrink-0 text-xs font-medium px-4 py-2 rounded-full transition-all whitespace-nowrap cursor-pointer ${
                       isExcluded
-                        ? 'bg-[rgba(6,199,85,0.1)] hover:bg-[rgba(6,199,85,0.2)] text-[#06C755]'
-                        : 'bg-[rgba(255,71,87,0.1)] hover:bg-[rgba(255,71,87,0.2)] text-[#ff4757]'
+                        ? 'bg-[rgba(6,199,85,0.1)] hover:bg-[rgba(6,199,85,0.2)] text-[#06C755] border border-[rgba(6,199,85,0.3)]'
+                        : 'bg-[rgba(255,71,87,0.08)] hover:bg-[rgba(255,71,87,0.15)] text-[#ff4757] border border-[rgba(255,71,87,0.2)]'
                     }`}
                   >
-                    {isExcluded ? '元に戻す' : 'リストから外す'}
+                    {isExcluded ? 'リストに戻す' : 'リストから外す'}
                   </button>
                 )}
                 {/* 確定後: 確定済みバッジ */}
                 {confirmed && (
-                  <span className="shrink-0 text-xs bg-[rgba(6,199,85,0.1)] text-[#06C755] px-2.5 py-1 rounded-full whitespace-nowrap">
+                  <span className="shrink-0 text-xs font-medium bg-[rgba(6,199,85,0.1)] text-[#06C755] border border-[rgba(6,199,85,0.25)] px-3 py-1.5 rounded-full whitespace-nowrap">
                     確定済み
                   </span>
                 )}
@@ -309,7 +320,7 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
           <button
             onClick={openConfirmModal}
             disabled={confirming || activeCount <= 0}
-            className="w-full bg-[#06C755] hover:bg-[#04a344] disabled:bg-[#0d1526] disabled:text-[#4a6080] text-white font-bold py-3 rounded-full transition-all flex flex-col items-center cursor-pointer hover:shadow-[0_0_20px_rgba(6,199,85,0.3)]"
+            className="w-full bg-[#06C755] hover:bg-[#04a344] disabled:bg-[#0d1526] disabled:text-[#8494a7] text-white font-bold py-3 rounded-full transition-all flex flex-col items-center cursor-pointer hover:shadow-[0_0_20px_rgba(6,199,85,0.3)]"
           >
             {confirming
               ? '確定中...'
@@ -319,7 +330,7 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
                 </>
             }
           </button>
-          <p className="text-xs text-[#4a6080] text-center mt-2">
+          <p className="text-xs text-[#8494a7] text-center mt-2">
             クレジットは依頼時に仮押さえ済みです。
           </p>
         </div>
@@ -332,8 +343,11 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
           onClick={(e) => {
             if (e.target === e.currentTarget && !confirming) setShowConfirmModal(false)
           }}
+          role="dialog"
+          aria-modal="true"
+          aria-label="リスト確定確認"
         >
-          <div className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-2xl w-full max-w-md mx-4 p-6 shadow-2xl">
+          <div ref={confirmModalRef} className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-2xl w-full max-w-md mx-4 p-6 shadow-2xl">
             <h2 className="text-lg font-bold text-[#f0f4f8] mb-1">リストを確定しますか？</h2>
             <p className="text-sm text-[#8fa3b8] mb-5">
               確定後は企業の除外・変更ができなくなります
@@ -344,11 +358,11 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
               <div className="flex items-center justify-between text-sm">
                 <span className="text-[#8fa3b8]">現在の残クレジット</span>
                 {creditsLoading ? (
-                  <span className="text-[#4a6080]">読み込み中...</span>
+                  <span className="text-[#8494a7]">読み込み中...</span>
                 ) : currentCredits !== null ? (
                   <span className="text-[#f0f4f8] font-medium">{currentCredits}件</span>
                 ) : (
-                  <span className="text-[#4a6080]">取得できませんでした</span>
+                  <span className="text-[#8494a7]">取得できませんでした</span>
                 )}
               </div>
               <div className="border-t border-[rgba(255,255,255,0.07)]" />
@@ -370,19 +384,19 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
               <div className="flex items-center justify-between text-sm pt-1">
                 <span className="text-[#8fa3b8]">確定後の残クレジット</span>
                 {creditsLoading ? (
-                  <span className="text-[#4a6080]">読み込み中...</span>
+                  <span className="text-[#8494a7]">読み込み中...</span>
                 ) : currentCredits !== null ? (
                   <span className="text-[#06C755] font-bold text-base">
                     {currentCredits + excludedCount}件
                   </span>
                 ) : (
-                  <span className="text-[#4a6080]">取得できませんでした</span>
+                  <span className="text-[#8494a7]">取得できませんでした</span>
                 )}
               </div>
             </div>
 
             {/* 説明テキスト */}
-            <p className="text-xs text-[#4a6080] mb-5">
+            <p className="text-xs text-[#8494a7] mb-5">
               {excludedCount > 0
                 ? `除外した${excludedCount}件分のクレジットが返却されます`
                 : '除外はありません。依頼時に引き落とし済みのクレジットがそのまま確定されます'}
@@ -410,7 +424,7 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
                   // handleConfirm navigates on success, so modal closes automatically
                 }}
                 disabled={confirming}
-                className="flex-1 bg-[#06C755] hover:bg-[#04a344] disabled:bg-[#0d1526] disabled:text-[#4a6080] text-white font-bold py-2.5 rounded-full transition-all text-sm disabled:cursor-not-allowed cursor-pointer hover:shadow-[0_0_20px_rgba(6,199,85,0.3)]"
+                className="flex-1 bg-[#06C755] hover:bg-[#04a344] disabled:bg-[#0d1526] disabled:text-[#8494a7] text-white font-bold py-2.5 rounded-full transition-all text-sm disabled:cursor-not-allowed cursor-pointer hover:shadow-[0_0_20px_rgba(6,199,85,0.3)]"
               >
                 {confirming ? '確定中...' : '確定する'}
               </button>

@@ -71,7 +71,7 @@ export default async function MyListsPage() {
             </svg>
           </div>
           <p className="text-[#f0f4f8] font-medium mb-2">まだリストがありません</p>
-          <p className="text-sm text-[#4a6080] mb-6">
+          <p className="text-sm text-[#8494a7] mb-6">
             業種と地域を指定して、フォーム営業リストを作成しましょう
           </p>
           <NewRequestButton />
@@ -98,7 +98,7 @@ export default async function MyListsPage() {
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${status.color}`}>
                       {status.label}
                     </span>
-                    <span className="text-xs text-[#4a6080]">
+                    <span className="text-xs text-[#8494a7]">
                       {new Date(job.createdAt).toLocaleDateString('ja-JP')}
                     </span>
                   </div>
@@ -107,15 +107,15 @@ export default async function MyListsPage() {
                     {job.industry && <span>{job.industry}</span>}
                     {job.location && <span>{job.location}</span>}
                   </div>
-                  <div className="flex items-center gap-1 text-xs text-[#4a6080] mt-1">
+                  <div className="flex items-center gap-1 text-xs text-[#8494a7] mt-1">
                     <span>依頼: <span className="text-[#f0f4f8]">{job.targetCount}件</span></span>
-                    <span className="text-[#4a6080]">→</span>
+                    <span className="text-[#8494a7]">→</span>
                     <span>収集: <span className="text-[#f0f4f8]">{actualCollected}件</span></span>
-                    <span className="text-[#4a6080]">→</span>
+                    <span className="text-[#8494a7]">→</span>
                     <span>確定: <span className="text-[#f0f4f8]">{confirmedCount !== null ? `${confirmedCount}件` : '-'}</span></span>
                   </div>
                   {job.completedAt && (
-                    <p className="text-xs text-[#4a6080] mt-1">
+                    <p className="text-xs text-[#8494a7] mt-1">
                       完了: {new Date(job.completedAt).toLocaleString('ja-JP')}
                     </p>
                   )}

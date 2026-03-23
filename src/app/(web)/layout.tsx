@@ -44,7 +44,7 @@ function NavBar() {
               </Link>
               <button
                 onClick={() => signOut({ callbackUrl: '/login' })}
-                className="text-sm text-[#4a6080] hover:text-[#f0f4f8] transition-colors"
+                className="text-sm text-[#8494a7] hover:text-[#f0f4f8] transition-colors"
               >
                 ログアウト
               </button>
@@ -71,7 +71,8 @@ function NavBar() {
         <button
           className="md:hidden relative w-8 h-8 flex items-center justify-center"
           onClick={() => setMenuOpen(!menuOpen)}
-          aria-label="メニューを開く"
+          aria-expanded={menuOpen}
+          aria-label={menuOpen ? 'メニューを閉じる' : 'メニューを開く'}
         >
           <svg
             width="24"
@@ -134,7 +135,7 @@ function NavBar() {
                   closeMenu()
                   signOut({ callbackUrl: '/login' })
                 }}
-                className="text-sm text-[#4a6080] hover:text-[#f0f4f8] transition-colors py-2 text-left"
+                className="text-sm text-[#8494a7] hover:text-[#f0f4f8] transition-colors py-2 text-left"
               >
                 ログアウト
               </button>
@@ -170,7 +171,7 @@ export default function WebLayout({ children }: { children: React.ReactNode }) {
         <NavBar />
         <main className="flex-1">{children}</main>
         <footer className="border-t border-[rgba(255,255,255,0.07)] bg-[#060a14] py-6 text-center">
-          <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-[#4a6080] mb-2">
+          <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-[#8494a7] mb-2">
             <Link href="/legal/tokushoho" className="hover:text-[#06C755] transition-colors">特定商取引法に基づく表記</Link>
             <span>|</span>
             <Link href="/legal/privacy" className="hover:text-[#06C755] transition-colors">プライバシーポリシー</Link>
@@ -179,7 +180,7 @@ export default function WebLayout({ children }: { children: React.ReactNode }) {
             <span>|</span>
             <Link href="/legal/company" className="hover:text-[#06C755] transition-colors">運営者情報</Link>
           </div>
-          <div className="text-sm text-[#4a6080]">
+          <div className="text-sm text-[#8494a7]">
             &copy; 2026 オートリスト — powered by{' '}
             <a
               href="https://shiryolog.com"

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useFocusTrap } from '@/lib/useFocusTrap'
 
 const LINE_BOT_FRIEND_URL = 'https://line.me/R/ti/p/@285tdinf'
 
@@ -136,7 +137,9 @@ export default function LineLinkButton() {
 
   const expired = expiresAt !== null && remaining <= 0
 
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(LINE_BOT_FRIEND_URL)}&size=200x200`
+  const qrUrl = '/line-qr.png'
+
+  const focusTrapRef = useFocusTrap(open, handleClose)
 
   // 連携済み表示
   if (status?.linked) {
@@ -153,9 +156,14 @@ export default function LineLinkButton() {
     )
   }
 
-  // ローディング中
+  // ローディング中（スケルトン表示）
   if (status === null) {
-    return null
+    return (
+      <div
+        className="inline-flex items-center w-[120px] h-[40px] rounded-full bg-[rgba(255,255,255,0.07)] animate-pulse"
+        aria-label="読み込み中"
+      />
+    )
   }
 
   return (
@@ -176,13 +184,16 @@ export default function LineLinkButton() {
           onClick={(e) => {
             if (e.target === e.currentTarget) handleClose()
           }}
+          role="dialog"
+          aria-modal="true"
+          aria-label="LINE連携"
         >
-          <div className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-2xl w-full max-w-md mx-4 p-6 shadow-2xl">
+          <div ref={focusTrapRef} className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-2xl w-full max-w-md mx-4 p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-[#f0f4f8]">LINE連携</h2>
               <button
                 onClick={handleClose}
-                className="text-[#4a6080] hover:text-[#8fa3b8] transition-colors cursor-pointer"
+                className="text-[#8494a7] hover:text-[#8fa3b8] transition-colors cursor-pointer"
                 aria-label="閉じる"
               >
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -202,8 +213,8 @@ export default function LineLinkButton() {
             )}
 
             {loading ? (
-              <div className="flex justify-center py-8">
-                <svg className="animate-spin h-8 w-8 text-[#06C755]" viewBox="0 0 24 24">
+              <div className="flex justify-center py-8" role="status" aria-label="読み込み中">
+                <svg className="animate-spin h-8 w-8 text-[#06C755]" viewBox="0 0 24 24" aria-hidden="true">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>

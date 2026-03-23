@@ -8,6 +8,11 @@ export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
+  const [emailTouched, setEmailTouched] = useState(false)
+
+  const emailError = emailTouched && email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    ? 'メールアドレスの形式が正しくありません'
+    : ''
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -44,31 +49,38 @@ export default function ForgotPasswordPage() {
           </p>
 
           {sent ? (
-            <div className="bg-[rgba(6,199,85,0.1)] border border-[rgba(6,199,85,0.4)] text-[#06C755] text-sm px-4 py-4 rounded-lg text-center">
+            <div className="bg-[rgba(6,199,85,0.1)] border border-[rgba(6,199,85,0.4)] text-[#06C755] text-sm px-4 py-4 rounded-xl text-center">
               <p className="font-medium mb-1">メールを送信しました</p>
               <p className="text-[#06C755]">ご登録のメールアドレスをご確認ください。</p>
             </div>
           ) : (
             <>
               {error && (
-                <div className="mb-6 bg-[rgba(255,71,87,0.1)] border border-[rgba(255,71,87,0.3)] text-[#ff4757] text-sm px-4 py-3 rounded-lg">
+                <div className="mb-6 bg-[rgba(255,71,87,0.1)] border border-[rgba(255,71,87,0.3)] text-[#ff4757] text-sm px-4 py-3 rounded-xl">
                   {error}
                 </div>
               )}
 
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
-                  <label className="block text-sm text-[#8fa3b8] mb-1.5">
+                  <label htmlFor="forgot-email" className="block text-sm text-[#8fa3b8] mb-1.5">
                     メールアドレス
                   </label>
                   <input
+                    id="forgot-email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    onBlur={() => setEmailTouched(true)}
                     required
                     placeholder="example@email.com"
-                    className="w-full bg-[#0a0f1c] border border-[rgba(255,255,255,0.07)] text-[#f0f4f8] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[rgba(6,199,85,0.4)] transition-colors placeholder:text-[#4a6080]"
+                    className={`w-full bg-[#0a0f1c] border text-[#f0f4f8] rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-colors placeholder:text-[#8494a7] ${
+                      emailError ? 'border-[rgba(255,71,87,0.5)] focus:border-[rgba(255,71,87,0.7)]' : 'border-[rgba(255,255,255,0.07)] focus:border-[rgba(6,199,85,0.4)]'
+                    }`}
                   />
+                  {emailError && (
+                    <p className="text-[#ff4757] text-xs mt-1">{emailError}</p>
+                  )}
                 </div>
                 <button
                   type="submit"
@@ -81,8 +93,8 @@ export default function ForgotPasswordPage() {
             </>
           )}
 
-          <p className="mt-6 text-center text-sm text-[#4a6080]">
-            <Link href="/login" className="text-[#06C755] hover:text-[#05b34a]">
+          <p className="mt-6 text-center text-sm text-[#8494a7]">
+            <Link href="/login" className="text-[#06C755] hover:text-[#04a344]">
               ログインに戻る
             </Link>
           </p>

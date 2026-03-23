@@ -15,6 +15,22 @@ function RegisterForm() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [registered, setRegistered] = useState(false)
+  const [emailTouched, setEmailTouched] = useState(false)
+  const [passwordTouched, setPasswordTouched] = useState(false)
+
+  const emailError = emailTouched && email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    ? 'メールアドレスの形式が正しくありません'
+    : ''
+  const passwordStrength = password.length === 0
+    ? null
+    : password.length < 8
+      ? { label: '弱い', color: '#ff4757', width: '33%' }
+      : password.length < 12
+        ? { label: '普通', color: '#ffa502', width: '66%' }
+        : { label: '強い', color: '#06C755', width: '100%' }
+  const passwordError = passwordTouched && password && password.length < 8
+    ? '8文字以上で入力してください'
+    : ''
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -61,7 +77,7 @@ function RegisterForm() {
           <Link href="/login" className="block w-full bg-[#06C755] hover:bg-[#04a344] text-white font-bold py-2.5 rounded-full transition-all hover:shadow-[0_0_20px_rgba(6,199,85,0.3)] text-center">
             ログインページへ
           </Link>
-          <p className="mt-4 text-center text-xs text-[#4a6080]">
+          <p className="mt-4 text-center text-xs text-[#8494a7]">
             メールが届かない場合は、迷惑メールフォルダをご確認ください。
           </p>
         </div>
@@ -88,48 +104,60 @@ function RegisterForm() {
             <input type="hidden" name="jobId" value={jobId} />
           )}
           <div>
-            <label className="block text-sm text-[#8fa3b8] mb-1.5">
+            <label htmlFor="register-name" className="block text-sm text-[#8fa3b8] mb-1.5">
               お名前
             </label>
             <input
+              id="register-name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="山田 太郎"
-              className="w-full bg-[#0a0f1c] border border-[rgba(255,255,255,0.07)] text-[#f0f4f8] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[rgba(6,199,85,0.4)] transition-colors placeholder:text-[#4a6080]"
+              className="w-full bg-[#0a0f1c] border border-[rgba(255,255,255,0.07)] text-[#f0f4f8] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[rgba(6,199,85,0.4)] transition-colors placeholder:text-[#8494a7]"
             />
           </div>
           <div>
-            <label className="block text-sm text-[#8fa3b8] mb-1.5">
+            <label htmlFor="register-email" className="block text-sm text-[#8fa3b8] mb-1.5">
               メールアドレス <span className="text-[#06C755]">*</span>
             </label>
             <input
+              id="register-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              onBlur={() => setEmailTouched(true)}
               required
               placeholder="example@email.com"
-              className="w-full bg-[#0a0f1c] border border-[rgba(255,255,255,0.07)] text-[#f0f4f8] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[rgba(6,199,85,0.4)] transition-colors placeholder:text-[#4a6080]"
+              className={`w-full bg-[#0a0f1c] border text-[#f0f4f8] rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-colors placeholder:text-[#8494a7] ${
+                emailError ? 'border-[rgba(255,71,87,0.5)] focus:border-[rgba(255,71,87,0.7)]' : 'border-[rgba(255,255,255,0.07)] focus:border-[rgba(6,199,85,0.4)]'
+              }`}
             />
+            {emailError && (
+              <p className="text-[#ff4757] text-xs mt-1">{emailError}</p>
+            )}
           </div>
           <div>
-            <label className="block text-sm text-[#8fa3b8] mb-1.5">
+            <label htmlFor="register-password" className="block text-sm text-[#8fa3b8] mb-1.5">
               パスワード <span className="text-[#06C755]">*</span>
             </label>
             <div className="relative">
               <input
+                id="register-password"
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                onBlur={() => setPasswordTouched(true)}
                 required
                 minLength={8}
                 placeholder="8文字以上"
-                className="w-full bg-[#0a0f1c] border border-[rgba(255,255,255,0.07)] text-[#f0f4f8] rounded-xl px-4 py-2.5 pr-10 text-sm focus:outline-none focus:border-[rgba(6,199,85,0.4)] transition-colors placeholder:text-[#4a6080]"
+                className={`w-full bg-[#0a0f1c] border text-[#f0f4f8] rounded-xl px-4 py-2.5 pr-10 text-sm focus:outline-none transition-colors placeholder:text-[#8494a7] ${
+                  passwordError ? 'border-[rgba(255,71,87,0.5)] focus:border-[rgba(255,71,87,0.7)]' : 'border-[rgba(255,255,255,0.07)] focus:border-[rgba(6,199,85,0.4)]'
+                }`}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#4a6080] hover:text-[#8fa3b8] transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8494a7] hover:text-[#8fa3b8] transition-colors"
                 tabIndex={-1}
               >
                 {showPassword ? (
@@ -146,6 +174,29 @@ function RegisterForm() {
                 )}
               </button>
             </div>
+            {passwordStrength && (
+              <div className="mt-2">
+                <div
+                  className="h-1 bg-[rgba(255,255,255,0.07)] rounded-full overflow-hidden"
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={parseInt(passwordStrength.width)}
+                  aria-valuetext={`パスワード強度: ${passwordStrength.label}`}
+                >
+                  <div
+                    className="h-full rounded-full transition-all duration-300"
+                    style={{ width: passwordStrength.width, backgroundColor: passwordStrength.color }}
+                  />
+                </div>
+                <p className="text-xs mt-1" style={{ color: passwordStrength.color }}>
+                  パスワード強度: {passwordStrength.label}
+                </p>
+              </div>
+            )}
+            {passwordError && (
+              <p className="text-[#ff4757] text-xs mt-1">{passwordError}</p>
+            )}
           </div>
           <button
             type="submit"
@@ -156,7 +207,7 @@ function RegisterForm() {
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-[#4a6080]">
+        <p className="mt-6 text-center text-sm text-[#8494a7]">
           既にアカウントをお持ちの方は{' '}
           <Link href="/login" className="text-[#06C755] hover:underline">
             ログイン

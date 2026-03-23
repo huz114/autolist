@@ -1,6 +1,6 @@
 export default function AutolistResultsLoading() {
   return (
-    <div className="max-w-5xl mx-auto px-4 py-10">
+    <div className="max-w-5xl mx-auto px-4 py-10" role="status" aria-label="読み込み中">
       {/* Back link skeleton */}
       <div className="mb-6">
         <div className="h-4 w-32 bg-[rgba(255,255,255,0.04)] rounded animate-pulse mb-4" />

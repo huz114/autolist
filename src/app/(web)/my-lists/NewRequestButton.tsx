@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useState, useEffect, useCallback } from 'react'
+import { useFocusTrap } from '@/lib/useFocusTrap'
 
 const COUNT_OPTIONS = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
 
@@ -36,8 +37,12 @@ export default function NewRequestButton() {
       } else {
         setCreditsError(data.error || 'クレジット情報の取得に失敗しました')
       }
-    } catch {
-      setCreditsError('クレジット情報の取得に失敗しました')
+    } catch (err) {
+      if (err instanceof TypeError && (err as TypeError).message === 'Failed to fetch') {
+        setCreditsError('ネットワークに接続できません')
+      } else {
+        setCreditsError('クレジット情報の取得に失敗しました')
+      }
     }
   }, [])
 
@@ -77,7 +82,8 @@ export default function NewRequestButton() {
       const data = await res.json()
 
       if (!res.ok) {
-        setError(data.error || '依頼の作成に失敗しました')
+        const message = data.error || (res.status === 401 ? 'ログインが必要です。再度ログインしてください。' : res.status >= 500 ? 'サーバーエラーが発生しました。しばらくお待ちください。' : '依頼の作成に失敗しました')
+        setError(message)
         return
       }
 
@@ -87,8 +93,12 @@ export default function NewRequestButton() {
         setSuccess(false)
         router.refresh()
       }, 1500)
-    } catch {
-      setError('依頼の作成に失敗しました')
+    } catch (err) {
+      if (err instanceof TypeError && (err as TypeError).message === 'Failed to fetch') {
+        setError('ネットワークに接続できません。インターネット接続を確認してください。')
+      } else {
+        setError('依頼の作成に失敗しました。しばらくお待ちください。')
+      }
     } finally {
       setSubmitting(false)
     }
@@ -109,13 +119,19 @@ export default function NewRequestButton() {
         setError(data.error || '決済ページの作成に失敗しました')
         setCheckoutLoading(null)
       }
-    } catch {
-      setError('決済ページの作成に失敗しました')
+    } catch (err) {
+      if (err instanceof TypeError && (err as TypeError).message === 'Failed to fetch') {
+        setError('ネットワークに接続できません。インターネット接続を確認してください。')
+      } else {
+        setError('決済ページの作成に失敗しました。しばらくお待ちください。')
+      }
       setCheckoutLoading(null)
     }
   }
 
   const insufficientCredits = credits !== null && credits < targetCount
+
+  const modalRef = useFocusTrap(open, handleClose)
 
   return (
     <>
@@ -132,8 +148,11 @@ export default function NewRequestButton() {
           onClick={(e) => {
             if (e.target === e.currentTarget) handleClose()
           }}
+          role="dialog"
+          aria-modal="true"
+          aria-label="新規リスト依頼"
         >
-          <div className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-2xl w-full max-w-md mx-4 p-6 shadow-2xl">
+          <div ref={modalRef} className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-2xl w-full max-w-md mx-4 p-6 shadow-2xl">
             {success ? (
               <div className="text-center py-8">
                 <div className="text-[#06C755] text-4xl mb-3">&#10003;</div>
@@ -187,13 +206,13 @@ export default function NewRequestButton() {
                               / {plan.credits.toLocaleString()}件
                             </span>
                           </div>
-                          <p className="text-[#4a6080] text-xs mt-0.5">
+                          <p className="text-[#8494a7] text-xs mt-0.5">
                             &yen;{plan.unitPrice}/件
                           </p>
                         </div>
                         <div className="text-[#8fa3b8]">
                           {checkoutLoading === plan.id ? (
-                            <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                            <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" role="status" aria-label="読み込み中">
                               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                             </svg>
@@ -214,7 +233,7 @@ export default function NewRequestButton() {
                   </div>
                 )}
 
-                <p className="text-[#4a6080] text-xs text-center mt-4">
+                <p className="text-[#8494a7] text-xs text-center mt-4">
                   Stripeの安全な決済ページに移動します
                 </p>
               </>
@@ -236,7 +255,7 @@ export default function NewRequestButton() {
                       onChange={(e) => setIndustry(e.target.value)}
                       placeholder="例: 整体院、美容室、不動産会社"
                       required
-                      className="w-full bg-[#0a0f1c] border border-[rgba(255,255,255,0.07)] rounded-xl px-4 py-2.5 text-[#f0f4f8] text-sm placeholder:text-[#4a6080] focus:outline-none focus:border-[rgba(6,199,85,0.4)] transition-colors"
+                      className="w-full bg-[#0a0f1c] border border-[rgba(255,255,255,0.07)] rounded-xl px-4 py-2.5 text-[#f0f4f8] text-sm placeholder:text-[#8494a7] focus:outline-none focus:border-[rgba(6,199,85,0.4)] transition-colors"
                     />
                   </div>
 
@@ -250,7 +269,7 @@ export default function NewRequestButton() {
                       onChange={(e) => setLocation(e.target.value)}
                       placeholder="例: 東京都、大阪市、福岡県"
                       required
-                      className="w-full bg-[#0a0f1c] border border-[rgba(255,255,255,0.07)] rounded-xl px-4 py-2.5 text-[#f0f4f8] text-sm placeholder:text-[#4a6080] focus:outline-none focus:border-[rgba(6,199,85,0.4)] transition-colors"
+                      className="w-full bg-[#0a0f1c] border border-[rgba(255,255,255,0.07)] rounded-xl px-4 py-2.5 text-[#f0f4f8] text-sm placeholder:text-[#8494a7] focus:outline-none focus:border-[rgba(6,199,85,0.4)] transition-colors"
                     />
                   </div>
 
@@ -258,17 +277,29 @@ export default function NewRequestButton() {
                     <label className="block text-sm font-medium text-[#8fa3b8] mb-1.5">
                       件数
                     </label>
-                    <select
-                      value={targetCount}
-                      onChange={(e) => setTargetCount(Number(e.target.value))}
-                      className="w-full bg-[#0a0f1c] border border-[rgba(255,255,255,0.07)] rounded-xl px-4 py-2.5 text-[#f0f4f8] text-sm focus:outline-none focus:border-[rgba(6,199,85,0.4)] transition-colors appearance-none cursor-pointer"
-                    >
-                      {COUNT_OPTIONS.map((n) => (
-                        <option key={n} value={n}>
-                          {n}件
-                        </option>
-                      ))}
-                    </select>
+                    <div className="relative">
+                      <select
+                        value={targetCount}
+                        onChange={(e) => setTargetCount(Number(e.target.value))}
+                        className="w-full bg-[#0a0f1c] border border-[rgba(255,255,255,0.07)] rounded-xl px-4 py-2.5 pr-10 text-[#f0f4f8] text-sm focus:outline-none focus:border-[rgba(6,199,85,0.4)] transition-colors appearance-none cursor-pointer"
+                      >
+                        {COUNT_OPTIONS.map((n) => (
+                          <option key={n} value={n}>
+                            {n}件
+                          </option>
+                        ))}
+                      </select>
+                      <svg
+                        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#8fa3b8]"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                        aria-hidden="true"
+                      >
+                        <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+                      </svg>
+                    </div>
                   </div>
 
                   {/* クレジット表示 */}
@@ -282,7 +313,7 @@ export default function NewRequestButton() {
                       ) : creditsError ? (
                         <span className="text-[#ff4757] text-xs">{creditsError}</span>
                       ) : (
-                        <span className="text-[#4a6080]">読み込み中...</span>
+                        <span className="text-[#8494a7]">読み込み中...</span>
                       )}
                     </div>
                     {insufficientCredits && (
@@ -310,7 +341,7 @@ export default function NewRequestButton() {
                     <button
                       type="submit"
                       disabled={submitting || insufficientCredits || !industry.trim() || !location.trim()}
-                      className="flex-1 bg-[#06C755] hover:bg-[#04a344] disabled:bg-[#0d1526] disabled:text-[#4a6080] text-white font-bold py-2.5 rounded-full transition-all text-sm disabled:cursor-not-allowed hover:shadow-[0_0_20px_rgba(6,199,85,0.3)]"
+                      className="flex-1 bg-[#06C755] hover:bg-[#04a344] disabled:bg-[#0d1526] disabled:text-[#8494a7] text-white font-bold py-2.5 rounded-full transition-all text-sm disabled:cursor-not-allowed hover:shadow-[0_0_20px_rgba(6,199,85,0.3)]"
                     >
                       {submitting ? '送信中...' : '依頼する'}
                     </button>

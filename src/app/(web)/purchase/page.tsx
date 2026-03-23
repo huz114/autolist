@@ -70,7 +70,7 @@ export default function PurchasePage() {
           ) : creditsError ? (
             <span className="text-[#ff4757] text-xs sm:text-sm">{creditsError}</span>
           ) : (
-            <span className="text-[#4a6080] text-xs sm:text-sm">読み込み中...</span>
+            <span className="text-[#8494a7] text-xs sm:text-sm">読み込み中...</span>
           )}
         </div>
       </div>
@@ -93,7 +93,7 @@ export default function PurchasePage() {
             )}
 
             <div className="text-center mb-2 sm:mb-4 pt-0.5 sm:pt-1">
-              <div className="text-[#4a6080] text-[11px] sm:text-sm mb-0.5 sm:mb-2">{plan.credits.toLocaleString()}件分</div>
+              <div className="text-[#8494a7] text-[11px] sm:text-sm mb-0.5 sm:mb-2">{plan.credits.toLocaleString()}件分</div>
               <div className="text-xl sm:text-3xl font-black text-[#f0f4f8]">
                 &yen;{plan.price.toLocaleString()}
               </div>
@@ -115,7 +115,7 @@ export default function PurchasePage() {
             >
               {checkoutLoading === plan.id ? (
                 <span className="inline-flex items-center gap-1 sm:gap-2">
-                  <svg className="animate-spin h-3 w-3 sm:h-4 sm:w-4" viewBox="0 0 24 24">
+                  <svg className="animate-spin h-3 w-3 sm:h-4 sm:w-4" viewBox="0 0 24 24" role="status" aria-label="読み込み中">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
@@ -135,7 +135,7 @@ export default function PurchasePage() {
         </div>
       )}
 
-      <p className="text-[#4a6080] text-[10px] sm:text-xs text-center mt-4 sm:mt-8">
+      <p className="text-[#8494a7] text-[10px] sm:text-xs text-center mt-4 sm:mt-8">
         Stripeの安全な決済ページに移動します
       </p>
 

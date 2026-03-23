@@ -19,7 +19,6 @@ const LINE_ICON = (
 
 export default function Home() {
   const [navScrolled, setNavScrolled] = useState(false);
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
   const revealRefs = useRef<(HTMLElement | null)[]>([]);
   const revealIndex = useRef(0);
 
@@ -64,10 +63,6 @@ export default function Home() {
     return () => clearTimeout(timer);
   }, []);
 
-  const toggleFaq = (index: number) => {
-    setOpenFaq(openFaq === index ? null : index);
-  };
-
   const faqData = [
     {
       q: "本当に全件フォーム付きですか？",
@@ -107,19 +102,6 @@ export default function Home() {
           <Link
             href="/my-lists"
             className="nav-member-link"
-            style={{
-              color: "rgba(255,255,255,0.75)",
-              fontSize: 13,
-              fontWeight: 500,
-              textDecoration: "none",
-              transition: "all 0.2s",
-              border: "1px solid rgba(255,255,255,0.25)",
-              borderRadius: 6,
-              padding: "5px 14px",
-              background: "rgba(255,255,255,0.06)",
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = "#fff"; e.currentTarget.style.background = "rgba(255,255,255,0.12)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.4)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(255,255,255,0.75)"; e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.25)"; }}
           >
             <span className="nav-member-text-full">会員ログイン</span>
             <span className="nav-member-text-short">ログイン</span>
@@ -217,11 +199,11 @@ export default function Home() {
               フォーム付きリストの<br />収集から送信まで、一気通貫。
             </h2>
           </div>
-          <div className="comparison-table reveal" ref={addRevealRef}>
-            <div className="comparison-header">
-              <div style={{ color: "var(--text-muted)" }}>比較項目</div>
-              <div className="col-before">&times; 従来の<br />方法</div>
-              <div className="col-after">✓ オート<br />リスト</div>
+          <div className="comparison-table reveal" ref={addRevealRef} role="table" aria-label="従来の方法とオートリストの比較">
+            <div className="comparison-header" role="row">
+              <div style={{ color: "var(--text-muted)" }} role="columnheader">比較項目</div>
+              <div className="col-before" role="columnheader">&times; 従来の<br />方法</div>
+              <div className="col-after" role="columnheader">✓ オート<br />リスト</div>
             </div>
             {[
               {
@@ -276,13 +258,13 @@ export default function Home() {
                 after: <>10件から<br />10件単位で自由</>,
               },
             ].map((row, i) => (
-              <div key={i} className="comparison-row">
-                <div className="col-item">
+              <div key={i} className="comparison-row" role="row">
+                <div className="col-item" role="cell">
                   {row.icon}
                   {row.label}
                 </div>
-                <div className="col-before">{row.before}</div>
-                <div className="col-after">{row.after}</div>
+                <div className="col-before" role="cell">{row.before}</div>
+                <div className="col-after" role="cell">{row.after}</div>
               </div>
             ))}
           </div>
@@ -413,14 +395,30 @@ export default function Home() {
             <div className="section-label">FAQ</div>
             <h2 className="section-title">よくある質問</h2>
           </div>
-          <div className="faq-list">
+          <div className="faq-list" role="region" aria-label="よくある質問">
             {faqData.map((faq, i) => (
-              <details key={i} className={`faq-item reveal${i > 0 ? ` reveal-delay-${i}` : ""}`} ref={addRevealRef}>
-                <summary className="faq-question">
+              <details
+                key={i}
+                className={`faq-item reveal${i > 0 ? ` reveal-delay-${i}` : ""}`}
+                ref={addRevealRef}
+                onToggle={(e) => {
+                  const details = e.currentTarget as HTMLDetailsElement;
+                  const summary = details.querySelector("summary");
+                  if (summary) {
+                    summary.setAttribute("aria-expanded", String(details.open));
+                  }
+                }}
+              >
+                <summary
+                  className="faq-question"
+                  role="button"
+                  aria-expanded="false"
+                  aria-controls={`faq-answer-${i}`}
+                >
                   {faq.q}
-                  <span className="faq-icon">+</span>
+                  <span className="faq-icon" aria-hidden="true">+</span>
                 </summary>
-                <div className="faq-answer-open">
+                <div className="faq-answer-open" id={`faq-answer-${i}`} role="region">
                   <p>{faq.a}</p>
                 </div>
               </details>

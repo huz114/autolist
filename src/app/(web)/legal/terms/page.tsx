@@ -1,8 +1,10 @@
+import Link from 'next/link'
+
 export default function TermsPage() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-16">
       <h1 className="text-2xl font-bold text-[#f0f4f8] mb-2">利用規約</h1>
-      <p className="text-[#4a6080] text-sm mb-10">施行日: 2026年3月17日</p>
+      <p className="text-[#8494a7] text-sm mb-10">施行日: 2026年3月17日</p>
 
       <div className="space-y-10 text-[#8fa3b8] text-sm leading-relaxed">
         <p>
@@ -104,7 +106,7 @@ export default function TermsPage() {
 
         <section>
           <h2 className="text-lg font-semibold text-[#f0f4f8] mb-3">第10条（お問い合わせ先）</h2>
-          <div className="bg-gray-900/50 rounded-lg border border-gray-800 p-5 mt-2">
+          <div className="bg-[#0d1526] rounded-lg border border-[rgba(255,255,255,0.07)] p-5 mt-2">
             <p>アイル（AI'll）</p>
             <p>代表者: 宇座 大陽</p>
             <p>メール: <a href="mailto:info@ai-ll.co" className="text-emerald-400 hover:underline">info@ai-ll.co</a></p>
@@ -112,7 +114,16 @@ export default function TermsPage() {
         </section>
       </div>
 
-      <p className="text-[#4a6080] text-xs mt-10 text-center">オートリスト — powered by シリョログ</p>
+      <nav className="flex justify-between items-center mt-12 pt-6 border-t border-[rgba(255,255,255,0.07)]" aria-label="法的ページナビゲーション">
+        <Link href="/legal/privacy" className="text-sm text-[#8494a7] hover:text-[#06C755] transition-colors">
+          &larr; 前: プライバシーポリシー
+        </Link>
+        <Link href="/legal/company" className="text-sm text-[#8494a7] hover:text-[#06C755] transition-colors">
+          次: 運営者情報 &rarr;
+        </Link>
+      </nav>
+
+      <p className="text-[#8494a7] text-xs mt-10 text-center">オートリスト — powered by シリョログ</p>
     </div>
   )
 }

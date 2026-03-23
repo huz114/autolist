@@ -1,13 +1,13 @@
 export default function MyListsLoading() {
   return (
-    <div className="max-w-5xl mx-auto px-4 py-10">
-      {/* Header skeleton */}
+    <div className="max-w-5xl mx-auto px-4 py-10" role="status" aria-label="読み込み中">
+      {/* Header */}
       <div className="mb-8 flex items-start justify-between">
         <div>
-          <div className="h-7 w-32 bg-[rgba(255,255,255,0.04)] rounded-lg animate-pulse mb-2" />
+          <h1 className="text-2xl font-bold text-[#f0f4f8] mb-1">マイリスト</h1>
           <div className="h-4 w-52 bg-[rgba(255,255,255,0.04)] rounded animate-pulse" />
         </div>
-        <div className="h-10 w-24 bg-[rgba(255,255,255,0.04)] rounded-lg animate-pulse" />
+        <div className="h-10 w-28 bg-[rgba(6,199,85,0.15)] rounded-full animate-pulse" />
       </div>
 
       {/* List item skeletons */}

@@ -41,10 +41,14 @@ interface ApiResponse {
 // ========================================
 
 const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string }> = {
-  submitted: { label: '送信処理中', bg: 'bg-[rgba(245,158,11,0.1)]', text: 'text-amber-400' },
-  confirmed: { label: '送信完了', bg: 'bg-[rgba(6,199,85,0.1)]', text: 'text-[#06C755]' },
-  bounced: { label: '失敗', bg: 'bg-[rgba(255,71,87,0.1)]', text: 'text-[#ff4757]' },
-  replied: { label: '返信あり', bg: 'bg-[rgba(6,199,85,0.15)]', text: 'text-[#06C755]' },
+  submitted:  { label: '処理中',   bg: 'bg-amber-900/30',              text: 'text-amber-400' },
+  pending:    { label: '処理中',   bg: 'bg-amber-900/30',              text: 'text-amber-400' },
+  confirmed:  { label: '送信完了', bg: 'bg-[rgba(6,199,85,0.1)]',      text: 'text-[#06C755]' },
+  completed:  { label: '完了',     bg: 'bg-[rgba(6,199,85,0.1)]',      text: 'text-[#06C755]' },
+  bounced:    { label: 'エラー',   bg: 'bg-[rgba(255,71,87,0.1)]',     text: 'text-[#ff4757]' },
+  failed:     { label: 'エラー',   bg: 'bg-[rgba(255,71,87,0.1)]',     text: 'text-[#ff4757]' },
+  replied:    { label: '返信あり', bg: 'bg-[rgba(6,199,85,0.15)]',     text: 'text-[#06C755]' },
+  cancelled:  { label: 'キャンセル', bg: 'bg-[#0d1526]',              text: 'text-[#8fa3b8]' },
 }
 
 function getStatus(status: string) {
@@ -85,7 +89,11 @@ export default function SendHistoryClient() {
       if (companyName.trim()) params.set('company_name', companyName.trim())
 
       const res = await fetch(`/api/send-history?${params.toString()}`)
-      if (!res.ok) throw new Error(`API error: ${res.status}`)
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => null)
+        const message = errorData?.error || (res.status === 401 ? 'ログインが必要です。再度ログインしてください。' : res.status >= 500 ? 'サーバーエラーが発生しました。しばらく時間をおいて再度お試しください。' : `データの取得に失敗しました (${res.status})`)
+        throw new Error(message)
+      }
 
       const data: ApiResponse = await res.json()
       setSubmissions(data.submissions)
@@ -93,7 +101,11 @@ export default function SendHistoryClient() {
       setTotalPages(data.pagination.total_pages)
       setStats(data.stats)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'データの取得に失敗しました')
+      if (err instanceof TypeError && err.message === 'Failed to fetch') {
+        setError('ネットワークに接続できません。インターネット接続を確認してください。')
+      } else {
+        setError(err instanceof Error ? err.message : 'データの取得に失敗しました')
+      }
       setSubmissions([])
       setTotal(0)
       setTotalPages(0)
@@ -124,7 +136,7 @@ export default function SendHistoryClient() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <div className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-2xl p-4">
           <p className="text-xs text-[#8fa3b8] mb-1">今週</p>
           <p className="text-2xl font-bold text-[#f0f4f8]">
@@ -152,13 +164,13 @@ export default function SendHistoryClient() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="企業名で検索..."
-          className="w-full sm:w-72 bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-xl px-4 py-2.5 text-sm text-[#f0f4f8] placeholder-[#4a6080] focus:outline-none focus:border-[rgba(6,199,85,0.4)] transition-colors"
+          className="w-full sm:w-72 bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-xl px-4 py-2.5 text-sm text-[#f0f4f8] placeholder-[#8494a7] focus:outline-none focus:border-[rgba(6,199,85,0.4)] transition-colors"
         />
       </div>
 
       {/* Content */}
       {loading ? (
-        <div className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-2xl overflow-hidden">
+        <div className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-2xl overflow-hidden" role="status" aria-label="読み込み中">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -197,7 +209,7 @@ export default function SendHistoryClient() {
       ) : error ? (
         <div className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-2xl p-12 text-center">
           <p className="text-sm text-[#ff4757] mb-2">データの取得に失敗しました</p>
-          <p className="text-xs text-[#4a6080] mb-4">{error}</p>
+          <p className="text-xs text-[#8494a7] mb-4">{error}</p>
           <button
             onClick={() => fetchData(page, debouncedSearch)}
             className="bg-[#06C755] hover:bg-[#04a344] text-white text-sm font-bold px-4 py-2 rounded-full transition-all hover:shadow-[0_0_20px_rgba(6,199,85,0.3)]"
@@ -208,7 +220,7 @@ export default function SendHistoryClient() {
       ) : submissions.length === 0 ? (
         <div className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-2xl p-12 text-center">
           <p className="text-[#8fa3b8] mb-2">送信履歴がありません</p>
-          <p className="text-sm text-[#4a6080]">
+          <p className="text-sm text-[#8494a7]">
             {debouncedSearch
               ? '検索条件に一致する履歴がありません'
               : 'リストを確定してフォーム送信を行ってください'}
@@ -258,7 +270,7 @@ export default function SendHistoryClient() {
                             rel="noopener noreferrer"
                             className="text-[#06C755] hover:text-[#04a344] hover:underline transition-colors"
                           >
-                            {s.formUrl ? new URL(s.formUrl).hostname : '-'}
+                            {s.formUrl ? (() => { try { return new URL(s.formUrl).hostname } catch { return s.formUrl } })() : '-'}
                           </a>
                         </td>
                         <td className="px-4 py-3">
@@ -279,28 +291,40 @@ export default function SendHistoryClient() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-6">
-              <p className="text-xs text-[#4a6080]">
-                {total}件中 {(page - 1) * perPage + 1}-{Math.min(page * perPage, total)}件
-              </p>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page <= 1}
-                  className="px-3 py-1.5 text-sm bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-lg text-[#8fa3b8] hover:text-[#f0f4f8] hover:border-[rgba(6,199,85,0.4)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                >
-                  前へ
-                </button>
-                <span className="text-sm text-[#8fa3b8]">
-                  {page} / {totalPages}
-                </span>
-                <button
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page >= totalPages}
-                  className="px-3 py-1.5 text-sm bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-lg text-[#8fa3b8] hover:text-[#f0f4f8] hover:border-[rgba(6,199,85,0.4)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                >
-                  次へ
-                </button>
+            <div className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-2xl px-5 py-4 mt-6">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-[#8fa3b8]">
+                  <span className="text-[#f0f4f8] font-medium">{total}</span>件中{' '}
+                  <span className="text-[#f0f4f8] font-medium">{(page - 1) * perPage + 1}</span>-
+                  <span className="text-[#f0f4f8] font-medium">{Math.min(page * perPage, total)}</span>件を表示
+                </p>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page <= 1}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-[#0a0f1c] border border-[rgba(255,255,255,0.07)] rounded-full text-[#8fa3b8] hover:text-[#f0f4f8] hover:border-[rgba(6,199,85,0.4)] disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                    </svg>
+                    前へ
+                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-bold text-[#06C755]">{page}</span>
+                    <span className="text-sm text-[#8494a7]">/</span>
+                    <span className="text-sm text-[#8fa3b8]">{totalPages}</span>
+                  </div>
+                  <button
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page >= totalPages}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-[#0a0f1c] border border-[rgba(255,255,255,0.07)] rounded-full text-[#8fa3b8] hover:text-[#f0f4f8] hover:border-[rgba(6,199,85,0.4)] disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+                  >
+                    次へ
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
           )}

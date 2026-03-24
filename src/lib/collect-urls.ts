@@ -422,6 +422,12 @@ async function scrapeAndSave(
   try {
     const companyInfo = await scrapeCompanyInfo(urlData.url, requestedIndustry, requestedLocation);
 
+    // 企業サイトでない / 業種不一致 / 地域不一致の場合はスキップ（companyNameもindustryもない = Geminiが弾いた）
+    if (!companyInfo.companyName && !companyInfo.industry) {
+      console.log(`  -> not a valid company site, skipped: ${urlData.url}`);
+      return false;
+    }
+
     const companyVerified = true;
     const companyName = companyInfo.companyName ?? urlData.companyName;
 

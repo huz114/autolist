@@ -592,6 +592,14 @@ export default function NewRequestButton() {
                                   <span className="text-[#8fa3b8] text-sm">💳 消費クレジット</span>
                                   <span className="text-[#06C755] text-sm font-bold">最大{analyzeResult.targetCount}</span>
                                 </div>
+                                {credits !== null && (
+                                  <div className="flex items-center justify-between mt-1.5">
+                                    <span className="text-[#8494a7] text-xs">残りクレジット</span>
+                                    <span className="text-[#8494a7] text-xs">
+                                      {credits}件 → 依頼後: <span className={credits - analyzeResult.targetCount < 0 ? 'text-[#ff6b78]' : 'text-[#f0f4f8]'}>{credits - analyzeResult.targetCount}件</span>
+                                    </span>
+                                  </div>
+                                )}
                                 <p className="text-[#8494a7] text-xs mt-1.5">開始時に仮押さえ、未使用分は返却されます</p>
                               </div>
                             </div>

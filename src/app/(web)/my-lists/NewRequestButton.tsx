@@ -615,7 +615,7 @@ export default function NewRequestButton() {
                           <div className="flex gap-3">
                             <button
                               type="button"
-                              onClick={handleBack}
+                              onClick={() => handleBack()}
                               className="flex-1 bg-transparent border border-[rgba(255,255,255,0.07)] text-[#8fa3b8] hover:text-[#f0f4f8] hover:border-[rgba(255,255,255,0.15)] font-medium py-2.5 rounded-full transition-colors text-sm cursor-pointer"
                             >
                               修正する

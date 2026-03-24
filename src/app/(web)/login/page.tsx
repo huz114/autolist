@@ -36,6 +36,25 @@ function LoginForm() {
     setError('')
     setLoading(true)
 
+    // メール認証チェック（signIn前に確認）
+    try {
+      const checkRes = await fetch('/api/auth/check-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+      if (checkRes.ok) {
+        const checkData = await checkRes.json()
+        if (checkData.exists && !checkData.verified) {
+          setLoading(false)
+          setError('メールアドレスが認証されていません。登録時に送信された確認メールのリンクをクリックしてください。')
+          return
+        }
+      }
+    } catch {
+      // チェック失敗時はsignInに進む
+    }
+
     const result = await signIn('credentials', {
       email,
       password,
@@ -44,12 +63,7 @@ function LoginForm() {
 
     if (result?.error) {
       setLoading(false)
-      // auth.ts の authorize で throw されたエラーメッセージを表示
-      if (result.error.includes('メールアドレスが認証されていません')) {
-        setError('メールアドレスが認証されていません。確認メールをご確認ください。')
-      } else {
-        setError('メールアドレスまたはパスワードが正しくありません')
-      }
+      setError('メールアドレスまたはパスワードが正しくありません')
     } else {
       // LINEユーザーとWebアカウントの自動紐づけ
       if (lineUserId) {

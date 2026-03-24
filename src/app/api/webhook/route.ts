@@ -164,7 +164,7 @@ async function getOrCreateUserForLine(lineUserId: string): Promise<{
   lineUser: { id: string; lineUserId: string; displayName: string | null; state: string | null; userId: string | null };
   userId: string;
   credits: number;
-}> {
+} | null> {
   let lineUser = await prisma.lineUser.findUnique({ where: { lineUserId } });
 
   if (!lineUser) {
@@ -190,35 +190,9 @@ async function getOrCreateUserForLine(lineUserId: string): Promise<{
     };
   }
 
-  // User 未紐づけ → 新規 User を作成して紐づける（LINE-only ユーザー）
-  // email は一意制約があるため、lineUserId ベースの仮メールを使用
-  const tempEmail = `line_${lineUserId}@autolist.local`;
-  let user = await prismaShiryolog.user.findUnique({ where: { email: tempEmail } });
-
-  if (!user) {
-    user = await prismaShiryolog.user.create({
-      data: {
-        email: tempEmail,
-        name: lineUser.displayName,
-        autolistCredits: 100,
-        autolistPlan: 'free',
-        autolistMonthlyCount: 0,
-      },
-    });
-  }
-
-  // LineUser に userId を設定
-  await prisma.lineUser.update({
-    where: { id: lineUser.id },
-    data: { userId: user.id },
-  });
-  lineUser = { ...lineUser, userId: user.id };
-
-  return {
-    lineUser,
-    userId: user.id,
-    credits: user.autolistCredits ?? 0,
-  };
+  // userId が null = 連携解除済み or 未連携
+  // 新規Userの自動作成はしない → Webから連携してもらう
+  return null;
 }
 
 /**
@@ -275,7 +249,12 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
     if (event.type === 'follow') {
       if (event.replyToken) {
         const lineUserId = event.source.userId;
-        const { credits } = await getOrCreateUserForLine(lineUserId);
+        const userResult = await getOrCreateUserForLine(lineUserId);
+        if (!userResult) {
+          await replyMessage(event.replyToken, WELCOME_MESSAGE);
+          continue;
+        }
+        const { credits } = userResult;
         if (credits > 0) {
           // 既存ユーザー（おかえり）
           const existingLineUser = await prisma.lineUser.findUnique({ where: { lineUserId } });
@@ -298,8 +277,15 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
       const data = new URLSearchParams(event.postback?.data || '');
       const action = data.get('action');
 
-      // ユーザーを取得または作成
-      const { lineUser: pbLineUser, userId: pbUserId, credits: pbCredits } = await getOrCreateUserForLine(lineUserId);
+      // ユーザーを取得
+      const pbResult = await getOrCreateUserForLine(lineUserId);
+      if (!pbResult) {
+        if (replyToken) {
+          await replyMessage(replyToken, 'Webアカウントとの連携が必要です。\nhttps://autolist.shiryolog.com にログインしてLINE連携を行ってください。');
+        }
+        continue;
+      }
+      const { lineUser: pbLineUser, userId: pbUserId, credits: pbCredits } = pbResult;
 
       switch (action) {
         case 'new_request':
@@ -505,8 +491,15 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
         continue;
       }
 
-      // ユーザーを取得または作成
-      const { lineUser: userLineUser, userId, credits: userCredits } = await getOrCreateUserForLine(lineUserId);
+      // ユーザーを取得
+      const msgResult = await getOrCreateUserForLine(lineUserId);
+      if (!msgResult) {
+        if (event.replyToken) {
+          await replyMessage(event.replyToken, 'Webアカウントとの連携が必要です。\nhttps://autolist.shiryolog.com にログインしてLINE連携を行ってください。');
+        }
+        continue;
+      }
+      const { lineUser: userLineUser, userId, credits: userCredits } = msgResult;
       // lineUser の state は LineUser テーブルで管理
       const userState = userLineUser.state;
 

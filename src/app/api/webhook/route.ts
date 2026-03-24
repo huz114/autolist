@@ -240,7 +240,7 @@ const WELCOME_MESSAGE = `👋 友だち登録ありがとうございます！
 「美容サロン 大阪 20社」
 ━━━━━━━━━━━━━`;
 
-const LINK_REQUIRED_MESSAGE = `Webアカウントとの連携が必要です。\n\n━━━ LINE連携の手順 ━━━\n\n① Webサイトにログイン\n② 「マイリスト」→「LINE連携」ボタン\n③ 表示された連携コードをこのトークに送信\n\n例: 「連携 123456」\n\n▼ ログインはこちら\nhttps://autolist.shiryolog.com/login`;
+const LINK_REQUIRED_MESSAGE = `Webアカウントとの連携が必要です。\n\n📌 連携コードをお持ちの方\nそのままこのトークに送信してください。\n例: 「連携 123456」\n\n━━━ 初めての方 ━━━\n① Webサイトにログイン\n② 「マイリスト」→「LINE連携」ボタン\n③ 表示されたコードをこのトークに送信\n\n▼ ログインはこちら\nhttps://autolist.shiryolog.com/login`;
 
 /**
  * LINEイベントを処理する

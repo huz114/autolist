@@ -296,7 +296,26 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
         const lineUserId = event.source.userId;
         const userResult = await getOrCreateUserForLine(lineUserId);
         if (!userResult) {
-          await replyMessage(event.replyToken, WELCOME_MESSAGE);
+          // 未連携ユーザー: おかえり + 連携案内
+          await replyMessage(event.replyToken, {
+            type: 'flex',
+            altText: 'おかえりなさい！LINE連携をお願いします',
+            contents: {
+              type: 'bubble',
+              body: {
+                type: 'box', layout: 'vertical', contents: [
+                  { type: 'text', text: 'おかえりなさい！👋', weight: 'bold', size: 'lg' },
+                  { type: 'text', text: 'オートリストをご利用いただくには、Webアカウントとの連携が必要です。', size: 'sm', color: '#888888', margin: 'md', wrap: true },
+                  { type: 'text', text: 'Webサイトでログイン後、LINE連携ボタンから連携コードを発行し、このトークに送信してください。', size: 'sm', color: '#888888', margin: 'md', wrap: true },
+                ],
+              },
+              footer: {
+                type: 'box', layout: 'vertical', contents: [
+                  { type: 'button', action: { type: 'uri', label: 'ログインして連携する', uri: 'https://autolist.shiryolog.com/login?openExternalBrowser=1' }, style: 'primary', color: '#06C755' },
+                ],
+              },
+            },
+          } as never);
           continue;
         }
         const { credits } = userResult;

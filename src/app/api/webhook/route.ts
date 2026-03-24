@@ -241,18 +241,47 @@ const WELCOME_MESSAGE = `👋 友だち登録ありがとうございます！
 ━━━━━━━━━━━━━`;
 
 const LINK_REQUIRED_MESSAGE = {
-  type: 'template' as const,
+  type: 'flex' as const,
   altText: 'Webアカウントとの連携が必要です',
-  template: {
-    type: 'buttons' as const,
-    text: 'Webアカウントとの連携が必要です。\nログインしてLINE連携を行ってください。',
-    actions: [
-      {
-        type: 'uri' as const,
-        label: 'ログインして連携する',
-        uri: 'https://autolist.shiryolog.com/login?openExternalBrowser=1',
-      },
-    ],
+  contents: {
+    type: 'bubble' as const,
+    body: {
+      type: 'box' as const,
+      layout: 'vertical' as const,
+      contents: [
+        {
+          type: 'text' as const,
+          text: 'Webアカウントとの連携が必要です。',
+          weight: 'bold' as const,
+          size: 'md' as const,
+          wrap: true,
+        },
+        {
+          type: 'text' as const,
+          text: 'ログインしてLINE連携を行ってください。',
+          size: 'sm' as const,
+          color: '#888888',
+          margin: 'md' as const,
+          wrap: true,
+        },
+      ],
+    },
+    footer: {
+      type: 'box' as const,
+      layout: 'vertical' as const,
+      contents: [
+        {
+          type: 'button' as const,
+          action: {
+            type: 'uri' as const,
+            label: 'ログインして連携する',
+            uri: 'https://autolist.shiryolog.com/login?openExternalBrowser=1',
+          },
+          style: 'primary' as const,
+          color: '#06C755',
+        },
+      ],
+    },
   },
 };
 

@@ -99,6 +99,12 @@ export default function NewRequestButton() {
   const handleAnalyze = async () => {
     if (!inputText.trim()) return
 
+    // 件数チェック（AI呼び出し前にクライアント側で弾く）
+    if (!/\d+/.test(inputText)) {
+      setError('件数を含めてください。\n例: 「渋谷区の不動産会社 30件」')
+      return
+    }
+
     setError(null)
     setPhase('analyzing')
 

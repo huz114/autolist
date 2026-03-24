@@ -325,7 +325,24 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
       // 連携不要のアクションは先に処理
       if (action === 'contact') {
         if (replyToken) {
-          await replyMessage(replyToken, '📩 お問い合わせはこちらからお願いします。\n\nhttps://autolist.shiryolog.com/contact?openExternalBrowser=1');
+          await replyMessage(replyToken, {
+            type: 'flex',
+            altText: 'お問い合わせ',
+            contents: {
+              type: 'bubble',
+              body: {
+                type: 'box', layout: 'vertical', contents: [
+                  { type: 'text', text: '📩 お問い合わせ', weight: 'bold', size: 'md' },
+                  { type: 'text', text: 'お気軽にご連絡ください。', size: 'sm', color: '#888888', margin: 'md', wrap: true },
+                ],
+              },
+              footer: {
+                type: 'box', layout: 'vertical', contents: [
+                  { type: 'button', action: { type: 'uri', label: 'お問い合わせページを開く', uri: 'https://autolist.shiryolog.com/contact?openExternalBrowser=1' }, style: 'primary', color: '#06C755' },
+                ],
+              },
+            },
+          } as never);
         }
         continue;
       }
@@ -533,7 +550,24 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
       // 問い合わせテキストの処理
       if (messageText.trim() === '問い合わせ' || messageText.trim() === 'お問い合わせ') {
         if (replyToken) {
-          await replyMessage(replyToken, '📩 お問い合わせはこちらからお願いします。\n\nhttps://autolist.shiryolog.com/contact?openExternalBrowser=1');
+          await replyMessage(replyToken, {
+            type: 'flex',
+            altText: 'お問い合わせ',
+            contents: {
+              type: 'bubble',
+              body: {
+                type: 'box', layout: 'vertical', contents: [
+                  { type: 'text', text: '📩 お問い合わせ', weight: 'bold', size: 'md' },
+                  { type: 'text', text: 'お気軽にご連絡ください。', size: 'sm', color: '#888888', margin: 'md', wrap: true },
+                ],
+              },
+              footer: {
+                type: 'box', layout: 'vertical', contents: [
+                  { type: 'button', action: { type: 'uri', label: 'お問い合わせページを開く', uri: 'https://autolist.shiryolog.com/contact?openExternalBrowser=1' }, style: 'primary', color: '#06C755' },
+                ],
+              },
+            },
+          } as never);
         }
         continue;
       }

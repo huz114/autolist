@@ -300,12 +300,6 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
         }
         continue;
       }
-      if (action === 'help') {
-        if (replyToken) {
-          await replyMessage(replyToken, HELP_MESSAGE);
-        }
-        continue;
-      }
 
       // ユーザーを取得（連携必須のアクション）
       const pbResult = await getOrCreateUserForLine(lineUserId);
@@ -386,6 +380,12 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
           }
           break;
         }
+
+        case 'help':
+          if (replyToken) {
+            await replyMessage(replyToken, HELP_MESSAGE);
+          }
+          break;
 
         default:
           if (replyToken) {

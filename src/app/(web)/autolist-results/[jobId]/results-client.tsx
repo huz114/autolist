@@ -14,8 +14,11 @@ type UrlItem = {
   phoneNumber: string | null
   employeeCount: string | null
   formUrl: string | null
+  hasForm: boolean
   excluded: boolean
 }
+
+type FormFilter = 'all' | 'hasForm' | 'noForm'
 
 type Props = {
   jobId: string
@@ -35,6 +38,7 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
     }
     return new Set<string>()
   })
+  const [formFilter, setFormFilter] = useState<FormFilter>('all')
   const [confirming, setConfirming] = useState(false)
   const [confirmed, setConfirmed] = useState(isConfirmed)
   const [error, setError] = useState<string | null>(null)
@@ -172,6 +176,28 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
         )}
       </div>
 
+      {/* フォームフィルター */}
+      <div className="flex items-center gap-2 mb-4">
+        <span className="text-xs text-[#8494a7] mr-1">絞り込み:</span>
+        {([
+          { value: 'all' as FormFilter, label: 'すべて' },
+          { value: 'hasForm' as FormFilter, label: 'フォームあり' },
+          { value: 'noForm' as FormFilter, label: 'フォームなし' },
+        ]).map(({ value, label }) => (
+          <button
+            key={value}
+            onClick={() => setFormFilter(value)}
+            className={`text-xs font-medium px-3 py-1.5 rounded-full transition-all cursor-pointer ${
+              formFilter === value
+                ? 'bg-[rgba(6,199,85,0.15)] text-[#06C755] border border-[rgba(6,199,85,0.4)]'
+                : 'bg-[rgba(255,255,255,0.05)] text-[#8494a7] border border-[rgba(255,255,255,0.07)] hover:border-[rgba(255,255,255,0.15)]'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       {/* 案内メッセージ（確定前のみ） */}
       {!confirmed && (
         <div className="bg-[rgba(6,199,85,0.05)] border border-[rgba(6,199,85,0.2)] rounded-2xl px-5 py-4 mb-6">
@@ -227,7 +253,13 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
               }}
             />
           )}
-          {urls.map((u, idx) => {
+          {urls
+          .filter(u => {
+            if (formFilter === 'hasForm') return u.hasForm
+            if (formFilter === 'noForm') return !u.hasForm
+            return true
+          })
+          .map((u, idx) => {
             const isExcluded = excludedIds.has(u.id)
             // 確定済みで除外された企業は表示しない
             if (confirmed && isExcluded) return null
@@ -250,6 +282,16 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
                       <p className={`font-medium truncate ${isExcluded ? 'text-[#8fa3b8] line-through' : 'text-[#f0f4f8]'}`}>
                         {u.companyName ?? u.url}
                       </p>
+                      {/* フォームバッジ */}
+                      {u.hasForm ? (
+                        <span className="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full bg-[rgba(6,199,85,0.12)] text-[#06C755] border border-[rgba(6,199,85,0.25)]">
+                          フォームあり
+                        </span>
+                      ) : (
+                        <span className="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full bg-[rgba(255,255,255,0.05)] text-[#8494a7] border border-[rgba(255,255,255,0.1)]">
+                          フォームなし
+                        </span>
+                      )}
                       {isExcluded && (
                         <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-[rgba(255,71,87,0.15)] text-[#ff4757] border border-[rgba(255,71,87,0.25)]">
                           <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">

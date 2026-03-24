@@ -344,7 +344,7 @@ export async function collectUrls(jobId: string): Promise<number> {
     }
   }
 
-  // 各URLに対して企業情報をクローリングし、hasForm: trueのみ保存
+  // 各URLに対して企業情報をクローリングして保存
   const totalCandidates = newUrls.length;
   let processed = 0;
   let saved = 0;
@@ -363,32 +363,28 @@ export async function collectUrls(jobId: string): Promise<number> {
       console.log(`Scraping: ${urlData.url} (${processed}/${totalCandidates})`);
       const companyInfo = await scrapeCompanyInfo(urlData.url, job.industry ?? undefined, job.location ?? undefined);
 
-      // hasForm: true のURLのみ保存
-      if (companyInfo.hasForm) {
-        await prisma.collectedUrl.create({
-          data: {
-            jobId,
-            url: urlData.url,
-            domain: urlData.domain,
-            companyName: companyInfo.companyName ?? urlData.companyName,
-            industry: companyInfo.industry ?? null,
-            location: companyInfo.location ?? null,
-            employeeCount: companyInfo.employeeCount ?? null,
-            capitalAmount: companyInfo.capitalAmount ?? null,
-            phoneNumber: companyInfo.phoneNumber ?? null,
-            representativeName: companyInfo.representativeName ?? null,
-            establishedYear: companyInfo.establishedYear ?? null,
-            businessDescription: companyInfo.businessDescription ?? null,
-            hasForm: true,
-            formUrl: companyInfo.formUrl ?? null,
-            status: 'collected',
-          },
-        });
-        saved++;
-        console.log(`  -> hasForm: true, saved (total: ${saved})`);
-      } else {
-        console.log(`  -> hasForm: false, skipped`);
-      }
+      // hasFormに関係なく全URLを保存（hasFormはフィールドとして記録）
+      await prisma.collectedUrl.create({
+        data: {
+          jobId,
+          url: urlData.url,
+          domain: urlData.domain,
+          companyName: companyInfo.companyName ?? urlData.companyName,
+          industry: companyInfo.industry ?? null,
+          location: companyInfo.location ?? null,
+          employeeCount: companyInfo.employeeCount ?? null,
+          capitalAmount: companyInfo.capitalAmount ?? null,
+          phoneNumber: companyInfo.phoneNumber ?? null,
+          representativeName: companyInfo.representativeName ?? null,
+          establishedYear: companyInfo.establishedYear ?? null,
+          businessDescription: companyInfo.businessDescription ?? null,
+          hasForm: companyInfo.hasForm,
+          formUrl: companyInfo.formUrl ?? null,
+          status: 'collected',
+        },
+      });
+      saved++;
+      console.log(`  -> hasForm: ${companyInfo.hasForm}, saved (total: ${saved})`);
     } catch (error) {
       console.error(`Failed to scrape ${urlData.url}:`, error);
       // 1社の失敗で全体が止まらないようにcontinue
@@ -415,8 +411,7 @@ export async function collectUrls(jobId: string): Promise<number> {
 
 /**
  * スクレイピング結果を保存するヘルパー関数
- * hasForm=true の場合は法人名クロールを実行して companyVerified を設定する
- * companyVerified=true の件数が targetCount に達したら true を返す
+ * hasFormに関係なく全URLを保存する。保存成功時にtrueを返す。
  */
 async function scrapeAndSave(
   jobId: string,
@@ -427,38 +422,32 @@ async function scrapeAndSave(
   try {
     const companyInfo = await scrapeCompanyInfo(urlData.url, requestedIndustry, requestedLocation);
 
-    if (companyInfo.hasForm) {
-      // isCompanySite: true かつ hasForm: true の場合のみここに到達
-      const companyVerified = true;
-      const companyName = companyInfo.companyName ?? urlData.companyName;
+    const companyVerified = true;
+    const companyName = companyInfo.companyName ?? urlData.companyName;
 
-      console.log(`  -> hasForm: true, companyVerified: true (isCompanySite確認済み), saved`);
+    console.log(`  -> hasForm: ${companyInfo.hasForm}, companyVerified: true, saved`);
 
-      await prisma.collectedUrl.create({
-        data: {
-          jobId,
-          url: urlData.url,
-          domain: urlData.domain,
-          companyName,
-          industry: companyInfo.industry ?? null,
-          location: companyInfo.location ?? null,
-          employeeCount: companyInfo.employeeCount ?? null,
-          capitalAmount: companyInfo.capitalAmount ?? null,
-          phoneNumber: companyInfo.phoneNumber ?? null,
-          representativeName: companyInfo.representativeName ?? null,
-          establishedYear: companyInfo.establishedYear ?? null,
-          businessDescription: companyInfo.businessDescription ?? null,
-          hasForm: true,
-          formUrl: companyInfo.formUrl ?? null,
-          companyVerified,
-          status: 'collected',
-        },
-      });
-      return companyVerified;
-    } else {
-      console.log(`  -> hasForm: false or not company site, skipped`);
-      return false;
-    }
+    await prisma.collectedUrl.create({
+      data: {
+        jobId,
+        url: urlData.url,
+        domain: urlData.domain,
+        companyName,
+        industry: companyInfo.industry ?? null,
+        location: companyInfo.location ?? null,
+        employeeCount: companyInfo.employeeCount ?? null,
+        capitalAmount: companyInfo.capitalAmount ?? null,
+        phoneNumber: companyInfo.phoneNumber ?? null,
+        representativeName: companyInfo.representativeName ?? null,
+        establishedYear: companyInfo.establishedYear ?? null,
+        businessDescription: companyInfo.businessDescription ?? null,
+        hasForm: companyInfo.hasForm,
+        formUrl: companyInfo.formUrl ?? null,
+        companyVerified,
+        status: 'collected',
+      },
+    });
+    return true;
   } catch (error) {
     console.error(`Failed to scrape ${urlData.url}:`, error);
     return false;
@@ -577,7 +566,6 @@ export async function collectUrlsWithQueries(
         where: {
           jobId: { in: cachedJobs.map(j => j.id) },
           domain: { notIn: Array.from(excludedDomains) },
-          hasForm: true,
         },
       });
       // ブラックリスト再チェック（過去データがブラックリスト追加前に収集されている場合の対策）
@@ -695,8 +683,8 @@ export async function collectUrlsWithQueries(
   const pendingQueue: CollectedUrlData[] = [];
 
   // 統計（キャッシュで既に保存された分を初期値に）
-  // savedCount = companyVerified=true の件数（目標件数カウント基準）
-  let savedCount = savedUrlsAfterCache.filter(u => u.companyVerified).length;
+  // savedCount = 保存済み全件数（目標件数カウント基準）
+  let savedCount = savedUrlsAfterCache.length;
   let scrapedTotal = 0;     // スクレイピング済みURL数
   let searchRound = 0;      // 実行した検索ラウンド数
 

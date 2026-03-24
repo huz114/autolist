@@ -93,7 +93,7 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
 
     // ── リトライ時の途中再開: 既収集件数を確認して残りだけ収集する ──
     const existingCollectedCount = await prisma.collectedUrl.count({
-      where: { jobId: job.id, hasForm: true, companyVerified: true },
+      where: { jobId: job.id },
     });
 
     // 残り件数を計算（既に収集済み分を差し引く）
@@ -141,9 +141,9 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
       scrapedCount = result.scrapedCount;
     }
 
-    // 法人名確認済み（companyVerified=true）の件数を取得（顧客提出用件数）
+    // 収集済み件数を取得（顧客提出用件数）
     const formCount = await prisma.collectedUrl.count({
-      where: { jobId: job.id, hasForm: true, companyVerified: true },
+      where: { jobId: job.id },
     });
 
     // 完了後のstatus確認（キャンセルされた場合は按分課金）
@@ -397,7 +397,7 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
 
     // 収集済み件数を確認
     const partialCount = await prisma.collectedUrl.count({
-      where: { jobId: job.id, hasForm: true, companyVerified: true },
+      where: { jobId: job.id },
     });
 
     if (currentRetryCount < MAX_RETRY) {

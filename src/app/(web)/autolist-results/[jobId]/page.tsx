@@ -18,7 +18,6 @@ export default async function AutolistResultsPage({ params }: { params: { jobId:
     },
     include: {
       urls: {
-        where: { hasForm: true, companyVerified: true },
         orderBy: { createdAt: 'asc' },
         select: {
           id: true,
@@ -29,6 +28,7 @@ export default async function AutolistResultsPage({ params }: { params: { jobId:
           phoneNumber: true,
           employeeCount: true,
           formUrl: true,
+          hasForm: true,
           excluded: true,
         },
       },

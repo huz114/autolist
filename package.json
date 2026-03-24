@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3007",
-    "build": "rm -rf .next && prisma generate && prisma generate --schema=prisma/schema-shiryolog.prisma && next build",
+    "build": "prisma generate && prisma generate --schema=prisma/schema-shiryolog.prisma && next build",
     "start": "next start -p ${PORT:-3007}",
     "lint": "next lint",
     "prisma:generate": "prisma generate",

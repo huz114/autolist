@@ -573,25 +573,26 @@ export default function NewRequestButton() {
                       {!analyzeResult.ambiguousLocation && analyzeResult.isDomestic && (
                         <>
                           <div className="bg-[#0a0f1c] border border-[rgba(255,255,255,0.07)] rounded-xl px-4 py-4 mb-4">
-                            <p className="text-[#8fa3b8] text-xs font-medium mb-3">解析結果</p>
+                            <p className="text-[#8fa3b8] text-xs font-medium mb-3">以下の条件でリストを収集します</p>
                             <div className="space-y-2.5">
                               <div className="flex items-center justify-between">
-                                <span className="text-[#8fa3b8] text-sm">業種</span>
+                                <span className="text-[#8fa3b8] text-sm">🏢 業種</span>
                                 <span className="text-[#f0f4f8] text-sm font-medium">{analyzeResult.industry}</span>
                               </div>
                               <div className="flex items-center justify-between">
-                                <span className="text-[#8fa3b8] text-sm">地域</span>
+                                <span className="text-[#8fa3b8] text-sm">📍 地域</span>
                                 <span className="text-[#f0f4f8] text-sm font-medium">{analyzeResult.location}</span>
                               </div>
                               <div className="flex items-center justify-between">
-                                <span className="text-[#8fa3b8] text-sm">件数</span>
-                                <span className="text-[#f0f4f8] text-sm font-medium">{analyzeResult.targetCount}件</span>
+                                <span className="text-[#8fa3b8] text-sm">📊 件数</span>
+                                <span className="text-[#f0f4f8] text-sm font-medium">{analyzeResult.targetCount}社</span>
                               </div>
                               <div className="border-t border-[rgba(255,255,255,0.07)] pt-2.5 mt-2.5">
                                 <div className="flex items-center justify-between">
-                                  <span className="text-[#8fa3b8] text-sm">消費クレジット</span>
-                                  <span className="text-[#06C755] text-sm font-bold">{analyzeResult.targetCount}件</span>
+                                  <span className="text-[#8fa3b8] text-sm">💳 消費クレジット</span>
+                                  <span className="text-[#06C755] text-sm font-bold">最大{analyzeResult.targetCount}</span>
                                 </div>
+                                <p className="text-[#8494a7] text-xs mt-1.5">開始時に仮押さえ、未使用分は返却されます</p>
                               </div>
                             </div>
                           </div>

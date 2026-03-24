@@ -101,12 +101,13 @@ export default function JobList({ initialJobs }: JobListProps) {
   const prevJobsRef = useRef<Map<string, string>>(new Map())
   const isVisibleRef = useRef(true)
 
-  // Initialize previous status map
+  // Sync when initialJobs changes (e.g. after router.refresh())
   useEffect(() => {
+    setJobs(initialJobs)
     const map = new Map<string, string>()
     initialJobs.forEach((j) => map.set(j.id, j.status))
     prevJobsRef.current = map
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [initialJobs])
 
   // Track page visibility
   useEffect(() => {

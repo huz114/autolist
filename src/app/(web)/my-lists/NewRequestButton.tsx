@@ -3,8 +3,6 @@
 import { useRouter } from 'next/navigation'
 import { useState, useEffect, useCallback, useRef } from 'react'
 
-const COUNT_OPTIONS = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
-
 const PLANS = [
   { id: 'plan_100', price: 2000, credits: 100, unitPrice: '20' },
   { id: 'plan_300', price: 5000, credits: 300, unitPrice: '16.7' },
@@ -12,19 +10,36 @@ const PLANS = [
   { id: 'plan_1500', price: 15000, credits: 1500, unitPrice: '10' },
 ]
 
+interface AnalyzeResult {
+  industry: string
+  location: string
+  targetCount: number
+  industryKeywords: string[]
+  searchQueries: string[]
+  excludeTerms: string[]
+  isDomestic: boolean
+  industrySpecified: boolean
+  locationSpecified: boolean
+  countSpecified: boolean
+  ambiguousLocation: string | null
+}
+
+type Phase = 'input' | 'analyzing' | 'confirmation' | 'submitting' | 'success'
+
 export default function NewRequestButton() {
   const router = useRouter()
   const [open, setOpen] = useState(false)
-  const [industry, setIndustry] = useState('')
-  const [location, setLocation] = useState('')
-  const [targetCount, setTargetCount] = useState(30)
+  const [phase, setPhase] = useState<Phase>('input')
+  const [inputText, setInputText] = useState('')
+  const [analyzeResult, setAnalyzeResult] = useState<AnalyzeResult | null>(null)
   const [credits, setCredits] = useState<number | null>(null)
   const [creditsError, setCreditsError] = useState<string | null>(null)
-  const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
-  const [view, setView] = useState<'form' | 'plans'>('form')
+  const [view, setView] = useState<'chat' | 'plans'>('chat')
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null)
+
+  const inputRef = useRef<HTMLInputElement>(null)
+  const modalRef = useRef<HTMLDivElement>(null)
 
   const fetchCredits = useCallback(async () => {
     setCreditsError(null)
@@ -51,45 +66,147 @@ export default function NewRequestButton() {
     }
   }, [open, fetchCredits])
 
+  // Focus input when phase changes to input (but not on initial mount to avoid IME issues)
+  const hasOpenedRef = useRef(false)
+  useEffect(() => {
+    if (open && phase === 'input' && view === 'chat') {
+      // Small delay to avoid focus issues with modal animation
+      const timer = setTimeout(() => {
+        if (hasOpenedRef.current) {
+          inputRef.current?.focus()
+        }
+        hasOpenedRef.current = true
+      }, 100)
+      return () => clearTimeout(timer)
+    }
+  }, [open, phase, view])
+
   const handleOpen = () => {
     setOpen(true)
-    setIndustry('')
-    setLocation('')
-    setTargetCount(30)
+    setPhase('input')
+    setInputText('')
+    setAnalyzeResult(null)
     setError(null)
-    setSuccess(false)
-    setView('form')
+    setView('chat')
     setCheckoutLoading(null)
+    hasOpenedRef.current = false
   }
 
   const handleClose = () => {
     setOpen(false)
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleAnalyze = async () => {
+    if (!inputText.trim()) return
+
     setError(null)
-    setSubmitting(true)
+    setPhase('analyzing')
 
     try {
-      const res = await fetch('/api/jobs/create', {
+      const res = await fetch('/api/jobs/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ industry, location, targetCount }),
+        body: JSON.stringify({ text: inputText.trim() }),
       })
 
       const data = await res.json()
 
       if (!res.ok) {
-        const message = data.error || (res.status === 401 ? 'ログインが必要です。再度ログインしてください。' : res.status >= 500 ? 'サーバーエラーが発生しました。しばらくお待ちください。' : '依頼の作成に失敗しました')
-        setError(message)
+        setError(data.error || '解析に失敗しました')
+        setPhase('input')
         return
       }
 
-      setSuccess(true)
+      const result = data as AnalyzeResult
+
+      // Check if all fields are missing (unrelated message)
+      const missingFields = []
+      if (!result.industrySpecified) missingFields.push('industry')
+      if (!result.locationSpecified) missingFields.push('location')
+      if (!result.countSpecified) missingFields.push('count')
+
+      if (missingFields.length === 3) {
+        setError('業種・地域・件数を含めて入力してください。\n例: 「渋谷区の不動産会社 30件」')
+        setPhase('input')
+        return
+      }
+
+      if (missingFields.length > 0) {
+        const missingLabels = []
+        if (!result.industrySpecified) missingLabels.push('業種')
+        if (!result.locationSpecified) missingLabels.push('地域')
+        if (!result.countSpecified) missingLabels.push('件数')
+        setError(`${missingLabels.join('・')}が指定されていません。まとめて入力してください。\n例: 「渋谷区の不動産会社 30件」`)
+        setPhase('input')
+        return
+      }
+
+      // Validate targetCount
+      if (result.targetCount < 10) {
+        setError('10件以上からご利用いただけます。10件単位でご指定ください。')
+        setPhase('input')
+        return
+      }
+      if (result.targetCount % 10 !== 0) {
+        setError('件数は10件単位でご指定ください。（例: 10、20、30、50件）')
+        setPhase('input')
+        return
+      }
+      if (result.targetCount > 100) {
+        setError('一度に依頼できるのは最大100件までです。件数を減らして再度ご入力ください。')
+        setPhase('input')
+        return
+      }
+
+      setAnalyzeResult(result)
+      setPhase('confirmation')
+    } catch (err) {
+      if (err instanceof TypeError && (err as TypeError).message === 'Failed to fetch') {
+        setError('ネットワークに接続できません。インターネット接続を確認してください。')
+      } else {
+        setError('解析に失敗しました。しばらくお待ちください。')
+      }
+      setPhase('input')
+    }
+  }
+
+  const handleSubmit = async () => {
+    if (!analyzeResult) return
+
+    setError(null)
+    setPhase('submitting')
+
+    try {
+      const res = await fetch('/api/jobs/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          industry: analyzeResult.industry,
+          location: analyzeResult.location,
+          targetCount: analyzeResult.targetCount,
+          industryKeywords: analyzeResult.industryKeywords,
+          searchQueries: analyzeResult.searchQueries,
+          excludeTerms: analyzeResult.excludeTerms,
+          originalMessage: inputText.trim(),
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        const message = data.error || (
+          res.status === 401 ? 'ログインが必要です。再度ログインしてください。' :
+          res.status >= 500 ? 'サーバーエラーが発生しました。しばらくお待ちください。' :
+          '依頼の作成に失敗しました'
+        )
+        setError(message)
+        setPhase('confirmation')
+        return
+      }
+
+      setPhase('success')
       setTimeout(() => {
         setOpen(false)
-        setSuccess(false)
         router.refresh()
       }, 1500)
     } catch (err) {
@@ -98,9 +215,14 @@ export default function NewRequestButton() {
       } else {
         setError('依頼の作成に失敗しました。しばらくお待ちください。')
       }
-    } finally {
-      setSubmitting(false)
+      setPhase('confirmation')
     }
+  }
+
+  const handleBack = () => {
+    setError(null)
+    setPhase('input')
+    // Keep inputText so user can modify
   }
 
   const handleCheckout = async (planId: string) => {
@@ -128,11 +250,14 @@ export default function NewRequestButton() {
     }
   }
 
-  const insufficientCredits = credits !== null && credits < targetCount
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+      e.preventDefault()
+      handleAnalyze()
+    }
+  }
 
-  const modalRef = useRef<HTMLDivElement>(null)
-  // フォーカストラップはIME干渉のため無効化
-  // const _unused = useFocusTrap(open, handleClose)
+  const insufficientCredits = analyzeResult && credits !== null && credits < analyzeResult.targetCount
 
   return (
     <>
@@ -153,19 +278,13 @@ export default function NewRequestButton() {
           aria-modal="true"
           aria-label="新規リスト依頼"
         >
-          <div ref={modalRef} className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-2xl w-full max-w-md mx-4 p-6 shadow-2xl">
-            {success ? (
-              <div className="text-center py-8">
-                <div className="text-[#06C755] text-4xl mb-3">&#10003;</div>
-                <p className="text-[#f0f4f8] font-medium text-lg">依頼を受け付けました</p>
-                <p className="text-[#8fa3b8] text-sm mt-1">リスト収集を開始します</p>
-              </div>
-            ) : view === 'plans' ? (
-              <>
+          <div ref={modalRef} className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-2xl w-full max-w-md mx-4 shadow-2xl overflow-hidden">
+            {view === 'plans' ? (
+              <div className="p-6">
                 <div className="flex items-center gap-3 mb-1">
                   <button
-                    onClick={() => { setView('form'); setError(null); }}
-                    className="text-[#8fa3b8] hover:text-[#f0f4f8] transition-colors"
+                    onClick={() => { setView('chat'); setError(null); }}
+                    className="text-[#8fa3b8] hover:text-[#f0f4f8] transition-colors cursor-pointer"
                     aria-label="戻る"
                   >
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -184,7 +303,7 @@ export default function NewRequestButton() {
                       key={plan.id}
                       onClick={() => handleCheckout(plan.id)}
                       disabled={checkoutLoading !== null}
-                      className={`w-full text-left relative rounded-2xl border px-4 py-3.5 transition-all ${
+                      className={`w-full text-left relative rounded-2xl border px-4 py-3.5 transition-all cursor-pointer ${
                         plan.popular
                           ? 'border-[rgba(6,199,85,0.4)] bg-[rgba(6,199,85,0.05)] hover:bg-[rgba(6,199,85,0.1)]'
                           : 'border-[rgba(255,255,255,0.07)] bg-[#0a0f1c] hover:bg-[#152035]'
@@ -237,129 +356,250 @@ export default function NewRequestButton() {
                 <p className="text-[#8494a7] text-xs text-center mt-4">
                   Stripeの安全な決済ページに移動します
                 </p>
-              </>
+              </div>
+            ) : phase === 'success' ? (
+              <div className="p-6">
+                <div className="text-center py-8">
+                  <div className="text-[#06C755] text-4xl mb-3">&#10003;</div>
+                  <p className="text-[#f0f4f8] font-medium text-lg">依頼を受け付けました</p>
+                  <p className="text-[#8fa3b8] text-sm mt-1">リスト収集を開始します</p>
+                </div>
+              </div>
             ) : (
               <>
-                <h2 className="text-lg font-bold text-[#f0f4f8] mb-1">新規リスト依頼</h2>
-                <p className="text-sm text-[#8fa3b8] mb-6">
-                  業種・地域・件数を指定してリストを作成します
-                </p>
-
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-[#8fa3b8] mb-1.5">
-                      業種 <span className="text-[#ff4757]">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={industry}
-                      onChange={(e) => setIndustry(e.target.value)}
-                      placeholder="例: 整体院、美容室、不動産会社"
-                      required
-                      className="w-full bg-[#0a0f1c] border border-[rgba(255,255,255,0.07)] rounded-xl px-4 py-2.5 text-[#f0f4f8] text-sm placeholder:text-[#8494a7] focus:outline-none focus:border-[rgba(6,199,85,0.4)] transition-colors"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-[#8fa3b8] mb-1.5">
-                      地域 <span className="text-[#ff4757]">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={location}
-                      onChange={(e) => setLocation(e.target.value)}
-                      placeholder="例: 東京都、大阪市、福岡県"
-                      required
-                      className="w-full bg-[#0a0f1c] border border-[rgba(255,255,255,0.07)] rounded-xl px-4 py-2.5 text-[#f0f4f8] text-sm placeholder:text-[#8494a7] focus:outline-none focus:border-[rgba(6,199,85,0.4)] transition-colors"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-[#8fa3b8] mb-1.5">
-                      件数
-                    </label>
-                    <div className="relative">
-                      <select
-                        value={targetCount}
-                        onChange={(e) => setTargetCount(Number(e.target.value))}
-                        className="w-full bg-[#0a0f1c] border border-[rgba(255,255,255,0.07)] rounded-xl px-4 py-2.5 pr-10 text-[#f0f4f8] text-sm focus:outline-none focus:border-[rgba(6,199,85,0.4)] transition-colors appearance-none cursor-pointer"
-                      >
-                        {COUNT_OPTIONS.map((n) => (
-                          <option key={n} value={n}>
-                            {n}件
-                          </option>
-                        ))}
-                      </select>
-                      <svg
-                        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#8fa3b8]"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                        aria-hidden="true"
-                      >
-                        <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+                {/* Header */}
+                <div className="px-6 pt-6 pb-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-bold text-[#f0f4f8]">新規リスト依頼</h2>
+                    <button
+                      onClick={handleClose}
+                      className="text-[#8fa3b8] hover:text-[#f0f4f8] transition-colors cursor-pointer"
+                      aria-label="閉じる"
+                    >
+                      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                       </svg>
-                    </div>
+                    </button>
                   </div>
+                  <p className="text-sm text-[#8fa3b8] mt-1">
+                    業種・地域・件数を自然文で入力してください
+                  </p>
+                </div>
 
-                  {/* クレジット表示 */}
-                  <div className="bg-[#0a0f1c] border border-[rgba(255,255,255,0.07)] rounded-xl px-4 py-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-[#8fa3b8]">残りクレジット</span>
-                      {credits !== null ? (
-                        <span className={`font-medium ${insufficientCredits ? 'text-[#ff4757]' : 'text-[#f0f4f8]'}`}>
-                          {credits}件
-                        </span>
-                      ) : creditsError ? (
-                        <span className="text-[#ff4757] text-xs">{creditsError}</span>
-                      ) : (
-                        <span className="text-[#8494a7]">読み込み中...</span>
+                {/* Chat area */}
+                <div className="px-6 pb-4 min-h-[200px]">
+                  {phase === 'analyzing' && (
+                    <div className="flex items-center justify-center py-12">
+                      <div className="flex flex-col items-center gap-3">
+                        <svg className="animate-spin h-8 w-8 text-[#06C755]" viewBox="0 0 24 24" role="status" aria-label="解析中">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        <p className="text-[#8fa3b8] text-sm">AIが解析中...</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {phase === 'submitting' && (
+                    <div className="flex items-center justify-center py-12">
+                      <div className="flex flex-col items-center gap-3">
+                        <svg className="animate-spin h-8 w-8 text-[#06C755]" viewBox="0 0 24 24" role="status" aria-label="送信中">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        <p className="text-[#8fa3b8] text-sm">依頼を送信中...</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {phase === 'input' && (
+                    <div className="py-4">
+                      {/* Example hints */}
+                      {!inputText && !error && (
+                        <div className="space-y-2 mb-6">
+                          <p className="text-[#8494a7] text-xs">入力例:</p>
+                          {['渋谷区の不動産会社 30件', '大阪市の美容サロン 50件', '福岡県の整体院 20件'].map((example) => (
+                            <button
+                              key={example}
+                              onClick={() => setInputText(example)}
+                              className="block w-full text-left text-sm text-[#8fa3b8] bg-[#0a0f1c] border border-[rgba(255,255,255,0.07)] rounded-xl px-4 py-2.5 hover:border-[rgba(6,199,85,0.3)] hover:bg-[#0d1526] transition-colors cursor-pointer"
+                            >
+                              {example}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {error && (
+                        <div className="bg-[rgba(255,71,87,0.1)] border border-[rgba(255,71,87,0.3)] rounded-xl px-4 py-3 mb-4">
+                          <p className="text-[#ff4757] text-sm whitespace-pre-line">{error}</p>
+                        </div>
                       )}
                     </div>
-                    {insufficientCredits && (
-                      <p className="text-[#ff4757] text-xs mt-1.5">
-                        クレジットが不足しています（必要: {targetCount}件）
-                      </p>
-                    )}
-                  </div>
-
-                  {error && (
-                    <div className="bg-[rgba(255,71,87,0.1)] border border-[rgba(255,71,87,0.3)] rounded-xl px-4 py-2.5">
-                      <p className="text-[#ff4757] text-sm">{error}</p>
-                    </div>
                   )}
 
-                  <div className="flex gap-3 pt-2">
-                    <button
-                      type="button"
-                      onClick={handleClose}
-                      disabled={submitting}
-                      className="flex-1 bg-transparent border border-[rgba(255,255,255,0.07)] text-[#8fa3b8] hover:text-[#f0f4f8] hover:border-[rgba(255,255,255,0.15)] font-medium py-2.5 rounded-full transition-colors text-sm disabled:opacity-50"
-                    >
-                      キャンセル
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={submitting || insufficientCredits || !industry.trim() || !location.trim()}
-                      className="flex-1 bg-[#06C755] hover:bg-[#04a344] disabled:bg-[#0d1526] disabled:text-[#8494a7] text-white font-bold py-2.5 rounded-full transition-all text-sm disabled:cursor-not-allowed hover:shadow-[0_0_20px_rgba(6,199,85,0.3)]"
-                    >
-                      {submitting ? '送信中...' : '依頼する'}
-                    </button>
-                  </div>
+                  {phase === 'confirmation' && analyzeResult && (
+                    <div className="py-2">
+                      {/* User's message bubble */}
+                      <div className="flex justify-end mb-4">
+                        <div className="bg-[#06C755] text-white text-sm rounded-2xl rounded-br-sm px-4 py-2.5 max-w-[80%]">
+                          {inputText}
+                        </div>
+                      </div>
 
-                  {insufficientCredits && (
-                    <div className="text-center pt-1">
+                      {/* Ambiguous location warning */}
+                      {analyzeResult.ambiguousLocation && (
+                        <div className="bg-[rgba(255,193,7,0.1)] border border-[rgba(255,193,7,0.3)] rounded-xl px-4 py-3 mb-4">
+                          <p className="text-[#ffc107] text-sm">
+                            「{analyzeResult.ambiguousLocation}」は複数の都道府県に存在します。都道府県を含めて入力してください。
+                          </p>
+                          <button
+                            onClick={handleBack}
+                            className="mt-2 text-[#06C755] hover:text-[#04a344] text-sm font-medium transition-colors cursor-pointer"
+                          >
+                            入力に戻る
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Overseas rejection */}
+                      {!analyzeResult.isDomestic && (
+                        <div className="bg-[rgba(255,71,87,0.1)] border border-[rgba(255,71,87,0.3)] rounded-xl px-4 py-3 mb-4">
+                          <p className="text-[#ff4757] text-sm">
+                            現在は日本国内の地域のみ対応しています。
+                          </p>
+                          <button
+                            onClick={handleBack}
+                            className="mt-2 text-[#06C755] hover:text-[#04a344] text-sm font-medium transition-colors cursor-pointer"
+                          >
+                            入力に戻る
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Parsed result card (only show if no blocking errors) */}
+                      {!analyzeResult.ambiguousLocation && analyzeResult.isDomestic && (
+                        <>
+                          <div className="bg-[#0a0f1c] border border-[rgba(255,255,255,0.07)] rounded-xl px-4 py-4 mb-4">
+                            <p className="text-[#8fa3b8] text-xs font-medium mb-3">解析結果</p>
+                            <div className="space-y-2.5">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[#8fa3b8] text-sm">業種</span>
+                                <span className="text-[#f0f4f8] text-sm font-medium">{analyzeResult.industry}</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-[#8fa3b8] text-sm">地域</span>
+                                <span className="text-[#f0f4f8] text-sm font-medium">{analyzeResult.location}</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-[#8fa3b8] text-sm">件数</span>
+                                <span className="text-[#f0f4f8] text-sm font-medium">{analyzeResult.targetCount}件</span>
+                              </div>
+                              <div className="border-t border-[rgba(255,255,255,0.07)] pt-2.5 mt-2.5">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[#8fa3b8] text-sm">消費クレジット</span>
+                                  <span className="text-[#06C755] text-sm font-bold">{analyzeResult.targetCount}件</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Insufficient credits */}
+                          {insufficientCredits && (
+                            <div className="bg-[rgba(255,71,87,0.1)] border border-[rgba(255,71,87,0.3)] rounded-xl px-4 py-3 mb-4">
+                              <p className="text-[#ff4757] text-sm">
+                                クレジットが不足しています（残り: {credits}件 / 必要: {analyzeResult.targetCount}件）
+                              </p>
+                              <button
+                                onClick={() => { setView('plans'); setError(null); }}
+                                className="mt-2 inline-flex items-center gap-1 text-[#06C755] hover:text-[#04a344] text-sm font-medium transition-colors cursor-pointer"
+                              >
+                                クレジットを購入する &rarr;
+                              </button>
+                            </div>
+                          )}
+
+                          {error && (
+                            <div className="bg-[rgba(255,71,87,0.1)] border border-[rgba(255,71,87,0.3)] rounded-xl px-4 py-2.5 mb-4">
+                              <p className="text-[#ff4757] text-sm">{error}</p>
+                            </div>
+                          )}
+
+                          {/* Action buttons */}
+                          <div className="flex gap-3">
+                            <button
+                              type="button"
+                              onClick={handleBack}
+                              className="flex-1 bg-transparent border border-[rgba(255,255,255,0.07)] text-[#8fa3b8] hover:text-[#f0f4f8] hover:border-[rgba(255,255,255,0.15)] font-medium py-2.5 rounded-full transition-colors text-sm cursor-pointer"
+                            >
+                              修正する
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleSubmit}
+                              disabled={!!insufficientCredits}
+                              className="flex-1 bg-[#06C755] hover:bg-[#04a344] disabled:bg-[#0d1526] disabled:text-[#8494a7] text-white font-bold py-2.5 rounded-full transition-all text-sm disabled:cursor-not-allowed hover:shadow-[0_0_20px_rgba(6,199,85,0.3)] cursor-pointer"
+                            >
+                              依頼する
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Input bar (visible in input phase) */}
+                {phase === 'input' && (
+                  <div className="px-4 pb-4">
+                    {/* Credits info */}
+                    <div className="flex items-center justify-between text-xs mb-3 px-2">
+                      <span className="text-[#8494a7]">
+                        残りクレジット:{' '}
+                        {credits !== null ? (
+                          <span className={credits <= 0 ? 'text-[#ff4757]' : 'text-[#f0f4f8]'}>
+                            {credits}件
+                          </span>
+                        ) : creditsError ? (
+                          <span className="text-[#ff4757]">{creditsError}</span>
+                        ) : (
+                          <span className="text-[#8494a7]">...</span>
+                        )}
+                      </span>
+                      {credits !== null && credits <= 0 && (
+                        <button
+                          onClick={() => { setView('plans'); setError(null); }}
+                          className="text-[#06C755] hover:text-[#04a344] text-xs font-medium transition-colors cursor-pointer"
+                        >
+                          クレジットを購入する
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Chat-style input bar */}
+                    <div className="flex items-center gap-2 bg-[#0a0f1c] border border-[rgba(255,255,255,0.07)] rounded-full px-4 py-1.5 focus-within:border-[rgba(6,199,85,0.4)] transition-colors">
+                      <input
+                        ref={inputRef}
+                        type="text"
+                        value={inputText}
+                        onChange={(e) => setInputText(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        placeholder="例: 渋谷区の不動産会社 30件"
+                        className="flex-1 bg-transparent text-[#f0f4f8] text-sm placeholder:text-[#8494a7] focus:outline-none py-1.5"
+                      />
                       <button
-                        type="button"
-                        onClick={() => { setView('plans'); setError(null); }}
-                        className="inline-flex items-center gap-1 text-[#06C755] hover:text-[#04a344] text-sm font-medium transition-colors cursor-pointer"
+                        onClick={handleAnalyze}
+                        disabled={!inputText.trim()}
+                        className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-[#06C755] hover:bg-[#04a344] disabled:bg-[#1a2332] rounded-full transition-colors disabled:cursor-not-allowed cursor-pointer"
+                        aria-label="送信"
                       >
-                        クレジットを購入する &rarr;
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                          <path d="M3 8H13M13 8L9 4M13 8L9 12" stroke={inputText.trim() ? 'white' : '#8494a7'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
                       </button>
                     </div>
-                  )}
-                </form>
+                  </div>
+                )}
               </>
             )}
           </div>

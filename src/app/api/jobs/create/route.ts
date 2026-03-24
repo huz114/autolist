@@ -10,14 +10,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  let body: { industry: string; location: string; targetCount: number }
+  let body: {
+    industry: string
+    location: string
+    targetCount: number
+    industryKeywords?: string[]
+    searchQueries?: string[]
+    excludeTerms?: string[]
+    originalMessage?: string
+  }
   try {
     body = await request.json()
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  const { industry, location, targetCount } = body
+  const { industry, location, targetCount, industryKeywords, searchQueries, excludeTerms, originalMessage } = body
 
   // バリデーション
   if (!industry || !location) {
@@ -73,8 +81,9 @@ export async function POST(request: NextRequest) {
       reservedCredits,
       status: 'pending',
       source: 'web',
-      originalMessage: `[Web] ${industry} ${location} ${targetCount}件`,
-      industryKeywords: [],
+      originalMessage: originalMessage || `[Web] ${industry} ${location} ${targetCount}件`,
+      industryKeywords: industryKeywords && industryKeywords.length > 0 ? industryKeywords : [],
+      searchQueries: searchQueries && searchQueries.length > 0 ? JSON.stringify(searchQueries) : null,
     },
   })
 

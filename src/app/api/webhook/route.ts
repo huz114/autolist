@@ -240,50 +240,7 @@ const WELCOME_MESSAGE = `👋 友だち登録ありがとうございます！
 「美容サロン 大阪 20社」
 ━━━━━━━━━━━━━`;
 
-const LINK_REQUIRED_MESSAGE = {
-  type: 'flex' as const,
-  altText: 'Webアカウントとの連携が必要です',
-  contents: {
-    type: 'bubble' as const,
-    body: {
-      type: 'box' as const,
-      layout: 'vertical' as const,
-      contents: [
-        {
-          type: 'text' as const,
-          text: 'Webアカウントとの連携が必要です。',
-          weight: 'bold' as const,
-          size: 'md' as const,
-          wrap: true,
-        },
-        {
-          type: 'text' as const,
-          text: 'ログインしてLINE連携を行ってください。',
-          size: 'sm' as const,
-          color: '#888888',
-          margin: 'md' as const,
-          wrap: true,
-        },
-      ],
-    },
-    footer: {
-      type: 'box' as const,
-      layout: 'vertical' as const,
-      contents: [
-        {
-          type: 'button' as const,
-          action: {
-            type: 'uri' as const,
-            label: 'ログインして連携する',
-            uri: 'https://autolist.shiryolog.com/login?openExternalBrowser=1',
-          },
-          style: 'primary' as const,
-          color: '#06C755',
-        },
-      ],
-    },
-  },
-};
+const LINK_REQUIRED_MESSAGE = `Webアカウントとの連携が必要です。\n\n━━━ LINE連携の手順 ━━━\n\n① Webサイトにログイン\n② 「マイリスト」→「LINE連携」ボタン\n③ 表示された連携コードをこのトークに送信\n\n例: 「連携 123456」\n\n▼ ログインはこちら\nhttps://autolist.shiryolog.com/login`;
 
 /**
  * LINEイベントを処理する

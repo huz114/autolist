@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
 
     const hashed = await bcrypt.hash(password, 12)
     const user = await prismaShiryolog.user.create({
-      data: { email, password: hashed, name },
+      data: { email, password: hashed, name, autolistCredits: 100 },
     })
 
     // 認証トークン生成 & 保存

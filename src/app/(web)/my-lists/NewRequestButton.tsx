@@ -1,8 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useState, useEffect, useCallback } from 'react'
-import { useFocusTrap } from '@/lib/useFocusTrap'
+import { useState, useEffect, useCallback, useRef } from 'react'
 
 const COUNT_OPTIONS = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
 
@@ -131,7 +130,9 @@ export default function NewRequestButton() {
 
   const insufficientCredits = credits !== null && credits < targetCount
 
-  const modalRef = useFocusTrap(open, handleClose)
+  const modalRef = useRef<HTMLDivElement>(null)
+  // フォーカストラップはIME干渉のため無効化
+  // const _unused = useFocusTrap(open, handleClose)
 
   return (
     <>

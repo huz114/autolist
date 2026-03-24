@@ -279,30 +279,11 @@ export default function LineLinkButton() {
                     <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#06C755] text-white text-xs font-bold mr-2">2</span>
                     以下をLINEのトークで送信
                   </p>
-                  <div className="bg-[#111827] border border-[rgba(6,199,85,0.3)] rounded-xl p-4 text-center">
-                    <p className="text-2xl font-mono font-bold tracking-[0.3em] text-[#f0f4f8]">
+                  <div className="bg-[#111827] border border-[rgba(6,199,85,0.3)] rounded-xl p-5 text-center">
+                    <p className="text-xs text-[#8fa3b8] mb-2">LINEのトークで以下を送信してください</p>
+                    <p className="text-3xl font-mono font-bold tracking-[0.4em] text-[#f0f4f8]">
                       連携 {code}
                     </p>
-                  </div>
-                  <div className="flex gap-2 mt-3">
-                    <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(`連携 ${code}`)
-                        setCopied(true)
-                        setTimeout(() => setCopied(false), 2000)
-                      }}
-                      className="flex-1 flex items-center justify-center gap-1.5 bg-[rgba(255,255,255,0.07)] hover:bg-[rgba(255,255,255,0.12)] text-[#f0f4f8] font-medium py-2.5 rounded-xl transition-all text-sm cursor-pointer"
-                    >
-                      {copied ? '✓ コピーしました' : 'コピー'}
-                    </button>
-                    <a
-                      href={`https://line.me/R/oaMessage/@285tdinf/?${encodeURIComponent(`連携 ${code}`)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 flex items-center justify-center gap-1.5 bg-[#06C755] hover:bg-[#04a344] text-white font-medium py-2.5 rounded-xl transition-all text-sm"
-                    >
-                      LINEを開く
-                    </a>
                   </div>
                   <div className="flex items-center justify-center gap-2 mt-3">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8fa3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

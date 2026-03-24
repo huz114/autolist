@@ -487,7 +487,7 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
           });
 
           if (replyToken) {
-            await replyMessage(replyToken, '連携が完了しました！Webアカウントと紐づけされました。');
+            await replyMessage(replyToken, `連携が完了しました！🎉\nWebアカウントと紐づけされました。\n\nLINEからリスト収集の依頼が可能です！\n以下のように送ってみてください：\n\n「渋谷区の不動産会社 30件」\n「大阪市の美容サロン 50件」`);
           }
         } else {
           if (replyToken) {

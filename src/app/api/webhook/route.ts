@@ -240,7 +240,7 @@ const WELCOME_MESSAGE = `👋 友だち登録ありがとうございます！
 「美容サロン 大阪 20社」
 ━━━━━━━━━━━━━`;
 
-const LINK_REQUIRED_MESSAGE = `Webアカウントとの連携が必要です。\n\n📌 連携コードをお持ちの方\nそのままこのトークに送信してください。\n例: 「連携 123456」\n\n━━━ 初めての方 ━━━\n① Webサイトにログイン\n② 「マイリスト」→「LINE連携」ボタン\n③ 表示されたコードをこのトークに送信\n\n▼ ログインはこちら\nhttps://autolist.shiryolog.com/login`;
+const LINK_REQUIRED_MESSAGE = `Webアカウントとの連携が必要です。\n\n📌 連携コードをお持ちの方\n6桁のコードをこのトークに送信してください。\n例: 「123456」\n\n━━━ 初めての方 ━━━\n① Webサイトにログイン\n② 「マイリスト」→「LINE連携」ボタン\n③ 表示された6桁コードをこのトークに送信\n\n▼ ログインはこちら\nhttps://autolist.shiryolog.com/login`;
 
 /**
  * LINEイベントを処理する
@@ -254,7 +254,7 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
         const userResult = await getOrCreateUserForLine(lineUserId);
         if (!userResult) {
           // 未連携ユーザー: おかえり + 連携コード送信案内
-          await replyMessage(event.replyToken, `おかえりなさい！👋\n友だち追加ありがとうございます。\n\n━━━ LINE連携の手順 ━━━\n\n① Webサイトにログイン\n② 「マイリスト」→「LINE連携」ボタン\n③ 表示された連携コードをこのトークに送信\n\n例: 「連携 123456」\n\n▼ ログインはこちら\nhttps://autolist.shiryolog.com/login`);
+          await replyMessage(event.replyToken, `おかえりなさい！👋\n友だち追加ありがとうございます。\n\n━━━ LINE連携の手順 ━━━\n\n① Webサイトにログイン\n② 「マイリスト」→「LINE連携」ボタン\n③ 表示された6桁コードをこのトークに送信\n\n例: 「123456」\n\n▼ ログインはこちら\nhttps://autolist.shiryolog.com/login`);
           continue;
         }
         const { credits } = userResult;
@@ -409,7 +409,7 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
 
     try {
       // --- LINE連携コマンドの処理 ---
-      const linkMatch = messageText.match(/^連携\s*(\d{6})$/);
+      const linkMatch = messageText.match(/^(?:連携\s*)?(\d{6})$/);
       if (linkMatch) {
         const linkCode = linkMatch[1];
         const now = new Date();

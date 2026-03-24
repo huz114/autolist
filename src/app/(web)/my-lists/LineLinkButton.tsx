@@ -280,9 +280,9 @@ export default function LineLinkButton() {
                     以下をLINEのトークで送信
                   </p>
                   <div className="bg-[#111827] border border-[rgba(6,199,85,0.3)] rounded-xl p-5 text-center">
-                    <p className="text-xs text-[#8fa3b8] mb-2">LINEのトークで以下を送信してください</p>
-                    <p className="text-3xl font-mono font-bold tracking-[0.4em] text-[#f0f4f8]">
-                      連携 {code}
+                    <p className="text-xs text-[#8fa3b8] mb-2">LINEのトークで以下の6桁コードを送信</p>
+                    <p className="text-3xl font-mono font-bold tracking-[0.5em] text-[#f0f4f8]">
+                      {code}
                     </p>
                   </div>
                   <div className="flex items-center justify-center gap-2 mt-3">

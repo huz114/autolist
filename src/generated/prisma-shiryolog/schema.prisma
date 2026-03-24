@@ -1,6 +1,6 @@
 generator client {
   provider      = "prisma-client-js"
-  output        = "."
+  output        = "../src/generated/prisma-shiryolog"
   binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
@@ -24,7 +24,7 @@ model User {
   defaultConciergeId   String?
   notificationSettings String?
 
-  // オートリスト: クレジット・プラン
+  // オートリスト: クレジット管理
   autolistCredits      Int    @default(0)
   autolistPlan         String @default("free")
   autolistMonthlyCount Int    @default(0)

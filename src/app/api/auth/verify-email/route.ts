@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prismaShiryolog } from '@/lib/prisma-shiryolog'
 
+function redirectTo(path: string, fallbackUrl: string) {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || fallbackUrl
+  return NextResponse.redirect(new URL(path, baseUrl))
+}
+
 export async function GET(req: NextRequest) {
   try {
     const token = req.nextUrl.searchParams.get('token')
 
     if (!token) {
-      return NextResponse.redirect(
-        new URL('/verify?status=invalid', req.url)
-      )
+      return redirectTo('/verify?status=invalid', req.url)
     }
 
     // トークン検索
@@ -17,9 +20,7 @@ export async function GET(req: NextRequest) {
     })
 
     if (!verificationToken) {
-      return NextResponse.redirect(
-        new URL('/verify?status=invalid', req.url)
-      )
+      return redirectTo('/verify?status=invalid', req.url)
     }
 
     // 有効期限チェック
@@ -28,11 +29,9 @@ export async function GET(req: NextRequest) {
       await prismaShiryolog.verificationToken.delete({
         where: { id: verificationToken.id },
       })
-      return NextResponse.redirect(
-        new URL(
-          `/verify?status=expired&email=${encodeURIComponent(verificationToken.email)}`,
-          req.url
-        )
+      return redirectTo(
+        `/verify?status=expired&email=${encodeURIComponent(verificationToken.email)}`,
+        req.url
       )
     }
 
@@ -47,15 +46,9 @@ export async function GET(req: NextRequest) {
       where: { id: verificationToken.id },
     })
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || req.url
-    return NextResponse.redirect(
-      new URL('/verify?status=success', baseUrl)
-    )
+    return redirectTo('/verify?status=success', req.url)
   } catch (error) {
     console.error('Email verification error:', error)
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || req.url
-    return NextResponse.redirect(
-      new URL('/verify?status=error', baseUrl)
-    )
+    return redirectTo('/verify?status=error', req.url)
   }
 }

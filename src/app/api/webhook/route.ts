@@ -297,7 +297,7 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
         const userResult = await getOrCreateUserForLine(lineUserId);
         if (!userResult) {
           // 未連携ユーザー: おかえり + 連携コード送信案内
-          await replyMessage(event.replyToken, `おかえりなさい！👋\n\nWebサイトで発行した連携コードを\nこのトークに送信してください。\n\n例: 「連携 123456」`);
+          await replyMessage(event.replyToken, `おかえりなさい！👋\n友だち追加ありがとうございます。\n\n━━━ LINE連携の手順 ━━━\n\n① Webサイトにログイン\n② 「マイリスト」→「LINE連携」ボタン\n③ 表示された連携コードをこのトークに送信\n\n例: 「連携 123456」\n\n▼ ログインはこちら\nhttps://autolist.shiryolog.com/login`);
           continue;
         }
         const { credits } = userResult;

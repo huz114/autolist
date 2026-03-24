@@ -100,7 +100,7 @@ export default function NewRequestButton() {
     if (!inputText.trim()) return
 
     // 件数チェック（AI呼び出し前にクライアント側で弾く）
-    if (!/\d+/.test(inputText)) {
+    if (!/[\d０-９]+/.test(inputText)) {
       setError('件数を含めてください。\n例: 「渋谷区の不動産会社 30件」')
       return
     }

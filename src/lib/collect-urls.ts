@@ -758,7 +758,11 @@ export async function collectUrlsWithQueries(
   }
 
   // メインループ: targetCount 達成 or 上限に達するまでスクレイピング & 追加検索
-  while (savedCount < targetCount && scrapedTotal < MAX_SCRAPED_URLS) {
+  // バッチ並列処理（CONCURRENCY件ずつ同時スクレイピング）
+  const CONCURRENCY = 4;
+  let cancelled = false;
+
+  while (savedCount < targetCount && scrapedTotal < MAX_SCRAPED_URLS && !cancelled) {
     // キューが空になったら追加検索
     if (pendingQueue.length === 0) {
       const fetched = await fetchNextBatch();
@@ -768,11 +772,57 @@ export async function collectUrlsWithQueries(
       }
     }
 
-    const urlData = pendingQueue.shift()!;
-    scrapedTotal++;
+    // キャンセルチェック: DBのstatusを確認して中断判断
+    const currentJob = await prisma.listJob.findUnique({
+      where: { id: jobId },
+      select: { status: true },
+    });
+    if (currentJob?.status === 'cancelled') {
+      console.log(`[Job ${jobId}] キャンセルを検出。処理を中断します。`);
+      cancelled = true;
+      break;
+    }
+
+    // バッチを構築: キューからCONCURRENCY件取り出し（重複・上限チェック付き）
+    const batch: CollectedUrlData[] = [];
+    while (batch.length < CONCURRENCY && pendingQueue.length > 0 && scrapedTotal + batch.length < MAX_SCRAPED_URLS) {
+      const urlData = pendingQueue.shift()!;
+
+      // ユーザー単位の重複排除: 過去ジョブで収集済みのドメインはスキップ
+      if (excludedDomains.has(urlData.domain)) {
+        console.log(`  -> [重複スキップ] ${urlData.domain} は過去に収集済み`);
+        continue;
+      }
+
+      batch.push(urlData);
+    }
+
+    if (batch.length === 0) {
+      continue;
+    }
+
+    // バッチ内の各URLをログ出力
+    for (const urlData of batch) {
+      console.log(
+        `Scraping: ${urlData.url} ` +
+        `(scraped: ${scrapedTotal + 1}/${MAX_SCRAPED_URLS}, saved: ${savedCount}/${targetCount})`
+      );
+    }
+
+    // バッチ並列実行
+    const results = await Promise.allSettled(
+      batch.map(urlData => scrapeAndSave(jobId, urlData, industry ?? undefined, location ?? undefined))
+    );
+
+    // 結果を集計
+    for (const result of results) {
+      scrapedTotal++;
+      if (result.status === 'fulfilled' && result.value) {
+        savedCount++;
+      }
+    }
 
     // 進捗を更新（0〜90%をスクレイピングフェーズに割り当て）
-    // savedCount / targetCount ベースで進捗を計算
     const progressByCount = Math.round((savedCount / targetCount) * 90);
     const progressByScraped = Math.round((scrapedTotal / MAX_SCRAPED_URLS) * 90);
     const progress = Math.min(Math.max(progressByCount, progressByScraped), 89);
@@ -781,40 +831,14 @@ export async function collectUrlsWithQueries(
       data: { progress },
     });
 
-    // キャンセルチェック: DBのstatusを確認して中断判断
-    const currentJob = await prisma.listJob.findUnique({
-      where: { id: jobId },
-      select: { status: true },
-    });
-    if (currentJob?.status === 'cancelled') {
-      console.log(`[Job ${jobId}] キャンセルを検出。処理を中断します。`);
-      break;
-    }
-
-    // ユーザー単位の重複排除: 過去ジョブで収集済みのドメインはスキップ
-    if (excludedDomains.has(urlData.domain)) {
-      console.log(`  -> [重複スキップ] ${urlData.domain} は過去に収集済み`);
-      continue;
-    }
-
-    console.log(
-      `Scraping: ${urlData.url} ` +
-      `(scraped: ${scrapedTotal}/${MAX_SCRAPED_URLS}, saved: ${savedCount}/${targetCount})`
-    );
-
-    const wasSaved = await scrapeAndSave(jobId, urlData, industry ?? undefined, location ?? undefined);
-    if (wasSaved) {
-      savedCount++;
-    }
-
     // targetCount 達成で早期終了
     if (savedCount >= targetCount) {
       console.log(`Target count ${targetCount} reached!`);
       break;
     }
 
-    // レート制限対策
-    await sleep(1000);
+    // レート制限対策（バッチ間で300ms待機）
+    await sleep(300);
   }
 
   const totalFound = savedCount;

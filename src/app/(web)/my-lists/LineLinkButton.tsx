@@ -289,6 +289,8 @@ export default function LineLinkButton() {
                     </svg>
                     LINEで連携コードを送信
                   </a>
+                  <p className="text-xs text-[#8494a7] text-center mt-3">PCの場合はLINEで以下を送信してください</p>
+                  <p className="text-lg font-mono font-bold tracking-[0.2em] text-[#f0f4f8] text-center mt-1">連携 {code}</p>
                   <div className="flex items-center justify-center gap-2 mt-3">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8fa3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <circle cx="12" cy="12" r="10" />

@@ -240,6 +240,22 @@ const WELCOME_MESSAGE = `👋 友だち登録ありがとうございます！
 「美容サロン 大阪 20社」
 ━━━━━━━━━━━━━`;
 
+const LINK_REQUIRED_MESSAGE = {
+  type: 'template' as const,
+  altText: 'Webアカウントとの連携が必要です',
+  template: {
+    type: 'buttons' as const,
+    text: 'Webアカウントとの連携が必要です。\nログインしてLINE連携を行ってください。',
+    actions: [
+      {
+        type: 'uri' as const,
+        label: 'ログインして連携する',
+        uri: 'https://autolist.shiryolog.com/login',
+      },
+    ],
+  },
+};
+
 /**
  * LINEイベントを処理する
  */
@@ -281,7 +297,7 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
       const pbResult = await getOrCreateUserForLine(lineUserId);
       if (!pbResult) {
         if (replyToken) {
-          await replyMessage(replyToken, 'Webアカウントとの連携が必要です。\nhttps://autolist.shiryolog.com にログインしてLINE連携を行ってください。');
+          await replyMessage(replyToken, LINK_REQUIRED_MESSAGE);
         }
         continue;
       }
@@ -495,7 +511,7 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
       const msgResult = await getOrCreateUserForLine(lineUserId);
       if (!msgResult) {
         if (event.replyToken) {
-          await replyMessage(event.replyToken, 'Webアカウントとの連携が必要です。\nhttps://autolist.shiryolog.com にログインしてLINE連携を行ってください。');
+          await replyMessage(event.replyToken, LINK_REQUIRED_MESSAGE);
         }
         continue;
       }

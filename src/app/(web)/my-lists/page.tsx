@@ -3,27 +3,10 @@ export const dynamic = 'force-dynamic'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
-import CancelButton from './CancelButton'
 import NewRequestButton from './NewRequestButton'
 import LineLinkButton from './LineLinkButton'
-
-function getStatusBadge(job: { status: string; confirmedAt: Date | null }) {
-  if (job.status === 'completed' && job.confirmedAt) {
-    return { label: '確定済み(送信可能)', color: 'text-blue-400 bg-blue-900/30' }
-  }
-  if (job.status === 'completed') {
-    return { label: '収集完了(未確定)', color: 'text-[#06C755] bg-[rgba(6,199,85,0.1)]' }
-  }
-  const map: Record<string, { label: string; color: string }> = {
-    pending:    { label: '処理中', color: 'text-amber-400 bg-amber-900/30' },
-    running:    { label: '処理中', color: 'text-amber-400 bg-amber-900/30' },
-    processing: { label: '処理中', color: 'text-amber-400 bg-amber-900/30' },
-    failed:     { label: 'エラー', color: 'text-[#ff4757] bg-[rgba(255,71,87,0.1)]' },
-    cancelled:  { label: 'キャンセル', color: 'text-[#8fa3b8] bg-[#0d1526]' },
-  }
-  return map[job.status] ?? { label: job.status, color: 'text-[#8fa3b8] bg-[#0d1526]' }
-}
+import JobList from './JobList'
+import type { Job } from './JobList'
 
 export default async function MyListsPage() {
   const session = await auth()
@@ -32,7 +15,7 @@ export default async function MyListsPage() {
   }
 
   // User.id で直接 ListJob を検索
-  const jobs = await prisma.listJob.findMany({
+  const rawJobs = await prisma.listJob.findMany({
     where: { userId: session.user.id },
     orderBy: { createdAt: 'desc' },
     include: {
@@ -46,6 +29,22 @@ export default async function MyListsPage() {
       },
     },
   })
+
+  // Serialize dates for client component
+  const jobs: Job[] = rawJobs.map((job) => ({
+    id: job.id,
+    status: job.status,
+    keyword: job.keyword,
+    industry: job.industry,
+    location: job.location,
+    targetCount: job.targetCount,
+    totalFound: job.totalFound,
+    createdAt: job.createdAt.toISOString(),
+    completedAt: job.completedAt?.toISOString() ?? null,
+    confirmedAt: job.confirmedAt?.toISOString() ?? null,
+    urls: job.urls,
+    _count: job._count,
+  }))
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-10">
@@ -77,81 +76,7 @@ export default async function MyListsPage() {
           <NewRequestButton />
         </div>
       ) : (
-        <div className="space-y-4">
-          {jobs.map((job) => {
-            const formCount = job.urls.filter((u) => u.hasForm && u.companyVerified).length
-            const status = getStatusBadge(job)
-            // failedジョブでも収集済みデータがあれば部分納品として閲覧可能にする
-            const isPartialDelivery = job.status === 'failed' && formCount > 0
-            // 収集数はDB上の実レコード数を使う（totalFoundはジョブ完了時の値で除外後にずれる場合がある）
-            const actualCollected = job.urls.length
-            const excludedCount = job._count.urls
-            const confirmedCount = job.confirmedAt ? actualCollected - excludedCount : null
-
-            return (
-              <div
-                key={job.id}
-                className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 transition-all hover:border-[rgba(6,199,85,0.4)]"
-              >
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${status.color}`}>
-                      {status.label}
-                    </span>
-                    <span className="text-xs text-[#8494a7]">
-                      {new Date(job.createdAt).toLocaleDateString('ja-JP')}
-                    </span>
-                  </div>
-                  <h2 className="text-[#f0f4f8] font-medium mb-1">{job.keyword}</h2>
-                  <div className="flex items-center gap-2 flex-wrap text-sm text-[#8fa3b8]">
-                    {job.industry && <span>{job.industry}</span>}
-                    {job.location && <span>{job.location}</span>}
-                  </div>
-                  <div className="flex items-center gap-1 text-xs text-[#8494a7] mt-1">
-                    <span>依頼: <span className="text-[#f0f4f8]">{job.targetCount}件</span></span>
-                    <span className="text-[#8494a7]">→</span>
-                    <span>収集: <span className="text-[#f0f4f8]">{actualCollected}件</span></span>
-                    <span className="text-[#8494a7]">→</span>
-                    <span>確定: <span className="text-[#f0f4f8]">{confirmedCount !== null ? `${confirmedCount}件` : '-'}</span></span>
-                  </div>
-                  {job.completedAt && (
-                    <p className="text-xs text-[#8494a7] mt-1">
-                      完了: {new Date(job.completedAt).toLocaleString('ja-JP')}
-                    </p>
-                  )}
-                </div>
-                <div className="shrink-0 flex flex-col items-end gap-2">
-                  {(job.status === 'running' || job.status === 'pending') && (
-                    <CancelButton jobId={job.id} />
-                  )}
-                  {(job.status === 'completed' || isPartialDelivery) && formCount > 0 && (
-                    <>
-                      {isPartialDelivery && (
-                        <span className="text-xs text-amber-400">
-                          {formCount}件収集済み（部分納品）
-                        </span>
-                      )}
-                      <Link
-                        href={`/autolist-results/${job.id}`}
-                        className="bg-[#06C755] hover:bg-[#04a344] text-white text-sm font-bold px-5 py-2 rounded-full transition-all hover:shadow-[0_0_20px_rgba(6,199,85,0.3)] whitespace-nowrap"
-                      >
-                        リストを見る →
-                      </Link>
-                      {job.confirmedAt && (
-                        <Link
-                          href={`/send/${job.id}`}
-                          className="border border-blue-400/50 text-blue-400 hover:bg-blue-400/10 text-sm font-bold px-5 py-2 rounded-full transition-all whitespace-nowrap"
-                        >
-                          フォーム送信 →
-                        </Link>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-            )
-          })}
-        </div>
+        <JobList initialJobs={jobs} />
       )}
     </div>
   )

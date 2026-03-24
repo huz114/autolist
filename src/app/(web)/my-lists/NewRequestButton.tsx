@@ -388,9 +388,14 @@ export default function NewRequestButton() {
                 {/* Chat area */}
                 <div className={phase === 'input' ? '' : 'px-6 pb-4 min-h-[200px]'}>
                   {phase === 'analyzing' && (
-                    <div className="flex items-center justify-center py-12">
-                      <div className="flex flex-col items-center gap-3">
-                        <svg className="animate-spin h-8 w-8 text-[#06C755]" viewBox="0 0 24 24" role="status" aria-label="解析中">
+                    <div className="py-6">
+                      <div className="flex justify-end mb-4">
+                        <div className="bg-[#06C755] text-white text-sm rounded-2xl rounded-br-sm px-4 py-2.5 max-w-[80%]">
+                          {inputText}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <svg className="animate-spin h-5 w-5 text-[#06C755] flex-shrink-0" viewBox="0 0 24 24" role="status" aria-label="解析中">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                         </svg>
@@ -400,9 +405,14 @@ export default function NewRequestButton() {
                   )}
 
                   {phase === 'submitting' && (
-                    <div className="flex items-center justify-center py-12">
-                      <div className="flex flex-col items-center gap-3">
-                        <svg className="animate-spin h-8 w-8 text-[#06C755]" viewBox="0 0 24 24" role="status" aria-label="送信中">
+                    <div className="py-6">
+                      <div className="flex justify-end mb-4">
+                        <div className="bg-[#06C755] text-white text-sm rounded-2xl rounded-br-sm px-4 py-2.5 max-w-[80%]">
+                          {inputText}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <svg className="animate-spin h-5 w-5 text-[#06C755] flex-shrink-0" viewBox="0 0 24 24" role="status" aria-label="送信中">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                         </svg>

@@ -141,17 +141,54 @@ export default function LineLinkButton() {
 
   const focusTrapRef = useFocusTrap(open, handleClose)
 
+  const [unlinking, setUnlinking] = useState(false)
+
+  const handleUnlink = async () => {
+    if (!confirm('LINE連携を解除しますか？LINEからの依頼ができなくなります。')) {
+      return
+    }
+    setUnlinking(true)
+    try {
+      const res = await fetch('/api/auth/link-line/unlink', { method: 'POST' })
+      const data = await res.json()
+      if (res.ok) {
+        setStatus({ linked: false })
+      } else {
+        alert(data.error || 'LINE連携の解除に失敗しました')
+      }
+    } catch {
+      alert('LINE連携の解除に失敗しました')
+    } finally {
+      setUnlinking(false)
+    }
+  }
+
   // 連携済み表示
   if (status?.linked) {
     return (
-      <div className="inline-flex items-center gap-2 bg-[rgba(6,199,85,0.1)] border border-[rgba(6,199,85,0.3)] rounded-full px-4 py-2">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#06C755" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
-        <span className="text-sm text-[#06C755] font-medium">LINE連携済み</span>
-        {status.displayName && (
-          <span className="text-sm text-[#8fa3b8]">{status.displayName}</span>
-        )}
+      <div className="inline-flex items-center gap-2">
+        <div className="inline-flex items-center gap-2 bg-[rgba(6,199,85,0.1)] border border-[rgba(6,199,85,0.3)] rounded-full px-4 py-2">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#06C755" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          <span className="text-sm text-[#06C755] font-medium">LINE連携済み</span>
+          {status.displayName && (
+            <span className="text-sm text-[#8fa3b8]">{status.displayName}</span>
+          )}
+        </div>
+        <button
+          onClick={handleUnlink}
+          disabled={unlinking}
+          className="inline-flex items-center gap-1 text-xs text-red-400 border border-red-400/30 hover:border-red-400/60 rounded-full px-3 py-1.5 transition-colors cursor-pointer disabled:opacity-50"
+        >
+          {unlinking ? (
+            <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" aria-hidden="true">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+          ) : null}
+          {unlinking ? '解除中...' : '連携解除'}
+        </button>
       </div>
     )
   }

@@ -437,6 +437,35 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
             });
           }
 
+          // 重複連携チェック1: このLINEアカウントが既に別のWebアカウントに連携されている場合
+          if (lineUser.userId && lineUser.userId !== linkRecord.userId) {
+            // コードは使用済みにする（リトライ防止）
+            await prisma.lineLinkCode.update({
+              where: { id: linkRecord.id },
+              data: { usedAt: now },
+            });
+            if (replyToken) {
+              await replyMessage(replyToken, 'このLINEアカウントは既に別のWebアカウントに連携されています。現在の連携を解除してから再度お試しください。');
+            }
+            continue;
+          }
+
+          // 重複連携チェック2: 対象Webアカウントが既に別のLINEアカウントと連携されている場合
+          const existingLink = await prisma.lineUser.findFirst({
+            where: { userId: linkRecord.userId, NOT: { lineUserId } },
+          });
+          if (existingLink) {
+            // コードは使用済みにする（リトライ防止）
+            await prisma.lineLinkCode.update({
+              where: { id: linkRecord.id },
+              data: { usedAt: now },
+            });
+            if (replyToken) {
+              await replyMessage(replyToken, 'このWebアカウントは既に別のLINEアカウントと連携されています。');
+            }
+            continue;
+          }
+
           // LineUser.userIdをLineLinkCode.userIdに設定
           await prisma.lineUser.update({
             where: { id: lineUser.id },

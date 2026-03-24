@@ -47,13 +47,15 @@ export async function GET(req: NextRequest) {
       where: { id: verificationToken.id },
     })
 
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || req.url
     return NextResponse.redirect(
-      new URL('/verify?status=success', req.url)
+      new URL('/verify?status=success', baseUrl)
     )
   } catch (error) {
     console.error('Email verification error:', error)
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || req.url
     return NextResponse.redirect(
-      new URL('/verify?status=error', req.url)
+      new URL('/verify?status=error', baseUrl)
     )
   }
 }

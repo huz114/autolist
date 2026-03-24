@@ -65,16 +65,24 @@ export default function Home() {
 
   const faqData = [
     {
-      q: "本当に全件フォーム付きですか？",
-      a: "はい。AIがGoogle検索で収集した企業の中から、実際に問い合わせフォームが確認できた企業のみを納品します。フォームなしの企業は自動で除外されるため、届いたリストはそのまま送信に使えます。",
+      q: "どんな企業情報が取得できますか？",
+      a: "企業名・URL・電話番号・フォームURL・代表者名・設立年・従業員数・資本金・事業内容を自動取得します。ただし、企業のWebサイトに情報が掲載されていない場合は空欄となります。",
+    },
+    {
+      q: "フォームがない企業も含まれますか？",
+      a: "はい、含まれます。オートリストはフォームの有無に関わらず、条件に合う企業を収集します。フォームURLが見つかった企業にはURLが付与されるので、フォーム営業にもテレアポにも対応できます。",
+    },
+    {
+      q: "CSVダウンロードはできますか？",
+      a: "はい。マイリスト画面からCSVをダウンロードできます。CRM・スプレッドシート・その他の営業ツールにそのまま取り込めます。",
     },
     {
       q: "どれくらいで収集できますか？",
-      a: "100件あたり1〜2時間が目安です。完了したらメールで通知します。前日の夜に依頼して翌朝送信、といった使い方がスムーズです。",
+      a: "100件あたり1〜2時間が目安です。完了したらメールで通知します。前日の夜に依頼して翌朝営業開始、といった使い方がスムーズです。",
     },
     {
       q: "リスト業者と何が違いますか？",
-      a: "リスト業者のデータは更新頻度が低く、フォームの有無も保証されません。オートリストはAIがリアルタイムでGoogleから収集するため、常に最新情報。さらに全件フォーム付き保証なので、そのままChrome拡張で送信まで完結します。",
+      a: "リスト業者のデータは更新頻度が低く、企業の詳細情報は別料金になることが多いです。オートリストはAIがリアルタイムでGoogleから収集するため、常に最新情報。代表者名・従業員数・事業内容まで標準で付属します。",
     },
     {
       q: "追加料金や月額費用はありますか？",
@@ -95,7 +103,7 @@ export default function Home() {
       {/* NAVBAR */}
       <nav className={`navbar${navScrolled ? " scrolled" : ""}`}>
         <div className="nav-logo">
-          <span className="nav-subtitle" style={{ display: "block", fontSize: 11, color: "var(--text-secondary)", fontWeight: 500, letterSpacing: "0.08em", marginBottom: 2 }}>フォーム付き企業リスト自動収集</span>
+          <span className="nav-subtitle" style={{ display: "block", fontSize: 11, color: "var(--text-secondary)", fontWeight: 500, letterSpacing: "0.08em", marginBottom: 2 }}>AI企業リスト自動生成</span>
           オート<span>リスト</span>
         </div>
         <div className="nav-right" style={{ display: "flex", alignItems: "center", gap: 20 }}>
@@ -120,17 +128,16 @@ export default function Home() {
         <div className="hero-inner">
           <div className="hero-badge">
             <span className="dot" />
-            AI営業リスト自動生成 × LINE・Web対応
+            企業詳細情報付きAI営業リスト × LINE・Web対応
           </div>
           <h1>
             移動中に頼んで、<br />
             <em>着いたらリストができてた。</em>
           </h1>
           <p className="hero-sub">
-            業種と地域を送るだけ。<br />
-            AIがGoogleから企業情報を自動収集。<br />
-            届くのは、<strong style={{ color: "var(--text-primary)" }}>全件フォーム付きの企業だけ</strong>。<br />
-            リスト収集からフォーム送信まで、一気通貫。<br />
+            業種と地域を送るだけ。AIがGoogleからリアルタイム収集。<br />
+            届くのは、<strong style={{ color: "var(--text-primary)" }}>代表者名・設立年・従業員数まで揃った企業リスト</strong>。<br />
+            テレアポにもフォーム営業にも、すぐ使える。<br />
             <strong style={{ color: "var(--accent)" }}>最初の100件は無料。</strong>
           </p>
           <div className="hero-cta-group">
@@ -149,7 +156,7 @@ export default function Home() {
               <div className="stat-label">10件単位で自由に指定</div>
             </div>
             <div>
-              <div className="stat-num">&yen;10〜</div>
+              <div className="stat-num">&yen;6.4〜</div>
               <div className="stat-label">1件あたりの最安コスト</div>
             </div>
           </div>
@@ -170,10 +177,10 @@ export default function Home() {
           </div>
           <div className="problem-grid">
             {[
-              { icon: "\uD83D\uDD0D", title: "Googleで1社ずつ調べて", desc: "Excelにコピペする作業が延々と続く", consequence: "月20時間を失い、その分だけ商談のチャンスが減っていく" },
-              { icon: "\uD83D\uDCCB", title: "100件買ったのに", desc: "フォームがある会社は半分以下", consequence: "使えないリストに払ったコスト、さらに精査する時間も無駄に" },
-              { icon: "\uD83D\uDCB8", title: "リスト業者に頼んだら", desc: "高い・古い・使えない", consequence: "1件¥30〜60、しかもフォームなしが混在。コスパが見えない" },
-              { icon: "\uD83D\uDEB6", title: "飛び込み先を探しながら", desc: "街を歩き回る非効率", consequence: "1日回れるのは10〜20社。移動時間が大半を占める" },
+              { icon: "\uD83D\uDD0D", title: "Googleで1社ずつ調べて", desc: "企業名・電話番号・担当者名...Excelに手入力する作業が延々と続く", consequence: "月20時間を失い、その分だけ商談のチャンスが減っていく" },
+              { icon: "\uD83D\uDCCB", title: "買ったリストが使えない", desc: "電話番号が古い、担当者名がない、事業内容が不明", consequence: "リストの精査にさらに時間を取られ、結局自分で調べ直す羽目に" },
+              { icon: "\uD83D\uDCB8", title: "リスト業者に頼んだら", desc: "高い・古い・情報が足りない", consequence: "1件¥30〜60。しかも代表者名や従業員数は別料金。コスパが見えない" },
+              { icon: "\uD83D\uDCDE", title: "テレアポ前の下調べが重い", desc: "会社の規模感も事業内容もわからず電話するのは怖い", consequence: "準備不足のまま架電 → 的外れなトーク → アポが取れない悪循環" },
             ].map((item, i) => (
               <div key={i} className={`problem-card reveal reveal-delay-${i + 1}`} ref={addRevealRef}>
                 <div className="problem-icon">{item.icon}</div>
@@ -196,63 +203,47 @@ export default function Home() {
           <div className="reveal" ref={addRevealRef}>
             <div className="section-label">Solution</div>
             <h2 className="section-title">
-              フォーム付きリストの<br />収集から送信まで、一気通貫。
+              企業詳細情報付きのリストが、<br />この価格で手に入る。
             </h2>
           </div>
           <div className="comparison-table reveal" ref={addRevealRef} role="table" aria-label="従来の方法とオートリストの比較">
             <div className="comparison-header" role="row">
               <div style={{ color: "var(--text-muted)" }} role="columnheader">比較項目</div>
-              <div className="col-before" role="columnheader">&times; 従来の<br />方法</div>
+              <div className="col-before" role="columnheader">&times; リスト<br />業者</div>
               <div className="col-after" role="columnheader">✓ オート<br />リスト</div>
             </div>
             {[
               {
-                icon: (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: "var(--text-muted)" }}>
-                    <line x1="12" y1="1" x2="12" y2="23" />
-                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                  </svg>
-                ),
                 label: "コスト",
-                before: <>リスト業者<br />&yen;5〜&yen;60/件</>,
-                after: <>&yen;10〜&yen;20/件</>,
+                before: <>¥30〜60/件</>,
+                after: <>¥6.4〜20/件</>,
               },
               {
-                icon: (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: "var(--text-muted)" }}>
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                  </svg>
-                ),
-                label: "フォーム有無",
-                before: <>買うまでわからない<br />フォーム無しリスト含む</>,
-                after: <>全件フォーム付き<br />確認作業ゼロ</>,
+                label: "情報の充実度",
+                before: <>企業名とURLだけ<br />詳細は別料金</>,
+                after: <>代表者名・設立年・従業員数<br />資本金・事業内容まで標準付属</>,
               },
               {
-                icon: (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: "var(--text-muted)" }}>
-                    <path d="M22 2L11 13" /><path d="M22 2L15 22L11 13L2 9L22 2Z" />
-                  </svg>
-                ),
-                label: "送信作業",
-                before: <>1件ずつ<br />コピペで<br />手入力</>,
-                after: <>Chrome拡張で<br />半自動送信</>,
+                label: "データ形式",
+                before: <>PDF・独自フォーマット<br />加工に手間</>,
+                after: <>CSVダウンロード<br />CRM・スプレッドシートにそのまま</>,
               },
               {
-                icon: (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: "var(--text-muted)" }}>
-                    <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-                  </svg>
-                ),
+                label: "電話番号",
+                before: <>載っていない or 古い</>,
+                after: <>AIがリアルタイムで収集<br />テレアポにすぐ使える</>,
+              },
+              {
+                label: "フォームURL",
+                before: <>買うまでわからない<br />フォーム無し混在</>,
+                after: <>フォームがある企業は<br />URL付きで納品</>,
+              },
+              {
                 label: "データ鮮度",
-                before: <>既存データベース<br />更新頻度は業者依存</>,
-                after: <>リアルタイム<br />Google最新情報</>,
+                before: <>既存DB<br />更新頻度は業者依存</>,
+                after: <>リアルタイムで<br />Googleから最新情報を収集</>,
               },
               {
-                icon: (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: "var(--text-muted)" }}>
-                    <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18" /><path d="M9 21V9" />
-                  </svg>
-                ),
                 label: "最低注文",
                 before: <>1,000件単位<br />少量注文不可</>,
                 after: <>10件から<br />10件単位で自由</>,
@@ -260,7 +251,6 @@ export default function Home() {
             ].map((row, i) => (
               <div key={i} className="comparison-row" role="row">
                 <div className="col-item" role="cell">
-                  {row.icon}
                   {row.label}
                 </div>
                 <div className="col-before" role="cell">{row.before}</div>
@@ -268,6 +258,67 @@ export default function Home() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* DATA SAMPLE */}
+      <section className="lp-section data-sample-section">
+        <div className="container">
+          <div className="reveal" ref={addRevealRef}>
+            <div className="section-label">Sample</div>
+            <h2 className="section-title">届くリストのサンプル</h2>
+          </div>
+          <div className="data-sample-table-wrap reveal" ref={addRevealRef}>
+            <table className="data-sample-table">
+              <thead>
+                <tr>
+                  <th>企業名</th>
+                  <th>電話番号</th>
+                  <th>代表者名</th>
+                  <th>設立年</th>
+                  <th>従業員数</th>
+                  <th>資本金</th>
+                  <th>事業内容</th>
+                  <th>フォームURL</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>株式会社サンプルテック</td>
+                  <td>03-XXXX-XXXX</td>
+                  <td>山田 太郎</td>
+                  <td>2015年</td>
+                  <td>25名</td>
+                  <td>1,000万円</td>
+                  <td>Webマーケティング支援</td>
+                  <td><span className="sample-url">https://...</span></td>
+                </tr>
+                <tr>
+                  <td>合同会社クリエイト</td>
+                  <td>06-XXXX-XXXX</td>
+                  <td>佐藤 花子</td>
+                  <td>2019年</td>
+                  <td>8名</td>
+                  <td>500万円</td>
+                  <td>IT導入コンサルティング</td>
+                  <td><span className="sample-empty">-</span></td>
+                </tr>
+                <tr>
+                  <td>株式会社テックフォース</td>
+                  <td>052-XXX-XXXX</td>
+                  <td>鈴木 一郎</td>
+                  <td>2010年</td>
+                  <td>50名</td>
+                  <td>3,000万円</td>
+                  <td>製造業向けシステム開発</td>
+                  <td><span className="sample-url">https://...</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p className="data-sample-note">
+            ※ サンプル表示用の架空データです。企業Webサイトに情報が掲載されていない項目は空欄となります。
+          </p>
         </div>
       </section>
 
@@ -289,14 +340,14 @@ export default function Home() {
               {
                 num: "02",
                 time: "依頼したら放置でOK",
-                title: "AIが自動で収集",
-                desc: "Googleから企業名・URL・電話番号・フォームURLを自動収集。届くのはフォームがある企業だけ。完了したらメールで通知します。",
+                title: "AIが自動で収集・精査",
+                desc: "Googleから企業名・URL・電話番号・フォームURLを収集。さらに代表者名・設立年・従業員数・資本金・事業内容をAIが自動取得。完了したらメールで通知します。",
               },
               {
                 num: "03",
-                time: "半自動で送信",
-                title: "Chrome拡張でフォーム送信",
-                desc: <>テンプレートを選んで送信ボタンを押すだけ。Chrome拡張がフォームを自動入力。<br />コピペ地獄から解放されます。</>,
+                time: "すぐ営業開始",
+                title: "CSVダウンロードで即活用",
+                desc: "完成したリストはCSVでダウンロード。CRMやスプレッドシートにそのまま取り込めます。Chrome拡張を使えば、フォーム送信も半自動化。",
               },
             ].map((step, i) => (
               <div key={i} className={`step-card reveal reveal-delay-${i + 1}`} ref={addRevealRef}>
@@ -324,19 +375,19 @@ export default function Home() {
           <div className="benefits-grid">
             {[
               {
+                icon: "\uD83D\uDCCA",
+                title: <>企業名だけじゃない。<br />中身がわかる。</>,
+                desc: "代表者名・設立年・従業員数・資本金・事業内容。営業に必要な情報をAIが自動で取得。テレアポの下調べも、提案書の準備も、リストを開くだけで済みます。",
+              },
+              {
+                icon: "\uD83C\uDFAF",
+                title: <>1つのリストで、<br />2つの営業手法。</>,
+                desc: "電話番号でテレアポ。フォームURLでフォーム営業。同じリストからどちらの手法にも展開できます。CSVダウンロードで、お使いのCRMやスプレッドシートにそのまま。",
+              },
+              {
                 icon: "\uD83E\uDD16",
                 title: <>頼んだら、<br />あとは放置でいい。</>,
-                desc: "AIが自動でGoogleを検索し収集します。移動中でも、商談中でも関係なし。気づいたら出来上がっています。",
-              },
-              {
-                icon: "\u2705",
-                title: <>全件フォーム付き。<br />ハズレなし。</>,
-                desc: "他社のリストは買ってみるまでフォームがあるかわからない。オートリストはフォームのある企業だけをお届けします。100件買って100件使える。",
-              },
-              {
-                icon: "\uD83D\uDE80",
-                title: <>リストから送信まで、<br />ワンストップ。</>,
-                desc: "収集して終わりじゃない。Chrome拡張でフォーム送信まで半自動化。リスト作成・精査・送信を一つのサービスで完結できます。",
+                desc: "AIが自動でGoogleを検索し、企業情報を収集・精査します。移動中でも、商談中でも関係なし。気づいたら出来上がっています。",
               },
             ].map((item, i) => (
               <div key={i} className={`benefit-card reveal reveal-delay-${i + 1}`} ref={addRevealRef}>
@@ -346,6 +397,56 @@ export default function Home() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ROI / BEFORE-AFTER */}
+      <section className="lp-section roi-section">
+        <div className="container">
+          <div className="reveal" ref={addRevealRef} style={{ textAlign: "center" }}>
+            <div className="section-label">ROI</div>
+            <h2 className="section-title">
+              リスト作成にかけていた時間、<br />計算したことがありますか？
+            </h2>
+          </div>
+          <div className="roi-table reveal" ref={addRevealRef} role="table" aria-label="Before / After 比較">
+            <div className="roi-header" role="row">
+              <div style={{ color: "var(--text-muted)" }} role="columnheader">項目</div>
+              <div className="roi-col-before" role="columnheader">&times; Before</div>
+              <div className="roi-col-after" role="columnheader">✓ After</div>
+            </div>
+            {[
+              {
+                label: "リスト作成",
+                before: "毎朝1時間 × 月20日 = 月20時間",
+                after: "依頼10秒。あとは自動。",
+              },
+              {
+                label: "1件あたりの情報",
+                before: "企業名とURLだけ",
+                after: "代表者名・電話番号・従業員数・事業内容まで",
+              },
+              {
+                label: "リスト単価",
+                before: "¥30〜60/件（業者）or 人件費換算¥500/件以上",
+                after: "¥6.4〜20/件",
+              },
+              {
+                label: "月の営業時間",
+                before: "160時間のうち20時間がリスト作成",
+                after: "160時間まるごと営業活動に",
+              },
+            ].map((row, i) => (
+              <div key={i} className="roi-row" role="row">
+                <div className="roi-col-item" role="cell">{row.label}</div>
+                <div className="roi-col-before" role="cell">{row.before}</div>
+                <div className="roi-col-after" role="cell">{row.after}</div>
+              </div>
+            ))}
+          </div>
+          <p className="roi-note">
+            ※ 上記は1日100件を手作業で作成する場合の概算です。実際の効果は業務内容により異なります。
+          </p>
         </div>
       </section>
 
@@ -364,10 +465,10 @@ export default function Home() {
           </p>
           <div className="pricing-grid" style={{ marginTop: 56 }}>
             {[
-              { volume: "100件", price: "2,000", per: "\u00A520 / 件", feature: <>まず試してみたい方に<br />お手頃スタートプラン</>, featured: false },
-              { volume: "300件", price: "5,000", per: "\u00A517 / 件", feature: <>週1回の定期リスト収集に<br />ちょうどいいボリューム</>, featured: false },
-              { volume: "700件", price: "10,000", per: "\u00A514 / 件", feature: <>本格的に営業活動を<br />スケールさせるなら</>, featured: true },
-              { volume: "1,500件", price: "15,000", per: "\u00A510 / 件", feature: <>大量開拓に最適<br />最もお得な大口プラン</>, featured: false },
+              { volume: "200件", price: "1,980", per: "\u00A59.9 / 件", feature: <>まず試してみたい方に</>, featured: false },
+              { volume: "500件", price: "3,980", per: "\u00A58.0 / 件", feature: <>週1回の定期収集にちょうどいい</>, featured: false },
+              { volume: "1,000件", price: "6,980", per: "\u00A57.0 / 件", feature: <>本格的に営業を<br />スケールさせるなら</>, featured: true },
+              { volume: "2,000件", price: "12,800", per: "\u00A56.4 / 件", feature: <>大量開拓に最適<br />最もお得</>, featured: false },
             ].map((plan, i) => (
               <div
                 key={i}

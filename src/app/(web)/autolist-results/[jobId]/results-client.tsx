@@ -18,6 +18,13 @@ type UrlItem = {
   formUrl: string | null
   hasForm: boolean
   excluded: boolean
+  email?: string | null
+  snsLinks?: string | null
+  hasRecruitPage?: boolean
+  siteUpdatedAt?: string | null
+  searchTags?: string[]
+  industryMajor?: string | null
+  industryMinor?: string | null
 }
 
 type FormFilter = 'all' | 'hasForm' | 'noForm'
@@ -33,8 +40,10 @@ type Props = {
 
 function downloadCsv(urls: UrlItem[], keyword: string) {
   const headers = [
-    '企業名', '業種', '所在地', 'URL', '電話番号', '代表者名',
+    '企業名', '業種', '所在地', 'URL', '電話番号', 'メールアドレス', '代表者名',
     '設立年', '従業員数', '資本金', '事業内容', 'フォームURL', 'フォームあり',
+    '業種大分類', '業種小分類', 'X', 'Instagram', 'Facebook', 'YouTube',
+    '採用ページあり', 'サイト更新日', '検索タグ',
   ]
 
   const escapeField = (value: string) => {
@@ -44,20 +53,37 @@ function downloadCsv(urls: UrlItem[], keyword: string) {
     return value
   }
 
-  const rows = urls.map(u => [
-    u.companyName ?? '',
-    u.industry ?? '',
-    u.location ?? '',
-    u.url,
-    u.phoneNumber ?? '',
-    u.representativeName ?? '',
-    u.establishedYear != null ? String(u.establishedYear) : '',
-    u.employeeCount ?? '',
-    u.capitalAmount ?? '',
-    u.businessDescription ?? '',
-    u.formUrl ?? '',
-    u.hasForm ? 'あり' : 'なし',
-  ].map(escapeField).join(','))
+  const rows = urls.map(u => {
+    let sns: Record<string, string> = {}
+    try {
+      if (u.snsLinks) sns = JSON.parse(u.snsLinks)
+    } catch { /* ignore */ }
+
+    return [
+      u.companyName ?? '',
+      u.industry ?? '',
+      u.location ?? '',
+      u.url,
+      u.phoneNumber ?? '',
+      u.email ?? '',
+      u.representativeName ?? '',
+      u.establishedYear != null ? String(u.establishedYear) : '',
+      u.employeeCount ?? '',
+      u.capitalAmount ?? '',
+      u.businessDescription ?? '',
+      u.formUrl ?? '',
+      u.hasForm ? 'あり' : 'なし',
+      u.industryMajor ?? '',
+      u.industryMinor ?? '',
+      sns.x ?? '',
+      sns.instagram ?? '',
+      sns.facebook ?? '',
+      sns.youtube ?? '',
+      u.hasRecruitPage ? 'はい' : 'いいえ',
+      u.siteUpdatedAt ?? '',
+      (u.searchTags ?? []).join('/'),
+    ].map(escapeField).join(',')
+  })
 
   const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\n')
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
@@ -277,13 +303,24 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
                   </a>
 
                   {/* 詳細情報 */}
-                  {(u.representativeName || u.establishedYear || u.employeeCount || u.capitalAmount || u.businessDescription || u.phoneNumber || u.formUrl) && (
+                  {(u.representativeName || u.establishedYear || u.employeeCount || u.capitalAmount || u.businessDescription || u.phoneNumber || u.formUrl || u.email || u.industryMajor || u.snsLinks || u.hasRecruitPage || u.siteUpdatedAt || (u.searchTags && u.searchTags.length > 0)) && (
                     <div className="mt-3 pt-3 border-t border-[rgba(255,255,255,0.05)]">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
                         {u.phoneNumber && (
                           <div className="flex items-center gap-2">
                             <span className="text-xs text-[#8494a7] shrink-0">電話番号:</span>
                             <span className="text-xs text-[#c8d6e5]">{u.phoneNumber}</span>
+                          </div>
+                        )}
+                        {u.email && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-[#8494a7] shrink-0">メール:</span>
+                            <a
+                              href={`mailto:${u.email}`}
+                              className="text-xs text-[#06C755] hover:text-[#04a344] transition-colors truncate"
+                            >
+                              {u.email}
+                            </a>
                           </div>
                         )}
                         {u.representativeName && (
@@ -310,6 +347,28 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
                             <span className="text-xs text-[#c8d6e5]">{u.capitalAmount}</span>
                           </div>
                         )}
+                        {(u.industryMajor || u.industryMinor) && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-[#8494a7] shrink-0">業種分類:</span>
+                            <span className="text-xs text-[#c8d6e5]">
+                              {u.industryMajor}{u.industryMajor && u.industryMinor ? ' > ' : ''}{u.industryMinor ?? ''}
+                            </span>
+                          </div>
+                        )}
+                        {u.siteUpdatedAt && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-[#8494a7] shrink-0">更新日:</span>
+                            <span className="text-xs text-[#c8d6e5]">{u.siteUpdatedAt}</span>
+                          </div>
+                        )}
+                        {u.hasRecruitPage && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-[#8494a7] shrink-0">採用ページ:</span>
+                            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[rgba(6,199,85,0.12)] text-[#06C755] border border-[rgba(6,199,85,0.25)]">
+                              採用中
+                            </span>
+                          </div>
+                        )}
                         {u.formUrl && (
                           <div className="flex items-center gap-2 sm:col-span-2">
                             <span className="text-xs text-[#8494a7] shrink-0">フォームURL:</span>
@@ -323,11 +382,49 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
                             </a>
                           </div>
                         )}
+                        {u.snsLinks && (() => {
+                          try {
+                            const sns = JSON.parse(u.snsLinks) as Record<string, string>
+                            const entries = Object.entries(sns).filter(([, v]) => v)
+                            if (entries.length === 0) return null
+                            const labels: Record<string, string> = { x: 'X', instagram: 'Instagram', facebook: 'Facebook', youtube: 'YouTube' }
+                            return (
+                              <div className="flex items-center gap-2 sm:col-span-2">
+                                <span className="text-xs text-[#8494a7] shrink-0">SNS:</span>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  {entries.map(([key, url]) => (
+                                    <a
+                                      key={key}
+                                      href={url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[rgba(255,255,255,0.05)] text-[#8494a7] border border-[rgba(255,255,255,0.1)] hover:text-[#c8d6e5] hover:border-[rgba(255,255,255,0.2)] transition-colors"
+                                    >
+                                      {labels[key] ?? key}
+                                    </a>
+                                  ))}
+                                </div>
+                              </div>
+                            )
+                          } catch { return null }
+                        })()}
                       </div>
                       {u.businessDescription && (
                         <div className="mt-1.5">
                           <span className="text-xs text-[#8494a7]">事業内容: </span>
                           <span className="text-xs text-[#c8d6e5] line-clamp-2">{u.businessDescription}</span>
+                        </div>
+                      )}
+                      {u.searchTags && u.searchTags.length > 0 && (
+                        <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+                          {u.searchTags.map((tag, i) => (
+                            <span
+                              key={i}
+                              className="text-[10px] px-2 py-0.5 rounded-full bg-[#1e293b] text-[#8494a7]"
+                            >
+                              {tag}
+                            </span>
+                          ))}
                         </div>
                       )}
                     </div>

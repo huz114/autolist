@@ -380,6 +380,13 @@ export async function collectUrls(jobId: string): Promise<number> {
           businessDescription: companyInfo.businessDescription ?? null,
           hasForm: companyInfo.hasForm,
           formUrl: companyInfo.formUrl ?? null,
+          email: companyInfo.email || null,
+          snsLinks: companyInfo.snsLinks ? JSON.stringify(companyInfo.snsLinks) : null,
+          hasRecruitPage: companyInfo.hasRecruitPage || false,
+          siteUpdatedAt: companyInfo.siteUpdatedAt || null,
+          searchTags: companyInfo.searchTags || [],
+          industryMajor: companyInfo.industryMajor || null,
+          industryMinor: companyInfo.industryMinor || null,
           status: 'collected',
         },
       });
@@ -449,6 +456,13 @@ async function scrapeAndSave(
         businessDescription: companyInfo.businessDescription ?? null,
         hasForm: companyInfo.hasForm,
         formUrl: companyInfo.formUrl ?? null,
+        email: companyInfo.email || null,
+        snsLinks: companyInfo.snsLinks ? JSON.stringify(companyInfo.snsLinks) : null,
+        hasRecruitPage: companyInfo.hasRecruitPage || false,
+        siteUpdatedAt: companyInfo.siteUpdatedAt || null,
+        searchTags: companyInfo.searchTags || [],
+        industryMajor: companyInfo.industryMajor || null,
+        industryMinor: companyInfo.industryMinor || null,
         companyVerified,
         status: 'collected',
       },
@@ -562,6 +576,13 @@ export async function collectUrlsWithQueries(
       businessDescription: string | null;
       hasForm: boolean;
       formUrl: string | null;
+      email: string | null;
+      snsLinks: string | null;
+      hasRecruitPage: boolean;
+      siteUpdatedAt: string | null;
+      searchTags: string[];
+      industryMajor: string | null;
+      industryMinor: string | null;
       companyVerified: boolean;
       status: string;
       createdAt: Date;
@@ -620,6 +641,13 @@ export async function collectUrlsWithQueries(
           businessDescription: u.businessDescription,
           hasForm: u.hasForm,
           formUrl: u.formUrl,
+          email: u.email,
+          snsLinks: u.snsLinks,
+          hasRecruitPage: u.hasRecruitPage,
+          siteUpdatedAt: u.siteUpdatedAt,
+          searchTags: u.searchTags,
+          industryMajor: u.industryMajor,
+          industryMinor: u.industryMinor,
           companyVerified: u.companyVerified,
           status: u.status,
           createdAt: now,
@@ -656,6 +684,13 @@ export async function collectUrlsWithQueries(
           businessDescription: u.businessDescription,
           hasForm: u.hasForm,
           formUrl: u.formUrl,
+          email: u.email,
+          snsLinks: u.snsLinks,
+          hasRecruitPage: u.hasRecruitPage,
+          siteUpdatedAt: u.siteUpdatedAt,
+          searchTags: u.searchTags,
+          industryMajor: u.industryMajor,
+          industryMinor: u.industryMinor,
           companyVerified: u.companyVerified,
           status: u.status,
           createdAt: now,

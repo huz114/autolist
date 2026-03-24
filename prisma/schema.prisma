@@ -77,6 +77,13 @@ model CollectedUrl {
   representativeName  String?
   establishedYear     Int?
   businessDescription String?
+  email               String?
+  snsLinks            String?              // JSON: {"x":"url","instagram":"url","facebook":"url","youtube":"url"}
+  hasRecruitPage      Boolean  @default(false)
+  siteUpdatedAt       String?              // サイト最終更新日（テキスト）
+  searchTags          String[]             // 検索タグ（5-10個）
+  industryMajor       String?              // 業種大分類
+  industryMinor       String?              // 業種小分類
   hasForm             Boolean  @default(false)
   formUrl             String?
   companyVerified     Boolean  @default(false)

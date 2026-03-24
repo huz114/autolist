@@ -39,6 +39,9 @@ export function useFocusTrap(isOpen: boolean, onClose: () => void) {
     })
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      // IME入力中はスキップ
+      if (e.isComposing || e.keyCode === 229) return
+
       if (e.key === 'Escape') {
         e.preventDefault()
         onClose()

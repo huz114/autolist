@@ -293,7 +293,21 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
       const data = new URLSearchParams(event.postback?.data || '');
       const action = data.get('action');
 
-      // ユーザーを取得
+      // 連携不要のアクションは先に処理
+      if (action === 'contact') {
+        if (replyToken) {
+          await replyMessage(replyToken, '📩 お問い合わせはこちらからお願いします。\n\nhttps://autolist.shiryolog.com/contact?openExternalBrowser=1');
+        }
+        continue;
+      }
+      if (action === 'help') {
+        if (replyToken) {
+          await replyMessage(replyToken, HELP_MESSAGE);
+        }
+        continue;
+      }
+
+      // ユーザーを取得（連携必須のアクション）
       const pbResult = await getOrCreateUserForLine(lineUserId);
       if (!pbResult) {
         if (replyToken) {
@@ -372,18 +386,6 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
           }
           break;
         }
-
-        case 'help':
-          if (replyToken) {
-            await replyMessage(replyToken, HELP_MESSAGE);
-          }
-          break;
-
-        case 'contact':
-          if (replyToken) {
-            await replyMessage(replyToken, '📩 お問い合わせはこちらからお願いします。\n\nhttps://autolist.shiryolog.com/contact?openExternalBrowser=1');
-          }
-          break;
 
         default:
           if (replyToken) {

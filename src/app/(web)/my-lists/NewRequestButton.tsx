@@ -367,27 +367,26 @@ export default function NewRequestButton() {
               </div>
             ) : (
               <>
-                {/* Header */}
-                <div className="px-6 pt-6 pb-4">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-bold text-[#f0f4f8]">新規リスト依頼</h2>
-                    <button
-                      onClick={handleClose}
-                      className="text-[#8fa3b8] hover:text-[#f0f4f8] transition-colors cursor-pointer"
-                      aria-label="閉じる"
-                    >
-                      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                        <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                      </svg>
-                    </button>
+                {/* Header - compact for non-input phases, hidden for input phase */}
+                {phase !== 'input' && (
+                  <div className="px-6 pt-6 pb-4">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-lg font-bold text-[#f0f4f8]">新規リスト依頼</h2>
+                      <button
+                        onClick={handleClose}
+                        className="text-[#8fa3b8] hover:text-[#f0f4f8] transition-colors cursor-pointer"
+                        aria-label="閉じる"
+                      >
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                          <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                        </svg>
+                      </button>
+                    </div>
                   </div>
-                  <p className="text-sm text-[#8fa3b8] mt-1">
-                    業種・地域・件数を自然文で入力してください
-                  </p>
-                </div>
+                )}
 
                 {/* Chat area */}
-                <div className="px-6 pb-4 min-h-[200px]">
+                <div className={phase === 'input' ? '' : 'px-6 pb-4 min-h-[200px]'}>
                   {phase === 'analyzing' && (
                     <div className="flex items-center justify-center py-12">
                       <div className="flex flex-col items-center gap-3">
@@ -413,28 +412,105 @@ export default function NewRequestButton() {
                   )}
 
                   {phase === 'input' && (
-                    <div className="py-4">
-                      {/* Example hints */}
-                      {!inputText && !error && (
-                        <div className="space-y-2 mb-6">
-                          <p className="text-[#8494a7] text-xs">入力例:</p>
-                          {['渋谷区の不動産会社 30件', '大阪市の美容サロン 50件', '福岡県の整体院 20件'].map((example) => (
-                            <button
-                              key={example}
-                              onClick={() => setInputText(example)}
-                              className="block w-full text-left text-sm text-[#8fa3b8] bg-[#0a0f1c] border border-[rgba(255,255,255,0.07)] rounded-xl px-4 py-2.5 hover:border-[rgba(6,199,85,0.3)] hover:bg-[#0d1526] transition-colors cursor-pointer"
-                            >
-                              {example}
-                            </button>
-                          ))}
+                    <div className="relative px-6 pt-5 pb-7">
+                      {/* Close button - top right, subtle */}
+                      <div className="flex justify-end animate-fade-in-up">
+                        <button
+                          onClick={handleClose}
+                          className="text-[#444c5a] hover:text-[#8fa3b8] transition-colors cursor-pointer p-1 rounded-lg hover:bg-[rgba(255,255,255,0.04)]"
+                          aria-label="閉じる"
+                        >
+                          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                            <path d="M13.5 4.5L4.5 13.5M4.5 4.5L13.5 13.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                          </svg>
+                        </button>
+                      </div>
+
+                      {/* Hero heading with shimmer gradient */}
+                      <div className="text-center mt-2 mb-7 animate-fade-in-up-delay-1">
+                        <h2 className="text-2xl font-extrabold tracking-tight heading-shimmer leading-tight">
+                          何を探しますか？
+                        </h2>
+                        <p className="text-[#555f6d] text-[13px] mt-2 tracking-wide font-medium">
+                          業種・地域・件数をまとめて入力
+                        </p>
+                      </div>
+
+                      {/* THE INPUT - Hero element, unmistakable */}
+                      <div className="animate-fade-in-up-delay-2">
+                        <div className="relative flex items-center bg-[#080c16] border-2 border-[rgba(255,255,255,0.08)] rounded-2xl pl-5 pr-2 py-1 focus-within:border-[rgba(6,199,85,0.5)] focus-within:shadow-[0_0_20px_rgba(6,199,85,0.15)] transition-all duration-300 animate-glow-pulse">
+                          <input
+                            ref={inputRef}
+                            type="text"
+                            value={inputText}
+                            onChange={(e) => setInputText(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            placeholder="渋谷区の不動産会社 30件"
+                            className="flex-1 bg-transparent text-[#f0f4f8] text-base py-3.5 placeholder:text-[#3d4654] placeholder:font-medium focus:outline-none"
+                          />
+                          <button
+                            onClick={handleAnalyze}
+                            disabled={!inputText.trim()}
+                            className="flex-shrink-0 ml-2 w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-200 cursor-pointer disabled:cursor-not-allowed bg-[#06C755] hover:bg-[#04a344] disabled:bg-[#141c2b] hover:shadow-[0_0_20px_rgba(6,199,85,0.4)] hover:scale-105 active:scale-95"
+                            aria-label="送信"
+                          >
+                            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                              <path d="M3.5 9H14.5M14.5 9L10 4.5M14.5 9L10 13.5" stroke={inputText.trim() ? 'white' : '#555f6d'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Error message - between input and examples */}
+                      {error && (
+                        <div className="bg-[rgba(255,71,87,0.08)] border border-[rgba(255,71,87,0.25)] rounded-xl px-4 py-3 mt-4">
+                          <p className="text-[#ff6b78] text-sm whitespace-pre-line leading-relaxed">{error}</p>
                         </div>
                       )}
 
-                      {error && (
-                        <div className="bg-[rgba(255,71,87,0.1)] border border-[rgba(255,71,87,0.3)] rounded-xl px-4 py-3 mb-4">
-                          <p className="text-[#ff4757] text-sm whitespace-pre-line">{error}</p>
-                        </div>
-                      )}
+                      {/* Example chips - below the input */}
+                      <div className="flex flex-wrap justify-center gap-2 mt-5 animate-fade-in-up-delay-3">
+                        {[
+                          { label: '渋谷区 不動産 30件', value: '渋谷区の不動産会社 30件' },
+                          { label: '大阪市 美容サロン 30件', value: '大阪市の美容サロン 30件' },
+                          { label: '福岡 整体院 20件', value: '福岡県の整体院 20件' },
+                        ].map((example) => (
+                          <button
+                            key={example.value}
+                            onClick={() => setInputText(example.value)}
+                            className="text-[11px] text-[#555f6d] bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.06)] rounded-full px-3.5 py-1.5 hover:border-[rgba(6,199,85,0.35)] hover:text-[#06C755] hover:bg-[rgba(6,199,85,0.04)] transition-all duration-200 cursor-pointer font-medium tracking-wide"
+                          >
+                            {example.label}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Credits - bottom, very subtle */}
+                      <div className="flex items-center justify-center gap-3 mt-6 text-[11px] text-[#3d4654] animate-fade-in-up-delay-4">
+                        <span>
+                          残り{' '}
+                          {credits !== null ? (
+                            <span className={credits <= 0 ? 'text-[#ff6b78]' : 'text-[#555f6d]'}>
+                              {credits}件
+                            </span>
+                          ) : creditsError ? (
+                            <span className="text-[#ff6b78]">{creditsError}</span>
+                          ) : (
+                            <span>...</span>
+                          )}
+                        </span>
+                        {credits !== null && credits <= 0 && (
+                          <>
+                            <span className="text-[#2a3040]">&middot;</span>
+                            <button
+                              onClick={() => { setView('plans'); setError(null); }}
+                              className="text-[#06C755] hover:text-[#04a344] font-medium transition-colors cursor-pointer"
+                            >
+                              購入する
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </div>
                   )}
 
@@ -549,57 +625,6 @@ export default function NewRequestButton() {
                   )}
                 </div>
 
-                {/* Input bar (visible in input phase) */}
-                {phase === 'input' && (
-                  <div className="px-4 pb-4">
-                    {/* Credits info */}
-                    <div className="flex items-center justify-between text-xs mb-3 px-2">
-                      <span className="text-[#8494a7]">
-                        残りクレジット:{' '}
-                        {credits !== null ? (
-                          <span className={credits <= 0 ? 'text-[#ff4757]' : 'text-[#f0f4f8]'}>
-                            {credits}件
-                          </span>
-                        ) : creditsError ? (
-                          <span className="text-[#ff4757]">{creditsError}</span>
-                        ) : (
-                          <span className="text-[#8494a7]">...</span>
-                        )}
-                      </span>
-                      {credits !== null && credits <= 0 && (
-                        <button
-                          onClick={() => { setView('plans'); setError(null); }}
-                          className="text-[#06C755] hover:text-[#04a344] text-xs font-medium transition-colors cursor-pointer"
-                        >
-                          クレジットを購入する
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Chat-style input bar */}
-                    <div className="flex items-center gap-2 bg-[#0a0f1c] border border-[rgba(255,255,255,0.07)] rounded-full px-4 py-1.5 focus-within:border-[rgba(6,199,85,0.4)] transition-colors">
-                      <input
-                        ref={inputRef}
-                        type="text"
-                        value={inputText}
-                        onChange={(e) => setInputText(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        placeholder="例: 渋谷区の不動産会社 30件"
-                        className="flex-1 bg-transparent text-[#f0f4f8] text-sm placeholder:text-[#8494a7] focus:outline-none py-1.5"
-                      />
-                      <button
-                        onClick={handleAnalyze}
-                        disabled={!inputText.trim()}
-                        className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-[#06C755] hover:bg-[#04a344] disabled:bg-[#1a2332] rounded-full transition-colors disabled:cursor-not-allowed cursor-pointer"
-                        aria-label="送信"
-                      >
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                          <path d="M3 8H13M13 8L9 4M13 8L9 12" stroke={inputText.trim() ? 'white' : '#8494a7'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                )}
               </>
             )}
           </div>

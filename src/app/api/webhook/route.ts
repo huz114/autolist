@@ -250,7 +250,7 @@ const LINK_REQUIRED_MESSAGE = {
       {
         type: 'uri' as const,
         label: 'ログインして連携する',
-        uri: 'https://autolist.shiryolog.com/login',
+        uri: 'https://autolist.shiryolog.com/login?openExternalBrowser=1',
       },
     ],
   },

@@ -219,8 +219,8 @@ export default function NewRequestButton() {
     }
   }
 
-  const handleBack = () => {
-    setError(null)
+  const handleBack = (message?: string) => {
+    setError(message || null)
     setPhase('input')
     // Keep inputText so user can modify
   }
@@ -540,10 +540,10 @@ export default function NewRequestButton() {
                             「{analyzeResult.ambiguousLocation}」は複数の都道府県に存在します。都道府県を含めて入力してください。
                           </p>
                           <button
-                            onClick={handleBack}
+                            onClick={() => handleBack(`「${analyzeResult.ambiguousLocation}」は複数の都道府県に存在します。\n例: 「東京都${analyzeResult.ambiguousLocation}」のように都道府県を含めてください。`)}
                             className="mt-2 text-[#06C755] hover:text-[#04a344] text-sm font-medium transition-colors cursor-pointer"
                           >
-                            入力に戻る
+                            修正する
                           </button>
                         </div>
                       )}
@@ -555,10 +555,10 @@ export default function NewRequestButton() {
                             現在は日本国内の地域のみ対応しています。
                           </p>
                           <button
-                            onClick={handleBack}
+                            onClick={() => handleBack('現在は日本国内の地域のみ対応しています。地域を変更してください。')}
                             className="mt-2 text-[#06C755] hover:text-[#04a344] text-sm font-medium transition-colors cursor-pointer"
                           >
-                            入力に戻る
+                            修正する
                           </button>
                         </div>
                       )}

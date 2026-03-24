@@ -19,6 +19,7 @@ type UrlItem = {
 }
 
 type FormFilter = 'all' | 'hasForm' | 'noForm'
+type PhoneFilter = 'all' | 'hasPhone' | 'noPhone'
 
 type Props = {
   jobId: string
@@ -39,6 +40,7 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
     return new Set<string>()
   })
   const [formFilter, setFormFilter] = useState<FormFilter>('all')
+  const [phoneFilter, setPhoneFilter] = useState<PhoneFilter>('all')
   const [confirming, setConfirming] = useState(false)
   const [confirmed, setConfirmed] = useState(isConfirmed)
   const [error, setError] = useState<string | null>(null)
@@ -176,26 +178,48 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
         )}
       </div>
 
-      {/* フォームフィルター */}
-      <div className="flex items-center gap-2 mb-4">
-        <span className="text-xs text-[#8494a7] mr-1">絞り込み:</span>
-        {([
-          { value: 'all' as FormFilter, label: 'すべて' },
-          { value: 'hasForm' as FormFilter, label: 'フォームあり' },
-          { value: 'noForm' as FormFilter, label: 'フォームなし' },
-        ]).map(({ value, label }) => (
-          <button
-            key={value}
-            onClick={() => setFormFilter(value)}
-            className={`text-xs font-medium px-3 py-1.5 rounded-full transition-all cursor-pointer ${
-              formFilter === value
-                ? 'bg-[rgba(6,199,85,0.15)] text-[#06C755] border border-[rgba(6,199,85,0.4)]'
-                : 'bg-[rgba(255,255,255,0.05)] text-[#8494a7] border border-[rgba(255,255,255,0.07)] hover:border-[rgba(255,255,255,0.15)]'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
+      {/* フィルター */}
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mb-4">
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-[#8494a7]">フォーム:</span>
+          {([
+            { value: 'all' as FormFilter, label: 'すべて' },
+            { value: 'hasForm' as FormFilter, label: 'あり' },
+            { value: 'noForm' as FormFilter, label: 'なし' },
+          ]).map(({ value, label }) => (
+            <button
+              key={value}
+              onClick={() => setFormFilter(value)}
+              className={`text-xs font-medium px-3 py-1.5 rounded-full transition-all cursor-pointer ${
+                formFilter === value
+                  ? 'bg-[rgba(6,199,85,0.15)] text-[#06C755] border border-[rgba(6,199,85,0.4)]'
+                  : 'bg-[rgba(255,255,255,0.05)] text-[#8494a7] border border-[rgba(255,255,255,0.07)] hover:border-[rgba(255,255,255,0.15)]'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-[#8494a7]">電話番号:</span>
+          {([
+            { value: 'all' as PhoneFilter, label: 'すべて' },
+            { value: 'hasPhone' as PhoneFilter, label: 'あり' },
+            { value: 'noPhone' as PhoneFilter, label: 'なし' },
+          ]).map(({ value, label }) => (
+            <button
+              key={value}
+              onClick={() => setPhoneFilter(value)}
+              className={`text-xs font-medium px-3 py-1.5 rounded-full transition-all cursor-pointer ${
+                phoneFilter === value
+                  ? 'bg-[rgba(59,130,246,0.15)] text-[#3b82f6] border border-[rgba(59,130,246,0.4)]'
+                  : 'bg-[rgba(255,255,255,0.05)] text-[#8494a7] border border-[rgba(255,255,255,0.07)] hover:border-[rgba(255,255,255,0.15)]'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* 案内メッセージ（確定前のみ） */}
@@ -255,8 +279,10 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
           )}
           {urls
           .filter(u => {
-            if (formFilter === 'hasForm') return u.hasForm
-            if (formFilter === 'noForm') return !u.hasForm
+            if (formFilter === 'hasForm' && !u.hasForm) return false
+            if (formFilter === 'noForm' && u.hasForm) return false
+            if (phoneFilter === 'hasPhone' && !u.phoneNumber) return false
+            if (phoneFilter === 'noPhone' && u.phoneNumber) return false
             return true
           })
           .map((u, idx) => {
@@ -290,6 +316,16 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
                       ) : (
                         <span className="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full bg-[rgba(255,255,255,0.05)] text-[#8494a7] border border-[rgba(255,255,255,0.1)]">
                           フォームなし
+                        </span>
+                      )}
+                      {/* 電話番号バッジ */}
+                      {u.phoneNumber ? (
+                        <span className="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full bg-[rgba(59,130,246,0.12)] text-[#3b82f6] border border-[rgba(59,130,246,0.25)]">
+                          電話あり
+                        </span>
+                      ) : (
+                        <span className="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full bg-[rgba(255,255,255,0.05)] text-[#8494a7] border border-[rgba(255,255,255,0.1)]">
+                          電話なし
                         </span>
                       )}
                       {isExcluded && (

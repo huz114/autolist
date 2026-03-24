@@ -232,6 +232,7 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
           progress: 100,
           totalFound: formCount,
           completedAt: new Date(),
+          confirmedAt: new Date(),
         },
       });
 

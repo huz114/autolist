@@ -27,6 +27,10 @@ export default async function AutolistResultsPage({ params }: { params: { jobId:
           location: true,
           phoneNumber: true,
           employeeCount: true,
+          capitalAmount: true,
+          representativeName: true,
+          establishedYear: true,
+          businessDescription: true,
           formUrl: true,
           hasForm: true,
           excluded: true,
@@ -39,8 +43,6 @@ export default async function AutolistResultsPage({ params }: { params: { jobId:
     notFound()
   }
 
-  const isConfirmed = job.confirmedAt !== null
-
   return (
     <ResultsClient
       jobId={job.id}
@@ -48,7 +50,6 @@ export default async function AutolistResultsPage({ params }: { params: { jobId:
       industry={job.industry}
       location={job.location}
       urls={job.urls}
-      isConfirmed={isConfirmed}
     />
   )
 }

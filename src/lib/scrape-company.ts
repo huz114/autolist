@@ -244,8 +244,9 @@ async function findCompanyPageByTitleFetch(urls: string[], _baseUrl: string): Pr
 
   const titlePatterns = /会社概要|企業情報|会社情報|企業概要|About|Company|Corporate/i;
 
-  for (const candidateUrl of candidates) {
-    try {
+  // 並列でタイトルフェッチ（全候補を同時にリクエスト）
+  const results = await Promise.allSettled(
+    candidates.map(async (candidateUrl) => {
       const response = await fetch(candidateUrl, {
         headers: {
           "User-Agent": USER_AGENT,
@@ -255,11 +256,11 @@ async function findCompanyPageByTitleFetch(urls: string[], _baseUrl: string): Pr
         redirect: "follow",
       });
 
-      if (!response.ok) continue;
+      if (!response.ok) return null;
 
       // 先頭10KBだけ読む
       const reader = response.body?.getReader();
-      if (!reader) continue;
+      if (!reader) return null;
 
       let html = "";
       const decoder = new TextDecoder();
@@ -278,8 +279,14 @@ async function findCompanyPageByTitleFetch(urls: string[], _baseUrl: string): Pr
       if (titleMatch && titlePatterns.test(titleMatch[1])) {
         return candidateUrl;
       }
-    } catch {
-      // skip
+      return null;
+    })
+  );
+
+  // 最初にマッチしたURLを返す（候補の順序を維持）
+  for (const result of results) {
+    if (result.status === "fulfilled" && result.value) {
+      return result.value;
     }
   }
 

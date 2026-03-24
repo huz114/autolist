@@ -141,6 +141,7 @@ export default function LineLinkButton() {
 
   const focusTrapRef = useFocusTrap(open, handleClose)
 
+  const [copied, setCopied] = useState(false)
   const [unlinking, setUnlinking] = useState(false)
 
   const handleUnlink = async () => {
@@ -276,21 +277,33 @@ export default function LineLinkButton() {
                 <div className="bg-[#0a0f1c] border border-[rgba(255,255,255,0.07)] rounded-xl p-4">
                   <p className="text-sm font-medium text-[#f0f4f8] mb-3">
                     <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#06C755] text-white text-xs font-bold mr-2">2</span>
-                    連携コードを送信
+                    以下をLINEのトークで送信
                   </p>
-                  <a
-                    href={`https://line.me/R/oaMessage/@285tdinf/?${encodeURIComponent(`連携 ${code}`)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 w-full bg-[#06C755] hover:bg-[#04a344] text-white font-bold py-3 rounded-xl transition-all text-sm hover:shadow-[0_0_20px_rgba(6,199,85,0.3)]"
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314" />
-                    </svg>
-                    LINEで連携コードを送信
-                  </a>
-                  <p className="text-xs text-[#8494a7] text-center mt-3">PCの場合はLINEで以下を送信してください</p>
-                  <p className="text-lg font-mono font-bold tracking-[0.2em] text-[#f0f4f8] text-center mt-1">連携 {code}</p>
+                  <div className="bg-[#111827] border border-[rgba(6,199,85,0.3)] rounded-xl p-4 text-center">
+                    <p className="text-2xl font-mono font-bold tracking-[0.3em] text-[#f0f4f8]">
+                      連携 {code}
+                    </p>
+                  </div>
+                  <div className="flex gap-2 mt-3">
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(`連携 ${code}`)
+                        setCopied(true)
+                        setTimeout(() => setCopied(false), 2000)
+                      }}
+                      className="flex-1 flex items-center justify-center gap-1.5 bg-[rgba(255,255,255,0.07)] hover:bg-[rgba(255,255,255,0.12)] text-[#f0f4f8] font-medium py-2.5 rounded-xl transition-all text-sm cursor-pointer"
+                    >
+                      {copied ? '✓ コピーしました' : 'コピー'}
+                    </button>
+                    <a
+                      href={`https://line.me/R/oaMessage/@285tdinf/?${encodeURIComponent(`連携 ${code}`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 flex items-center justify-center gap-1.5 bg-[#06C755] hover:bg-[#04a344] text-white font-medium py-2.5 rounded-xl transition-all text-sm"
+                    >
+                      LINEを開く
+                    </a>
+                  </div>
                   <div className="flex items-center justify-center gap-2 mt-3">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8fa3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <circle cx="12" cy="12" r="10" />

@@ -208,7 +208,7 @@ export default function Home() {
 
       {/* HERO */}
       <section className="hero" id="hero">
-        <div className="hero-inner" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 40, alignItems: 'center' }}>
+        <div className="hero-inner hero-two-col">
           <div>
             <div className="hero-badge">
               <span className="dot" />
@@ -224,8 +224,10 @@ export default function Home() {
               テレアポにもフォーム営業にも、すぐ使える。<br />
               <strong style={{ color: "var(--accent)" }}>最初の100件は無料。</strong>
             </p>
+          </div>
 
-            {/* インタラクティブデモ */}
+          {/* インタラクティブデモ（右カラム） */}
+          <div>
             <div
               onClick={() => setDemoStep(prev => (prev + 1) % 3)}
               style={{
@@ -233,8 +235,6 @@ export default function Home() {
                 border: '1px solid rgba(255,255,255,0.1)',
                 borderRadius: 16,
                 padding: '20px 24px',
-                maxWidth: 480,
-                marginTop: 32,
                 minHeight: 220,
                 cursor: 'pointer',
                 position: 'relative',

@@ -188,26 +188,71 @@ export default function Home() {
 
       {/* HERO */}
       <section className="hero" id="hero">
-        <div className="hero-inner">
-          <div className="hero-badge">
-            <span className="dot" />
-            企業詳細情報付きAI営業リスト × LINE・Web対応
-          </div>
-          <h1>
-            移動中に頼んで、<br />
-            <em>着いたらリストができてた。</em>
-          </h1>
-          <p className="hero-sub">
-            業種と地域を送るだけ。AIがGoogleからリアルタイム収集。<br />
-            届くのは、<strong style={{ color: "var(--text-primary)" }}>代表者名・設立年・従業員数まで揃った企業リスト</strong>。<br />
-            テレアポにもフォーム営業にも、すぐ使える。<br />
-            <strong style={{ color: "var(--accent)" }}>最初の100件は無料。</strong>
-          </p>
-          <div className="hero-cta-group">
-            <Link href="/register" className="btn-primary">
-              100件無料でお試し
-            </Link>
-            <span className="btn-note">登録料無料 · カード不要でお試し · いつでも解約</span>
+        <div className="hero-inner" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 40, alignItems: 'center' }}>
+          <div>
+            <div className="hero-badge">
+              <span className="dot" />
+              企業詳細情報付きAI営業リスト × LINE・Web対応
+            </div>
+            <h1>
+              移動中に頼んで、<br />
+              <em>着いたらリストができてた。</em>
+            </h1>
+            <p className="hero-sub">
+              業種と地域を送るだけ。AIがGoogleからリアルタイム収集。<br />
+              届くのは、<strong style={{ color: "var(--text-primary)" }}>代表者名・設立年・従業員数まで揃った企業リスト</strong>。<br />
+              テレアポにもフォーム営業にも、すぐ使える。<br />
+              <strong style={{ color: "var(--accent)" }}>最初の100件は無料。</strong>
+            </p>
+
+            {/* デモ依頼フォーム */}
+            <div style={{
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: 16,
+              padding: '20px 24px',
+              maxWidth: 480,
+              marginTop: 32,
+            }}>
+              <div style={{ fontSize: 13, color: '#8494a7', marginBottom: 12, fontWeight: 600 }}>
+                リスト依頼イメージ
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
+                <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 8, padding: '10px 14px' }}>
+                  <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 4 }}>業種</div>
+                  <div style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 500 }}>不動産会社</div>
+                </div>
+                <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 8, padding: '10px 14px' }}>
+                  <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 4 }}>地域</div>
+                  <div style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 500 }}>渋谷区</div>
+                </div>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 8, padding: '10px 14px', marginBottom: 16 }}>
+                <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 4 }}>件数</div>
+                <div style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 500 }}>30件</div>
+              </div>
+              <Link
+                href="/register"
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  textAlign: 'center',
+                  background: '#06C755',
+                  color: '#fff',
+                  fontWeight: 700,
+                  fontSize: 15,
+                  padding: '14px 0',
+                  borderRadius: 12,
+                  textDecoration: 'none',
+                  transition: 'background 0.2s',
+                }}
+              >
+                🚀 収集スタート（無料）
+              </Link>
+              <div style={{ textAlign: 'center', fontSize: 11, color: '#6b7280', marginTop: 8 }}>
+                登録後すぐにお試しいただけます
+              </div>
+            </div>
           </div>
           <div className="hero-stats">
             <div>

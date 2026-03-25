@@ -259,7 +259,7 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
         {/* アクションボタン群 */}
         <div className="flex items-center gap-3">
           <button
-            onClick={() => downloadCsv(filteredUrls, keyword)}
+            onClick={() => downloadCsv(urls, keyword)}
             className="inline-flex items-center gap-2 text-sm font-medium px-5 py-2.5 rounded-full transition-all cursor-pointer border border-[rgba(255,255,255,0.15)] text-[#f0f4f8] bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.1)] hover:border-[rgba(255,255,255,0.25)]"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -595,7 +595,7 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
       {urls.length > 5 && (
         <div className="flex items-center justify-end gap-3 mt-6">
           <button
-            onClick={() => downloadCsv(filteredUrls, keyword)}
+            onClick={() => downloadCsv(urls, keyword)}
             className="inline-flex items-center gap-2 text-sm font-medium px-5 py-2.5 rounded-full transition-all cursor-pointer border border-[rgba(255,255,255,0.15)] text-[#f0f4f8] bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.1)] hover:border-[rgba(255,255,255,0.25)]"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

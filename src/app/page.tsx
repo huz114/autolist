@@ -736,8 +736,8 @@ export default function Home() {
               {
                 num: "03",
                 time: "すぐ営業開始",
-                title: "CSVダウンロードで即活用",
-                desc: "完成したリストはCSVでダウンロード。CRMやスプレッドシートにそのまま取り込めます。Chrome拡張を使えば、フォーム送信も半自動化。",
+                title: <>CSVダウンロード &amp;<br />フォーム送信半自動化</>,
+                desc: "完成したリストはCSVでダウンロード。CRMやスプレッドシートにそのまま取り込めます。Chrome拡張を使えば、フォーム送信も半自動化できます。",
               },
             ].map((step, i) => (
               <div key={i} className={`step-card reveal reveal-delay-${i + 1}`} ref={addRevealRef}>

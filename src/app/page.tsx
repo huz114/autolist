@@ -391,7 +391,7 @@ export default function Home() {
                     transition: 'opacity 0.4s ease 450ms, transform 0.4s ease 450ms, background 0.2s',
                   }}
                 >
-                  🚀 収集スタート（無料）
+                  🚀 収集スタート
                 </Link>
               </div>
               </div>{/* end steps container */}

@@ -31,6 +31,12 @@ function NavBar() {
                 マイリスト
               </Link>
               <Link
+                href="/profile"
+                className="text-sm text-[#8fa3b8] hover:text-[#f0f4f8] transition-colors"
+              >
+                プロフィール
+              </Link>
+              <Link
                 href="/send-history"
                 className="text-sm text-[#8fa3b8] hover:text-[#f0f4f8] transition-colors"
               >
@@ -115,6 +121,13 @@ function NavBar() {
                 className="text-sm text-[#8fa3b8] hover:text-[#f0f4f8] transition-colors py-2 border-b border-[rgba(255,255,255,0.07)]"
               >
                 マイリスト
+              </Link>
+              <Link
+                href="/profile"
+                onClick={closeMenu}
+                className="text-sm text-[#8fa3b8] hover:text-[#f0f4f8] transition-colors py-2 border-b border-[rgba(255,255,255,0.07)]"
+              >
+                プロフィール
               </Link>
               <Link
                 href="/send-history"

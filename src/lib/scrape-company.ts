@@ -59,6 +59,34 @@ const COMPANY_PAGE_PATHS = [
 // ─── HTML取得 ───
 
 /**
+ * SSL証明書が有効かチェックする（HEADリクエスト、5秒タイムアウト）
+ * 証明書エラー・httpへのリダイレクトを検出
+ */
+async function checkSslValid(domain: string): Promise<boolean> {
+  try {
+    const response = await fetch(`https://${domain}`, {
+      method: 'HEAD',
+      headers: { "User-Agent": USER_AGENT },
+      signal: AbortSignal.timeout(5000),
+      redirect: 'manual', // リダイレクトを自動フォローしない
+    });
+    // 3xx でhttpにリダイレクトされる場合はNG
+    if (response.status >= 300 && response.status < 400) {
+      const location = response.headers.get('location');
+      if (location && location.startsWith('http://')) {
+        console.log(`  -> SSL redirect to HTTP detected: ${domain}`);
+        return false;
+      }
+    }
+    return true;
+  } catch {
+    // SSL証明書エラーなどでfetch自体が失敗
+    console.log(`  -> SSL check failed for ${domain}`);
+    return false;
+  }
+}
+
+/**
  * HTMLを取得する（10秒タイムアウト）
  */
 async function fetchHtml(url: string): Promise<string | null> {
@@ -894,6 +922,13 @@ export async function scrapeCompanyInfo(url: string, requestedIndustry?: string,
   const baseUrl = `https://${domain}`;
 
   try {
+    // SSL証明書チェック（無効なサイトはスキップ）
+    const sslValid = await checkSslValid(domain);
+    if (!sslValid) {
+      console.log(`  -> Skipped ${domain}: invalid SSL certificate`);
+      return { hasForm: false };
+    }
+
     // トップページのHTMLを取得
     const mainHtml = await fetchHtml(url);
 

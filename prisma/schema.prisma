@@ -88,6 +88,7 @@ model CollectedUrl {
   officers            String?              // JSON: [{"name":"田中太郎","title":"代表取締役"}]
   relatedSites        String[]             // サブドメインの関連サイト
   latestNews          String?              // JSON: [{"date":"2026-03-20","title":"新製品を発表"}]
+  isAdvertiser        Boolean  @default(false)
   hasForm             Boolean  @default(false)
   formUrl             String?
   companyVerified     Boolean  @default(false)

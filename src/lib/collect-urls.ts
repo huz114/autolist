@@ -173,6 +173,11 @@ interface SerperResult {
     snippet: string;
     domain?: string;
   }>;
+  ads?: Array<{
+    title: string;
+    link: string;
+    description?: string;
+  }>;
   searchParameters?: {
     q: string;
   };
@@ -230,7 +235,7 @@ function guessCompanyName(domain: string, title: string): string {
  * @param query 検索クエリ
  * @param page ページ番号（1始まり）
  */
-async function searchWithSerper(query: string, page: number = 1): Promise<CollectedUrlData[]> {
+async function searchWithSerper(query: string, page: number = 1): Promise<{ results: CollectedUrlData[]; advertiserDomains: Set<string> }> {
   const apiKey = process.env.SERPER_API_KEY;
 
   if (!apiKey) {
@@ -290,7 +295,21 @@ async function searchWithSerper(query: string, page: number = 1): Promise<Collec
     }
   }
 
-  return results;
+  // 広告出稿企業のドメインを収集
+  const advertiserDomains = new Set<string>();
+  if (data.ads) {
+    for (const ad of data.ads) {
+      const domain = extractDomain(ad.link);
+      if (domain) {
+        advertiserDomains.add(domain);
+      }
+    }
+    if (advertiserDomains.size > 0) {
+      console.log(`  [ADS] ${advertiserDomains.size} advertiser domains found: ${Array.from(advertiserDomains).join(', ')}`);
+    }
+  }
+
+  return { results, advertiserDomains };
 }
 
 /**
@@ -319,6 +338,7 @@ export async function collectUrls(jobId: string): Promise<number> {
 
   const collectedDomains = new Set<string>(job.urls.map(u => u.domain));
   const newUrls: CollectedUrlData[] = [];
+  const advertiserDomains = new Set<string>();
 
   // targetCountに達するまで検索を繰り返す
   for (const query of searchQueries) {
@@ -328,7 +348,10 @@ export async function collectUrls(jobId: string): Promise<number> {
 
     try {
       console.log(`Searching: ${query}`);
-      const results = await searchWithSerper(query);
+      const { results, advertiserDomains: adDomains } = await searchWithSerper(query);
+
+      // 広告出稿ドメインを蓄積
+      adDomains.forEach(d => advertiserDomains.add(d));
 
       for (const result of results) {
         if (!collectedDomains.has(result.domain)) {
@@ -391,6 +414,7 @@ export async function collectUrls(jobId: string): Promise<number> {
           officers: companyInfo.officers ? JSON.stringify(companyInfo.officers) : null,
           relatedSites: companyInfo.relatedSites || [],
           latestNews: companyInfo.latestNews ? JSON.stringify(companyInfo.latestNews) : null,
+          isAdvertiser: advertiserDomains.has(urlData.domain) || false,
           status: 'collected',
         },
       });
@@ -428,7 +452,8 @@ async function scrapeAndSave(
   jobId: string,
   urlData: CollectedUrlData,
   requestedIndustry?: string,
-  requestedLocation?: string
+  requestedLocation?: string,
+  isAdvertiser: boolean = false
 ): Promise<boolean> {
   try {
     const companyInfo = await scrapeCompanyInfo(urlData.url, requestedIndustry, requestedLocation);
@@ -471,6 +496,7 @@ async function scrapeAndSave(
         officers: companyInfo.officers ? JSON.stringify(companyInfo.officers) : null,
         relatedSites: companyInfo.relatedSites || [],
         latestNews: companyInfo.latestNews ? JSON.stringify(companyInfo.latestNews) : null,
+        isAdvertiser,
         companyVerified,
         status: 'collected',
       },
@@ -595,6 +621,7 @@ export async function collectUrlsWithQueries(
       officers: string | null;
       relatedSites: string[];
       latestNews: string | null;
+      isAdvertiser: boolean;
       companyVerified: boolean;
       status: string;
       createdAt: Date;
@@ -664,6 +691,7 @@ export async function collectUrlsWithQueries(
           officers: u.officers,
           relatedSites: u.relatedSites,
           latestNews: u.latestNews,
+          isAdvertiser: u.isAdvertiser ?? false,
           companyVerified: u.companyVerified,
           status: u.status,
           createdAt: now,
@@ -711,6 +739,7 @@ export async function collectUrlsWithQueries(
           officers: u.officers,
           relatedSites: u.relatedSites,
           latestNews: u.latestNews,
+          isAdvertiser: u.isAdvertiser ?? false,
           companyVerified: u.companyVerified,
           status: u.status,
           createdAt: now,
@@ -722,6 +751,9 @@ export async function collectUrlsWithQueries(
     }
   }
   // ─────────────────────────────────────────────────────────────
+
+  // 広告出稿企業のドメインを収集するセット
+  const advertiserDomains = new Set<string>();
 
   // 無限ループ防止の上限値
   // フォーム検出率が低い場合でも targetCount に到達できるよう、
@@ -766,7 +798,9 @@ export async function collectUrlsWithQueries(
     console.log(`[Search round ${searchRound}] query="${query}" page=${page}`);
 
     try {
-      const results = await searchWithSerper(query, page);
+      const { results, advertiserDomains: adDomains } = await searchWithSerper(query, page);
+      // 広告出稿ドメインを蓄積
+      adDomains.forEach(d => advertiserDomains.add(d));
       let added = 0;
       for (const result of results) {
         if (!collectedDomains.has(result.domain)) {
@@ -860,7 +894,7 @@ export async function collectUrlsWithQueries(
 
     // バッチ並列実行
     const results = await Promise.allSettled(
-      batch.map(urlData => scrapeAndSave(jobId, urlData, industry ?? undefined, location ?? undefined))
+      batch.map(urlData => scrapeAndSave(jobId, urlData, industry ?? undefined, location ?? undefined, advertiserDomains.has(urlData.domain)))
     );
 
     // 結果を集計

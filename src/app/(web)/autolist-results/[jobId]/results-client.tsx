@@ -29,6 +29,7 @@ type UrlItem = {
   officers?: string | null
   relatedSites?: string[]
   latestNews?: string | null
+  isAdvertiser?: boolean
 }
 
 type FormFilter = 'all' | 'hasForm' | 'noForm'
@@ -48,7 +49,7 @@ function downloadCsv(urls: UrlItem[], keyword: string) {
     '設立年', '従業員数', '資本金', '事業内容', 'フォームURL', 'フォームあり',
     '業種大分類', '業種小分類', 'X', 'Instagram', 'Facebook', 'YouTube',
     '採用ページあり', 'サイト更新日', '検索タグ',
-    '役員ページURL', '役員一覧', '関連サイト', '最新ニュース',
+    '役員ページURL', '役員一覧', '関連サイト', '最新ニュース', '広告出稿',
   ]
 
   const escapeField = (value: string) => {
@@ -107,6 +108,7 @@ function downloadCsv(urls: UrlItem[], keyword: string) {
       officersStr,
       (u.relatedSites ?? []).join(' / '),
       latestNewsStr,
+      u.isAdvertiser ? 'はい' : 'いいえ',
     ].map(escapeField).join(',')
   })
 
@@ -303,6 +305,11 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
                     ) : (
                       <span className="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full bg-[rgba(255,255,255,0.05)] text-[#8494a7] border border-[rgba(255,255,255,0.1)]">
                         電話なし
+                      </span>
+                    )}
+                    {u.isAdvertiser && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-[#713f12] text-[#facc15]">
+                        広告出稿中
                       </span>
                     )}
                   </div>

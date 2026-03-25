@@ -45,6 +45,7 @@ export default async function AutolistResultsPage({ params }: { params: { jobId:
           officers: true,
           relatedSites: true,
           latestNews: true,
+          isAdvertiser: true,
         },
       },
     },

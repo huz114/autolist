@@ -74,6 +74,7 @@ export default function Home() {
   const [expandedSamples, setExpandedSamples] = useState<Set<number>>(new Set([0]));
   const [demoStep, setDemoStep] = useState(0); // 0=input, 1=analyzing, 2=result
   const [dots, setDots] = useState(0);
+  const [formDemoStep, setFormDemoStep] = useState(0);
 
   const toggleSample = (idx: number) => {
     setExpandedSamples(prev => {
@@ -111,6 +112,15 @@ export default function Home() {
     }, durations[demoStep]);
     return () => clearTimeout(timer);
   }, [demoStep]);
+
+  // Form demo auto-advance
+  useEffect(() => {
+    const durations = [500, 800, 800, 800, 2000];
+    const timer = setTimeout(() => {
+      setFormDemoStep(prev => (prev + 1) % 5);
+    }, durations[formDemoStep]);
+    return () => clearTimeout(timer);
+  }, [formDemoStep]);
 
   // Dots animation for analyzing phase
   useEffect(() => {
@@ -789,6 +799,79 @@ export default function Home() {
                 <p className="benefit-desc">{item.desc}</p>
               </div>
             ))}
+            {/* フォーム送信デモカード */}
+            <div className="benefit-card reveal reveal-delay-4" ref={addRevealRef} style={{ padding: 0, overflow: 'hidden' }}>
+              <div style={{ position: 'relative', background: 'rgba(255,255,255,0.03)', borderRadius: 16 }}>
+                {/* Chrome extension widget */}
+                <div style={{
+                  position: 'absolute',
+                  top: 12,
+                  right: 12,
+                  background: 'rgba(6,199,85,0.12)',
+                  border: '1px solid rgba(6,199,85,0.3)',
+                  borderRadius: 8,
+                  padding: '6px 10px',
+                  fontSize: 10,
+                  color: '#06C755',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  zIndex: 10,
+                  opacity: formDemoStep >= 1 ? 1 : 0,
+                  transition: 'opacity 0.3s ease',
+                }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#06C755', display: 'inline-block' }} />
+                  オートリスト 自動入力中...
+                </div>
+
+                {/* Form area */}
+                <div style={{ padding: 24 }}>
+                  <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 16, textAlign: 'center' }}>
+                    お問い合わせフォーム（デモ）
+                  </div>
+
+                  {[
+                    { label: '会社名', value: '株式会社サンプルテック', step: 1, multiline: false },
+                    { label: 'ご担当者名', value: '山田 太郎', step: 2, multiline: false },
+                    { label: 'メールアドレス', value: 'info@sample-tech.co.jp', step: 3, multiline: false },
+                    { label: 'お問い合わせ内容', value: '貴社のサービスについてお伺いしたく、ご連絡いたしました。', step: 4, multiline: true },
+                  ].map((field, i) => (
+                    <div key={i} style={{ marginBottom: 10 }}>
+                      <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 4 }}>{field.label}</div>
+                      <div style={{
+                        background: 'rgba(255,255,255,0.06)',
+                        borderRadius: 6,
+                        padding: '8px 12px',
+                        fontSize: 12,
+                        color: formDemoStep >= field.step ? 'var(--text-primary)' : 'transparent',
+                        minHeight: field.multiline ? 48 : 32,
+                        transition: 'all 0.3s ease',
+                        borderLeft: formDemoStep === field.step ? '2px solid #06C755' : '2px solid transparent',
+                      }}>
+                        {formDemoStep >= field.step ? field.value : '\u00A0'}
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Send button */}
+                  <div style={{
+                    width: '100%',
+                    padding: 10,
+                    borderRadius: 8,
+                    fontSize: 13,
+                    fontWeight: 700,
+                    textAlign: 'center',
+                    transition: 'all 0.3s',
+                    background: formDemoStep === 4 ? '#06C755' : 'rgba(255,255,255,0.06)',
+                    color: formDemoStep === 4 ? 'white' : '#6b7280',
+                    boxShadow: formDemoStep === 4 ? '0 0 16px rgba(6,199,85,0.4)' : 'none',
+                  }}>
+                    送信
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>

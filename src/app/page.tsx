@@ -128,7 +128,7 @@ export default function Home() {
     fetch("/api/stats")
       .then((res) => res.json())
       .then((data) => {
-        if (data.completedCount > 0) {
+        if (data.completedCount >= 100) {
           setCompletedCount(data.completedCount);
         }
       })

@@ -569,6 +569,7 @@ export default function SendClient({
 
         {currentStep === 3 && (
           <SendStep
+            jobId={jobId}
             companies={companies}
             companyName={companyName}
             personName={personName}
@@ -632,8 +633,8 @@ export default function SendClient({
         </div>
       )}
 
-      {/* Back button on step 4 */}
-      {currentStep === 3 && (
+      {/* Back button on step 4 (hidden once send has started) */}
+      {currentStep === 3 && !isSendStarted && (
         <div className="mt-6">
           <button
             onClick={handleBack}

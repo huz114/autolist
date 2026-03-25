@@ -2,12 +2,21 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { signOut, useSession } from 'next-auth/react'
 import { SessionProvider } from 'next-auth/react'
 
 function NavBar() {
   const { data: session } = useSession()
   const [menuOpen, setMenuOpen] = useState(false)
+  const pathname = usePathname()
+
+  const isActive = (href: string) => {
+    if (href === '/my-lists') {
+      return pathname === '/my-lists' || pathname.startsWith('/autolist-results') || pathname.startsWith('/send/')
+    }
+    return pathname === href || pathname.startsWith(href + '/')
+  }
 
   const closeMenu = () => setMenuOpen(false)
 
@@ -26,19 +35,19 @@ function NavBar() {
             <>
               <Link
                 href="/my-lists"
-                className="text-sm text-[#8fa3b8] hover:text-[#f0f4f8] transition-colors"
+                className={`text-sm transition-colors pb-1 ${isActive('/my-lists') ? 'text-[#f0f4f8] font-semibold border-b-2 border-[#06C755]' : 'text-[#8fa3b8] hover:text-[#c8d6e5]'}`}
               >
                 マイリスト
               </Link>
               <Link
                 href="/profile"
-                className="text-sm text-[#8fa3b8] hover:text-[#f0f4f8] transition-colors"
+                className={`text-sm transition-colors pb-1 ${isActive('/profile') ? 'text-[#f0f4f8] font-semibold border-b-2 border-[#06C755]' : 'text-[#8fa3b8] hover:text-[#c8d6e5]'}`}
               >
                 プロフィール
               </Link>
               <Link
                 href="/send-history"
-                className="text-sm text-[#8fa3b8] hover:text-[#f0f4f8] transition-colors"
+                className={`text-sm transition-colors pb-1 ${isActive('/send-history') ? 'text-[#f0f4f8] font-semibold border-b-2 border-[#06C755]' : 'text-[#8fa3b8] hover:text-[#c8d6e5]'}`}
               >
                 送信履歴
               </Link>
@@ -118,21 +127,21 @@ function NavBar() {
               <Link
                 href="/my-lists"
                 onClick={closeMenu}
-                className="text-sm text-[#8fa3b8] hover:text-[#f0f4f8] transition-colors py-2 border-b border-[rgba(255,255,255,0.07)]"
+                className={`text-sm transition-colors py-2 border-b border-[rgba(255,255,255,0.07)] ${isActive('/my-lists') ? 'text-[#f0f4f8] font-semibold border-l-2 border-l-[#06C755] pl-2' : 'text-[#8fa3b8] hover:text-[#c8d6e5]'}`}
               >
                 マイリスト
               </Link>
               <Link
                 href="/profile"
                 onClick={closeMenu}
-                className="text-sm text-[#8fa3b8] hover:text-[#f0f4f8] transition-colors py-2 border-b border-[rgba(255,255,255,0.07)]"
+                className={`text-sm transition-colors py-2 border-b border-[rgba(255,255,255,0.07)] ${isActive('/profile') ? 'text-[#f0f4f8] font-semibold border-l-2 border-l-[#06C755] pl-2' : 'text-[#8fa3b8] hover:text-[#c8d6e5]'}`}
               >
                 プロフィール
               </Link>
               <Link
                 href="/send-history"
                 onClick={closeMenu}
-                className="text-sm text-[#8fa3b8] hover:text-[#f0f4f8] transition-colors py-2 border-b border-[rgba(255,255,255,0.07)]"
+                className={`text-sm transition-colors py-2 border-b border-[rgba(255,255,255,0.07)] ${isActive('/send-history') ? 'text-[#f0f4f8] font-semibold border-l-2 border-l-[#06C755] pl-2' : 'text-[#8fa3b8] hover:text-[#c8d6e5]'}`}
               >
                 送信履歴
               </Link>

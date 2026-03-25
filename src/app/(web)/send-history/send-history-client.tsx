@@ -223,14 +223,22 @@ export default function SendHistoryClient() {
           <p className="text-sm text-[#8494a7]">
             {debouncedSearch
               ? '検索条件に一致する履歴がありません'
-              : 'リストを確定してフォーム送信を行ってください'}
+              : 'リストを作成してフォーム送信を行ってください'}
           </p>
-          <Link
-            href="/my-lists"
-            className="inline-block mt-4 text-sm text-[#06C755] hover:text-[#2ad96e] transition-colors"
-          >
-            ← マイリストを見る
-          </Link>
+          <div className="flex items-center justify-center gap-6 mt-4">
+            <Link
+              href="/my-lists"
+              className="text-sm text-[#06C755] hover:underline transition-colors"
+            >
+              新しいリストを作成する
+            </Link>
+            <Link
+              href="/my-lists"
+              className="text-sm text-[#06C755] hover:underline transition-colors"
+            >
+              マイリストを見る
+            </Link>
+          </div>
         </div>
       ) : (
         <>
@@ -328,6 +336,27 @@ export default function SendHistoryClient() {
               </div>
             </div>
           )}
+
+          {/* Next Actions */}
+          <div className="mt-8">
+            <h2 className="text-sm font-semibold text-[#f0f4f8] mb-4">次のアクション</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.07)] rounded-xl p-5">
+                <p className="text-[#f0f4f8] font-semibold text-sm mb-1">新しいリストを作成</p>
+                <p className="text-[#8fa3b8] text-xs mb-3">別の業種・地域でアプローチを広げましょう</p>
+                <Link href="/my-lists" className="text-[#06C755] text-sm hover:underline transition-colors">
+                  リストを作成する →
+                </Link>
+              </div>
+              <div className="bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.07)] rounded-xl p-5">
+                <p className="text-[#f0f4f8] font-semibold text-sm mb-1">マイリストを確認</p>
+                <p className="text-[#8fa3b8] text-xs mb-3">既存リストの詳細確認・CSVダウンロードはこちら</p>
+                <Link href="/my-lists" className="text-[#06C755] text-sm hover:underline transition-colors">
+                  マイリストへ →
+                </Link>
+              </div>
+            </div>
+          </div>
         </>
       )}
     </div>

@@ -1,8 +1,10 @@
 'use client'
 
+import Link from 'next/link'
 import type { Company } from './types'
 
 type Props = {
+  jobId: string
   companies: Company[]
   companyName: string
   personName: string
@@ -25,6 +27,7 @@ type Props = {
 }
 
 export default function SendStep({
+  jobId,
   companies,
   companyName,
   personName,
@@ -161,7 +164,11 @@ export default function SendStep({
           {/* 完了メッセージ or 進捗テキスト */}
           {isAllComplete ? (
             <div className="text-center mb-6">
-              <div className="text-3xl mb-2">&#127881;</div>
+              <div className="flex justify-center mb-2">
+                <svg className="w-10 h-10 text-[#06C755]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
               <h3 className="text-lg font-bold text-[#06C755]">
                 全{totalCount}件の送信が完了しました
               </h3>
@@ -204,17 +211,72 @@ export default function SendStep({
             </div>
           )}
 
-          {/* 送信履歴リンク */}
-          <a
-            href="/send-history"
-            className={`block text-center text-sm font-medium transition-colors cursor-pointer ${
-              isAllComplete
-                ? 'bg-[#06C755] hover:bg-[#04a344] text-white py-3 rounded-xl'
-                : 'text-[#8fa3b8] hover:text-[#06C755] mt-2'
-            }`}
-          >
-            送信履歴を見る →
-          </a>
+          {/* 部分完了時の警告 */}
+          {sentCount > 0 && sentCount < totalCount && (
+            <div className="bg-amber-900/15 border border-amber-500/25 rounded-xl px-5 py-4 mb-6">
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-[#f59e0b] shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <div>
+                  <p className="text-sm font-medium text-[#f59e0b] mb-1">
+                    {totalCount - sentCount}件は自動送信できませんでした
+                  </p>
+                  <p className="text-xs text-[#8fa3b8] leading-relaxed mb-3">
+                    フォームが見つからなかった、またはSSL証明書エラーが発生した企業です。電話やメールで直接アプローチできます。
+                  </p>
+                  <Link
+                    href={`/autolist-results/${jobId}`}
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-[#06C755] hover:underline transition-colors"
+                  >
+                    リスト詳細でCSVダウンロード
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 次のステップ */}
+          {sentCount > 0 && (
+            <div className="border-t border-[rgba(255,255,255,0.07)] pt-6">
+              <h4 className="text-sm font-semibold text-[#8fa3b8] mb-4">次のステップ</h4>
+              <div className="space-y-3">
+                <Link
+                  href="/send-history"
+                  className="block text-center bg-[#06C755] hover:bg-[#04a344] text-white py-3 rounded-xl font-bold text-sm transition-colors"
+                >
+                  送信履歴を確認する
+                </Link>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6">
+                  <Link
+                    href="/mylist"
+                    className="text-sm text-[#06C755] hover:underline transition-colors"
+                  >
+                    別のリストでも送信する → マイリスト
+                  </Link>
+                  <Link
+                    href="/"
+                    className="text-sm text-[#06C755] hover:underline transition-colors"
+                  >
+                    新しいリストを作成する
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 送信中で未完了の場合の送信履歴リンク */}
+          {sentCount === 0 && (
+            <Link
+              href="/send-history"
+              className="block text-center text-sm font-medium text-[#8fa3b8] hover:text-[#06C755] transition-colors mt-2"
+            >
+              送信履歴を見る →
+            </Link>
+          )}
         </div>
       ) : (
         <div>

@@ -362,7 +362,7 @@ export default function Home() {
                 },
               },
               {
-                name: '合同会社クリエイト',
+                name: '合同会社サンプルクリエイト',
                 badges: [
                   { label: 'フォームなし', color: '#6b7280', bg: 'rgba(107,114,128,0.12)' },
                   { label: '電話あり', color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
@@ -385,7 +385,7 @@ export default function Home() {
                 },
               },
               {
-                name: '株式会社テックフォース',
+                name: '株式会社サンプルフォース',
                 badges: [
                   { label: 'フォームあり', color: '#22c55e', bg: 'rgba(34,197,94,0.12)' },
                   { label: '電話あり', color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },

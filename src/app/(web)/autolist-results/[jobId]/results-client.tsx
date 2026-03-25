@@ -6,6 +6,7 @@ import Link from 'next/link'
 type UrlItem = {
   id: string
   url: string
+  domain: string
   companyName: string | null
   industry: string | null
   location: string | null
@@ -326,12 +327,12 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
 
                   {/* URL */}
                   <a
-                    href={u.url}
+                    href={`https://${u.domain}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs text-[#06C755] hover:text-[#04a344] transition-colors truncate block mt-0.5"
                   >
-                    {u.url}
+                    {`https://${u.domain}`}
                   </a>
 
                   {/* 詳細情報 */}

@@ -22,6 +22,7 @@ export default async function AutolistResultsPage({ params }: { params: { jobId:
         select: {
           id: true,
           url: true,
+          domain: true,
           companyName: true,
           industry: true,
           location: true,

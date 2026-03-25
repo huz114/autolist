@@ -481,6 +481,54 @@ function extractNewsFromHtml(html: string): NewsItem[] {
   return news;
 }
 
+/**
+ * 役員ページHTMLから役員情報を抽出する（正規表現のみ、Geminiなし）
+ */
+function extractOfficersFromHtml(html: string): { representativeName?: string; officers: { name: string; title: string }[] } {
+  const officers: { name: string; title: string }[] = [];
+  let representativeName: string | undefined;
+
+  // Common patterns for officer listings in Japanese company pages
+  // Pattern: 代表取締役（社長）　田中太郎 or 代表取締役社長 田中 太郎
+  const titlePatterns = [
+    /(?:代表取締役(?:社長|会長)?|代表(?:社員|執行役員)?)\s*[：:\s]\s*([^\s<\n]{2,10}(?:\s[^\s<\n]{1,8})?)/g,
+    /<(?:td|dd|span|div|p)[^>]*>\s*(?:代表取締役(?:社長|会長)?|代表(?:社員|執行役員)?)\s*<\/(?:td|dd|span|div|p)>\s*<(?:td|dd|span|div|p)[^>]*>\s*([^<]{2,20})\s*</gi,
+  ];
+
+  // Try to find representative name
+  for (const pattern of titlePatterns) {
+    let match;
+    while ((match = pattern.exec(html)) !== null) {
+      const name = match[1].replace(/\s+/g, ' ').trim();
+      // Filter out obvious non-names (too short, contains HTML, numbers)
+      if (name.length >= 2 && name.length <= 20 && !/[<>0-9]/.test(name) && !/氏$|様$/.test(name)) {
+        if (!representativeName) {
+          representativeName = name;
+        }
+        officers.push({ name, title: '代表取締役' });
+        break;
+      }
+    }
+    if (representativeName) break;
+  }
+
+  // Also try to extract other officers with common titles
+  const officerRegex = /(取締役|常務|専務|監査役|執行役員|相談役)\s*[：:\s]\s*([^\s<\n]{2,10}(?:\s[^\s<\n]{1,8})?)/g;
+  let officerMatch;
+  while ((officerMatch = officerRegex.exec(html)) !== null && officers.length < 10) {
+    const title = officerMatch[1].trim();
+    const name = officerMatch[2].replace(/\s+/g, ' ').trim();
+    if (name.length >= 2 && name.length <= 20 && !/[<>0-9]/.test(name)) {
+      // Avoid duplicates
+      if (!officers.some(o => o.name === name)) {
+        officers.push({ name, title });
+      }
+    }
+  }
+
+  return { representativeName, officers };
+}
+
 // ─── HTML解析 ───
 
 interface StructuredContent {
@@ -984,6 +1032,22 @@ export async function scrapeCompanyInfo(url: string, requestedIndustry?: string,
 
     // Geminiで企業情報を抽出（依頼業種を渡して一致チェック）
     const extracted = await extractInfoWithGemini(structuredContent, requestedIndustry);
+
+    // 役員ページがある場合、代表者名が未取得 or 役員リストが空ならフェッチして抽出
+    if (officerPageUrl && (!extracted.representativeName || !extracted.officers || extracted.officers.length === 0)) {
+      const officerHtml = await fetchHtml(officerPageUrl);
+      if (officerHtml) {
+        const officerData = extractOfficersFromHtml(officerHtml);
+        if (!extracted.representativeName && officerData.representativeName) {
+          extracted.representativeName = officerData.representativeName;
+          console.log(`  -> Representative name extracted from officer page: ${officerData.representativeName}`);
+        }
+        if ((!extracted.officers || extracted.officers.length === 0) && officerData.officers.length > 0) {
+          extracted.officers = officerData.officers;
+          console.log(`  -> ${officerData.officers.length} officers extracted from officer page`);
+        }
+      }
+    }
 
     // 企業公式サイトでない場合はhasForm: falseで早期リターン
     if (!extracted.isCompanySite) {

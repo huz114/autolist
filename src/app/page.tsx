@@ -783,14 +783,14 @@ export default function Home() {
                 desc: "代表者名・設立年・従業員数・資本金・事業内容。営業に必要な情報をAIが自動で取得。テレアポの下調べも、提案書の準備も、リストを開くだけで済みます。",
               },
               {
-                icon: <IconTarget />,
-                title: <>1つのリストで、<br />2つの営業手法。</>,
-                desc: "電話番号でテレアポ。フォームURLでフォーム営業。同じリストからどちらの手法にも展開できます。CSVダウンロードで、お使いのCRMやスプレッドシートにそのまま。",
-              },
-              {
                 icon: <IconBot />,
                 title: <>頼んだら、<br />あとは放置でいい。</>,
                 desc: "AIが自動でGoogleを検索し、企業情報を収集・精査します。移動中でも、商談中でも関係なし。気づいたら出来上がっています。",
+              },
+              {
+                icon: <IconTarget />,
+                title: <>1つのリストで、<br />2つの営業手法。</>,
+                desc: "電話番号でテレアポ。フォームURLでフォーム営業。同じリストからどちらの手法にも展開できます。CSVダウンロードで、お使いのCRMやスプレッドシートにそのまま。",
               },
             ].map((item, i) => (
               <div key={i} className={`benefit-card reveal reveal-delay-${i + 1}`} ref={addRevealRef}>
@@ -875,22 +875,21 @@ export default function Home() {
                       送信
                     </div>
                     {/* Fake finger tap */}
-                    <svg
-                      width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
+                    <span
                       style={{
                         position: 'absolute',
                         right: 24,
-                        transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+                        transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
                         opacity: formDemoStep >= 4 ? 1 : 0,
                         bottom: formDemoStep === 4 ? 6 : -24,
+                        fontSize: 22,
                         filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.6))',
+                        pointerEvents: 'none',
                       }}
+                      aria-hidden="true"
                     >
-                      <path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v0" fill="rgba(255,255,255,0.9)" />
-                      <path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2" fill="rgba(255,255,255,0.9)" />
-                      <path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8" fill="rgba(255,255,255,0.9)" />
-                      <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" fill="rgba(255,255,255,0.9)" />
-                    </svg>
+                      👆
+                    </span>
                   </div>
                 </div>
               </div>

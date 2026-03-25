@@ -393,10 +393,10 @@ export default function Home() {
                 ],
                 industry: '製造業向けシステム開発',
                 location: '愛知県名古屋市',
-                domain: 'https://techforce.co.jp',
+                domain: 'https://sample-force.co.jp',
                 phone: '052-XXX-XXXX',
                 representative: '鈴木 一郎',
-                email: 'contact@techforce.co.jp',
+                email: 'contact@sample-force.co.jp',
                 description: '製造業向け生産管理システムの開発・導入支援',
                 details: {
                   established: '2010年',

@@ -878,11 +878,12 @@ export default function Home() {
                     <span
                       style={{
                         position: 'absolute',
-                        right: 24,
+                        left: '50%',
+                        marginLeft: 20,
                         transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
                         opacity: formDemoStep >= 4 ? 1 : 0,
-                        bottom: formDemoStep === 4 ? 6 : -24,
-                        fontSize: 22,
+                        bottom: formDemoStep === 4 ? 2 : -24,
+                        fontSize: 20,
                         filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.6))',
                         pointerEvents: 'none',
                       }}

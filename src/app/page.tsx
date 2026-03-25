@@ -71,6 +71,16 @@ const SectionCTA = () => (
 
 export default function Home() {
   const [navScrolled, setNavScrolled] = useState(false);
+  const [expandedSamples, setExpandedSamples] = useState<Set<number>>(new Set([0]));
+
+  const toggleSample = (idx: number) => {
+    setExpandedSamples(prev => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx);
+      else next.add(idx);
+      return next;
+    });
+  };
   const revealRefs = useRef<(HTMLElement | null)[]>([]);
   const revealIndex = useRef(0);
 
@@ -324,53 +334,196 @@ export default function Home() {
             <div className="section-label">Sample</div>
             <h2 className="section-title">届くリストのサンプル</h2>
           </div>
-          <div className="data-sample-table-wrap reveal" ref={addRevealRef}>
-            <table className="data-sample-table">
-              <thead>
-                <tr>
-                  <th>企業名</th>
-                  <th>電話番号</th>
-                  <th>代表者名</th>
-                  <th>設立年</th>
-                  <th>従業員数</th>
-                  <th>資本金</th>
-                  <th>事業内容</th>
-                  <th>フォームURL</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>株式会社サンプルテック</td>
-                  <td>03-XXXX-XXXX</td>
-                  <td>山田 太郎</td>
-                  <td>2015年</td>
-                  <td>25名</td>
-                  <td>1,000万円</td>
-                  <td>Webマーケティング支援</td>
-                  <td><span className="sample-url">https://...</span></td>
-                </tr>
-                <tr>
-                  <td>合同会社クリエイト</td>
-                  <td>06-XXXX-XXXX</td>
-                  <td>佐藤 花子</td>
-                  <td>2019年</td>
-                  <td>8名</td>
-                  <td>500万円</td>
-                  <td>IT導入コンサルティング</td>
-                  <td><span className="sample-empty">-</span></td>
-                </tr>
-                <tr>
-                  <td>株式会社テックフォース</td>
-                  <td>052-XXX-XXXX</td>
-                  <td>鈴木 一郎</td>
-                  <td>2010年</td>
-                  <td>50名</td>
-                  <td>3,000万円</td>
-                  <td>製造業向けシステム開発</td>
-                  <td><span className="sample-url">https://...</span></td>
-                </tr>
-              </tbody>
-            </table>
+          <div className="reveal" ref={addRevealRef} style={{ maxWidth: 720, margin: '0 auto' }}>
+            {[
+              {
+                name: '株式会社サンプルテック',
+                badges: [
+                  { label: 'フォームあり', color: '#22c55e', bg: 'rgba(34,197,94,0.12)' },
+                  { label: '電話あり', color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
+                  { label: '採用中', color: '#a78bfa', bg: 'rgba(167,139,250,0.12)' },
+                  { label: '広告出稿中', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
+                ],
+                industry: 'Webマーケティング支援',
+                location: '東京都渋谷区',
+                domain: 'https://sample-tech.co.jp',
+                phone: '03-XXXX-XXXX',
+                representative: '山田 太郎',
+                email: 'info@sample-tech.co.jp',
+                description: 'Webマーケティング支援、SEO対策、広告運用代行',
+                details: {
+                  established: '2015年',
+                  employees: '25名',
+                  capital: '1,000万円',
+                  industryCategory: '情報通信業 > インターネット附随サービス業',
+                  sns: ['X', 'Instagram', 'Facebook'],
+                  tags: ['Webマーケティング', 'SEO', '広告運用', 'デジタルマーケ', 'コンサル'],
+                  officers: '代表取締役 山田太郎 / 取締役 佐藤花子',
+                },
+              },
+              {
+                name: '合同会社クリエイト',
+                badges: [
+                  { label: 'フォームなし', color: '#6b7280', bg: 'rgba(107,114,128,0.12)' },
+                  { label: '電話あり', color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
+                ],
+                industry: 'IT導入コンサルティング',
+                location: '大阪府大阪市',
+                domain: 'https://create-llc.co.jp',
+                phone: '06-XXXX-XXXX',
+                representative: '佐藤 花子',
+                email: null,
+                description: 'IT導入コンサルティング、業務改善支援',
+                details: {
+                  established: '2019年',
+                  employees: '8名',
+                  capital: '500万円',
+                  industryCategory: '情報通信業 > 情報処理・提供サービス業',
+                  sns: [] as string[],
+                  tags: ['IT導入', 'DX', 'コンサル', '業務改善'],
+                  officers: null as string | null,
+                },
+              },
+              {
+                name: '株式会社テックフォース',
+                badges: [
+                  { label: 'フォームあり', color: '#22c55e', bg: 'rgba(34,197,94,0.12)' },
+                  { label: '電話あり', color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
+                  { label: '採用中', color: '#a78bfa', bg: 'rgba(167,139,250,0.12)' },
+                ],
+                industry: '製造業向けシステム開発',
+                location: '愛知県名古屋市',
+                domain: 'https://techforce.co.jp',
+                phone: '052-XXX-XXXX',
+                representative: '鈴木 一郎',
+                email: 'contact@techforce.co.jp',
+                description: '製造業向け生産管理システムの開発・導入支援',
+                details: {
+                  established: '2010年',
+                  employees: '50名',
+                  capital: '3,000万円',
+                  industryCategory: '情報通信業 > ソフトウェア業',
+                  sns: ['YouTube'],
+                  tags: ['製造業', '生産管理', 'システム開発', 'DX', 'IoT'],
+                  officers: '代表取締役 鈴木一郎',
+                },
+              },
+            ].map((company, idx) => (
+              <div
+                key={idx}
+                style={{
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.07)',
+                  borderRadius: 16,
+                  padding: '20px 24px',
+                  marginBottom: 12,
+                }}
+              >
+                {/* Layer 1 */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>{company.name}</span>
+                  {company.badges.map((badge, bi) => (
+                    <span
+                      key={bi}
+                      style={{
+                        display: 'inline-block',
+                        fontSize: 10,
+                        fontWeight: 600,
+                        color: badge.color,
+                        background: badge.bg,
+                        borderRadius: 999,
+                        padding: '2px 8px',
+                        lineHeight: '16px',
+                      }}
+                    >
+                      {badge.label}
+                    </span>
+                  ))}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4 }}>
+                  {company.industry}　{company.location}
+                </div>
+                <div style={{ fontSize: 12, color: '#22c55e', marginBottom: 10 }}>
+                  {company.domain}
+                </div>
+                {/* Contact grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: 10 }}>
+                  <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '8px 12px' }}>
+                    <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 2 }}>電話番号</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-primary)' }}>{company.phone}</div>
+                  </div>
+                  <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '8px 12px' }}>
+                    <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 2 }}>代表者名</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-primary)' }}>{company.representative}</div>
+                  </div>
+                  <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '8px 12px' }}>
+                    <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 2 }}>メール</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-primary)' }}>{company.email || '-'}</div>
+                  </div>
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 10 }}>
+                  {company.description}
+                </div>
+                {/* Toggle button */}
+                <button
+                  onClick={() => toggleSample(idx)}
+                  style={{
+                    fontSize: 12,
+                    color: '#8494a7',
+                    cursor: 'pointer',
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                  }}
+                >
+                  {expandedSamples.has(idx) ? '詳細を閉じる ▲' : '詳細を見る ▼'}
+                </button>
+                {/* Layer 2 */}
+                {expandedSamples.has(idx) && (
+                  <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                    {/* 基本情報 */}
+                    <div style={{ fontSize: 10, textTransform: 'uppercase' as const, letterSpacing: '0.1em', color: '#6b7280', marginBottom: 6 }}>基本情報</div>
+                    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 12, color: 'var(--text-secondary)', marginBottom: 12 }}>
+                      <span>設立: {company.details.established}</span>
+                      <span>従業員: {company.details.employees}</span>
+                      <span>資本金: {company.details.capital}</span>
+                    </div>
+                    {/* 業種分類 */}
+                    <div style={{ fontSize: 10, textTransform: 'uppercase' as const, letterSpacing: '0.1em', color: '#6b7280', marginBottom: 6 }}>業種分類</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 12 }}>
+                      {company.details.industryCategory}
+                    </div>
+                    {/* SNS */}
+                    {company.details.sns.length > 0 && (
+                      <>
+                        <div style={{ fontSize: 10, textTransform: 'uppercase' as const, letterSpacing: '0.1em', color: '#6b7280', marginBottom: 6 }}>SNS</div>
+                        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                          {company.details.sns.map((s, si) => (
+                            <span key={si} style={{ fontSize: 11, color: '#8494a7', background: 'rgba(255,255,255,0.06)', borderRadius: 999, padding: '2px 10px' }}>{s}</span>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                    {/* 検索タグ */}
+                    <div style={{ fontSize: 10, textTransform: 'uppercase' as const, letterSpacing: '0.1em', color: '#6b7280', marginBottom: 6 }}>検索タグ</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+                      {company.details.tags.map((tag, ti) => (
+                        <span key={ti} style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 999, padding: '2px 10px', fontSize: 11, color: '#8494a7' }}>{tag}</span>
+                      ))}
+                    </div>
+                    {/* 役員 */}
+                    {company.details.officers && (
+                      <>
+                        <div style={{ fontSize: 10, textTransform: 'uppercase' as const, letterSpacing: '0.1em', color: '#6b7280', marginBottom: 6 }}>役員</div>
+                        <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                          {company.details.officers}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
           <p className="data-sample-note">
             ※ サンプル表示用の架空データです。企業Webサイトに情報が掲載されていない項目は空欄となります。

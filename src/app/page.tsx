@@ -826,9 +826,12 @@ export default function Home() {
                 </div>
 
                 {/* Form area */}
-                <div style={{ padding: 24 }}>
-                  <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 16, textAlign: 'center' }}>
-                    お問い合わせフォーム（デモ）
+                <div style={{ padding: '16px 24px 24px' }}>
+                  <div style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 700, marginBottom: 4, textAlign: 'center' }}>
+                    Chrome拡張でフォーム送信を半自動化
+                  </div>
+                  <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 14, textAlign: 'center' }}>
+                    企業のお問い合わせフォームにワンクリックで自動入力
                   </div>
 
                   {[

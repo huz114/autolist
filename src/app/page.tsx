@@ -173,8 +173,8 @@ export default function Home() {
       a: "100件あたり1〜2時間が目安です。完了したらメールでお知らせします。LINEから依頼した場合はLINEにも通知が届きます。前日の夜に依頼して翌朝営業開始、といった使い方がスムーズです。",
     },
     {
-      q: "リスト業者と何が違いますか？",
-      a: "リスト業者のデータは更新頻度が低く、企業の詳細情報は別料金になることが多いです。オートリストはAIがリアルタイムでGoogleから収集するため、常に最新情報。代表者名・従業員数・事業内容まで標準で付属します。",
+      q: "リスト業者と何が違いますか？データは最新ですか？",
+      a: "リスト業者は事前にストックしたデータベースを販売するため、移転・閉業・担当者変更が反映されていないことがあります。オートリストは注文のたびにGoogleからリアルタイム検索し、AIが企業サイトを直接訪問して最新情報を抽出します。事前ストック型ではないため、常にその時点の最新データをお届けします。さらに、代表者名・従業員数・事業内容などの詳細情報も追加料金なしで標準付属します。",
     },
     {
       q: "追加料金や月額費用はありますか？",
@@ -235,9 +235,32 @@ export default function Home() {
               <strong style={{ color: "var(--accent)" }}>最初の100件は無料。</strong>
             </p>
             <div style={{ marginTop: 28 }}>
-              <Link href="/register" className="btn-primary">
-                100件無料でお試し
-              </Link>
+              <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+                <Link href="/register" className="btn-primary">
+                  100件無料でお試し
+                </Link>
+                <a
+                  href="#data-sample"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 8,
+                    color: "var(--text-secondary)",
+                    fontSize: 14,
+                    fontWeight: 600,
+                    textDecoration: "none",
+                    padding: "14px 24px",
+                    border: "1px solid var(--border)",
+                    borderRadius: 50,
+                    transition: "border-color 0.3s, color 0.3s",
+                    minHeight: 48,
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--border-accent)"; e.currentTarget.style.color = "var(--accent)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--text-secondary)"; }}
+                >
+                  サンプルデータを見る
+                </a>
+              </div>
               <span className="btn-note" style={{ display: 'block', marginTop: 10 }}>登録料無料 · カード不要でお試し · いつでも解約</span>
             </div>
           </div>
@@ -546,7 +569,7 @@ export default function Home() {
       </section>
 
       {/* DATA SAMPLE */}
-      <section className="lp-section data-sample-section">
+      <section id="data-sample" className="lp-section data-sample-section">
         <div className="container">
           <div className="reveal" ref={addRevealRef}>
             <div className="section-label">Sample</div>
@@ -974,6 +997,31 @@ export default function Home() {
               </div>
             ))}
           </div>
+          <div className="reveal" ref={addRevealRef} style={{ marginTop: 40, background: "var(--bg-card)", border: "1px solid var(--border-accent)", borderRadius: 16, padding: "28px 32px", maxWidth: 640, marginLeft: "auto", marginRight: "auto" }}>
+            <p style={{ fontSize: 15, fontWeight: 700, color: "var(--accent)", marginBottom: 16, textAlign: "center" }}>
+              コスト比較シミュレーション
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 16, alignItems: "center" }}>
+              <div style={{ textAlign: "center" }}>
+                <p style={{ fontSize: 12, color: "var(--red)", fontWeight: 700, marginBottom: 8, textTransform: "uppercase", letterSpacing: 1 }}>手作業の場合</p>
+                <p style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.8 }}>
+                  月20時間 &times; 時給2,500円<br />
+                  <span style={{ fontSize: 28, fontWeight: 900, color: "#ff8090" }}>= 月5万円</span>
+                </p>
+              </div>
+              <div style={{ fontSize: 24, color: "var(--text-muted)" }} aria-hidden="true">→</div>
+              <div style={{ textAlign: "center" }}>
+                <p style={{ fontSize: 12, color: "var(--accent)", fontWeight: 700, marginBottom: 8, textTransform: "uppercase", letterSpacing: 1 }}>オートリストの場合</p>
+                <p style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.8 }}>
+                  1,000件プラン<br />
+                  <span style={{ fontSize: 28, fontWeight: 900, color: "#4ddb8a" }}>= 月6,980円</span>
+                </p>
+              </div>
+            </div>
+            <p style={{ marginTop: 16, textAlign: "center", fontSize: 16, fontWeight: 800, color: "var(--text-primary)" }}>
+              人件費の<span style={{ color: "var(--accent)", fontSize: 20 }}>約1/7</span>のコストで、営業リスト作成をゼロに
+            </p>
+          </div>
           <p className="roi-note">
             ※ 上記は1日100件を手作業で作成する場合の概算です。実際の効果は業務内容により異なります。
           </p>
@@ -1067,9 +1115,9 @@ export default function Home() {
           <div className="final-cta-inner reveal" ref={addRevealRef}>
             <div className="section-label" style={{ textAlign: "center" }}>Get Started</div>
             <h2 className="final-cta-title">
-              営業の時間を、営業に使う。
+              明日の朝、100件のリストが<br />手元にある状態で営業を始めませんか？
             </h2>
-            <p className="final-cta-sub">最初の100件は無料。<br />月額なし、いつでも始められます。</p>
+            <p className="final-cta-sub">今夜依頼すれば、明日の朝には企業詳細付きリストが届きます。<br />最初の100件は無料。月額なし、いつでも始められます。</p>
             <div className="final-cta-group">
               <Link
                 href="/register"
@@ -1078,6 +1126,27 @@ export default function Home() {
               >
                 100件無料でお試し
               </Link>
+              <a
+                href="#data-sample"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  color: "var(--text-secondary)",
+                  fontSize: 15,
+                  fontWeight: 600,
+                  textDecoration: "none",
+                  padding: "16px 28px",
+                  border: "1px solid var(--border)",
+                  borderRadius: 50,
+                  transition: "border-color 0.3s, color 0.3s",
+                  minHeight: 48,
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--border-accent)"; e.currentTarget.style.color = "var(--accent)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--text-secondary)"; }}
+              >
+                まずサンプルを見る
+              </a>
             </div>
             <p style={{ marginTop: 24, fontSize: 13, color: "var(--text-muted)" }}>
               登録料無料 &middot; クレジットカード不要でお試し &middot; いつでも解約

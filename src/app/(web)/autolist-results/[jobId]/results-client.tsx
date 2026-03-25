@@ -145,6 +145,25 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
     if (phoneFilter === 'hasPhone' && !u.phoneNumber) return false
     if (phoneFilter === 'noPhone' && u.phoneNumber) return false
     return true
+  }).sort((a, b) => {
+    // 情報充実度スコアで降順ソート（フォーム・電話を優先）
+    const score = (u: typeof a) => {
+      let s = 0
+      if (u.hasForm) s += 100
+      if (u.phoneNumber) s += 50
+      if (u.representativeName) s += 10
+      if (u.email) s += 10
+      if (u.employeeCount) s += 5
+      if (u.capitalAmount) s += 5
+      if (u.establishedYear) s += 5
+      if (u.businessDescription) s += 3
+      if (u.isAdvertiser) s += 20
+      if (u.hasRecruitPage) s += 5
+      if (u.snsLinks) s += 2
+      if (u.officers) s += 2
+      return s
+    }
+    return score(b) - score(a)
   })
 
   const hasFormUrls = urls.some(u => u.formUrl)

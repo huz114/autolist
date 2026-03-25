@@ -72,6 +72,8 @@ const SectionCTA = () => (
 export default function Home() {
   const [navScrolled, setNavScrolled] = useState(false);
   const [expandedSamples, setExpandedSamples] = useState<Set<number>>(new Set([0]));
+  const [demoStep, setDemoStep] = useState(0); // 0=input, 1=analyzing, 2=result
+  const [dots, setDots] = useState(0);
 
   const toggleSample = (idx: number) => {
     setExpandedSamples(prev => {
@@ -100,6 +102,24 @@ export default function Home() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Demo auto-advance
+  useEffect(() => {
+    const durations = [2500, 1500, 4000];
+    const timer = setTimeout(() => {
+      setDemoStep(prev => (prev + 1) % 3);
+    }, durations[demoStep]);
+    return () => clearTimeout(timer);
+  }, [demoStep]);
+
+  // Dots animation for analyzing phase
+  useEffect(() => {
+    if (demoStep !== 1) return;
+    const interval = setInterval(() => {
+      setDots(prev => (prev + 1) % 4);
+    }, 400);
+    return () => clearInterval(interval);
+  }, [demoStep]);
 
   useEffect(() => {
     // Delay to ensure all refs are registered after render
@@ -205,52 +225,158 @@ export default function Home() {
               <strong style={{ color: "var(--accent)" }}>最初の100件は無料。</strong>
             </p>
 
-            {/* デモ依頼フォーム */}
-            <div style={{
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: 16,
-              padding: '20px 24px',
-              maxWidth: 480,
-              marginTop: 32,
-            }}>
-              <div style={{ fontSize: 13, color: '#8494a7', marginBottom: 12, fontWeight: 600 }}>
-                リスト依頼イメージ
+            {/* インタラクティブデモ */}
+            <div
+              onClick={() => setDemoStep(prev => (prev + 1) % 3)}
+              style={{
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 16,
+                padding: '20px 24px',
+                maxWidth: 480,
+                marginTop: 32,
+                minHeight: 220,
+                cursor: 'pointer',
+                position: 'relative',
+                overflow: 'hidden',
+              }}
+            >
+              <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 14, fontWeight: 500, textAlign: 'center' }}>
+                こんなかんたんに依頼できます
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
-                <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 8, padding: '10px 14px' }}>
-                  <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 4 }}>業種</div>
-                  <div style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 500 }}>不動産会社</div>
+
+              {/* Step 0: Input phase */}
+              <div style={{
+                opacity: demoStep === 0 ? 1 : 0,
+                transform: demoStep === 0 ? 'translateY(0)' : 'translateY(-20px)',
+                transition: 'opacity 0.4s ease, transform 0.4s ease',
+                position: demoStep === 0 ? 'relative' : 'absolute',
+                top: demoStep === 0 ? undefined : 0,
+                left: demoStep === 0 ? undefined : 0,
+                right: demoStep === 0 ? undefined : 0,
+                padding: demoStep === 0 ? undefined : '20px 24px',
+                pointerEvents: demoStep === 0 ? 'auto' : 'none',
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  background: 'rgba(255,255,255,0.06)',
+                  borderRadius: 999,
+                  padding: '10px 12px 10px 20px',
+                  gap: 10,
+                }}>
+                  <span style={{ flex: 1, fontSize: 15, color: 'var(--text-primary)', fontWeight: 500 }}>
+                    渋谷区の不動産会社 30件
+                  </span>
+                  <span style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 36,
+                    height: 36,
+                    borderRadius: '50%',
+                    background: '#06C755',
+                    flexShrink: 0,
+                  }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M22 2L11 13" /><path d="M22 2L15 22L11 13L2 9L22 2Z" />
+                    </svg>
+                  </span>
                 </div>
-                <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 8, padding: '10px 14px' }}>
-                  <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 4 }}>地域</div>
-                  <div style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 500 }}>渋谷区</div>
+                <div style={{ fontSize: 11, color: '#6b7280', marginTop: 10, textAlign: 'center' }}>
+                  例: 港区の税理士事務所 50件
                 </div>
               </div>
-              <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 8, padding: '10px 14px', marginBottom: 16 }}>
-                <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 4 }}>件数</div>
-                <div style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 500 }}>30件</div>
-              </div>
-              <Link
-                href="/register"
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  textAlign: 'center',
-                  background: '#06C755',
-                  color: '#fff',
+
+              {/* Step 1: Analyzing phase */}
+              <div style={{
+                opacity: demoStep === 1 ? 1 : 0,
+                transition: 'opacity 0.4s ease',
+                position: demoStep === 1 ? 'relative' : 'absolute',
+                top: demoStep === 1 ? undefined : 0,
+                left: demoStep === 1 ? undefined : 0,
+                right: demoStep === 1 ? undefined : 0,
+                padding: demoStep === 1 ? undefined : '20px 24px',
+                pointerEvents: demoStep === 1 ? 'auto' : 'none',
+                display: 'flex',
+                flexDirection: 'column' as const,
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: 120,
+              }}>
+                <div style={{
+                  fontSize: 18,
                   fontWeight: 700,
-                  fontSize: 15,
-                  padding: '14px 0',
-                  borderRadius: 12,
-                  textDecoration: 'none',
-                  transition: 'background 0.2s',
-                }}
-              >
-                🚀 収集スタート（無料）
-              </Link>
-              <div style={{ textAlign: 'center', fontSize: 11, color: '#6b7280', marginTop: 8 }}>
-                登録後すぐにお試しいただけます
+                  color: 'var(--text-primary)',
+                  marginBottom: 8,
+                }}>
+                  AIが解析中{'.'.repeat(dots)}
+                </div>
+                <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                  {[0, 1, 2].map(i => (
+                    <span key={i} style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      background: '#06C755',
+                      opacity: dots % 3 === i ? 1 : 0.3,
+                      transition: 'opacity 0.3s ease',
+                    }} />
+                  ))}
+                </div>
+              </div>
+
+              {/* Step 2: Result phase */}
+              <div style={{
+                opacity: demoStep === 2 ? 1 : 0,
+                transition: 'opacity 0.4s ease',
+                position: demoStep === 2 ? 'relative' : 'absolute',
+                top: demoStep === 2 ? undefined : 0,
+                left: demoStep === 2 ? undefined : 0,
+                right: demoStep === 2 ? undefined : 0,
+                padding: demoStep === 2 ? undefined : '20px 24px',
+                pointerEvents: demoStep === 2 ? 'auto' : 'none',
+              }}>
+                {[
+                  { label: '業種', value: '不動産会社', delay: 0 },
+                  { label: '地域', value: '渋谷区', delay: 150 },
+                  { label: '件数', value: '30件', delay: 300 },
+                ].map((field, i) => (
+                  <div key={i} style={{
+                    background: 'rgba(255,255,255,0.06)',
+                    borderRadius: 8,
+                    padding: '10px 14px',
+                    marginBottom: 8,
+                    opacity: demoStep === 2 ? 1 : 0,
+                    transform: demoStep === 2 ? 'translateX(0)' : 'translateX(-20px)',
+                    transition: `opacity 0.4s ease ${field.delay}ms, transform 0.4s ease ${field.delay}ms`,
+                  }}>
+                    <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 4 }}>{field.label}</div>
+                    <div style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 500 }}>{field.value}</div>
+                  </div>
+                ))}
+                <Link
+                  href="/register"
+                  onClick={(e) => e.stopPropagation()}
+                  style={{
+                    display: 'block',
+                    width: '100%',
+                    textAlign: 'center',
+                    background: '#06C755',
+                    color: '#fff',
+                    fontWeight: 700,
+                    fontSize: 15,
+                    padding: '14px 0',
+                    borderRadius: 12,
+                    textDecoration: 'none',
+                    marginTop: 8,
+                    opacity: demoStep === 2 ? 1 : 0,
+                    transform: demoStep === 2 ? 'scale(1)' : 'scale(0.9)',
+                    transition: 'opacity 0.4s ease 450ms, transform 0.4s ease 450ms, background 0.2s',
+                  }}
+                >
+                  🚀 収集スタート（無料）
+                </Link>
               </div>
             </div>
           </div>

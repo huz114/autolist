@@ -250,18 +250,18 @@ export default function Home() {
                 background: 'rgba(255,255,255,0.04)',
                 border: '1px solid rgba(255,255,255,0.1)',
                 borderRadius: 16,
-                padding: '20px 24px',
-                minHeight: 220,
+                padding: '16px 24px 20px',
+                minHeight: 240,
                 cursor: 'pointer',
                 position: 'relative',
                 overflow: 'hidden',
               }}
             >
-              <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 8, fontWeight: 500, textAlign: 'center' }}>
+              <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 6, fontWeight: 500, textAlign: 'center' }}>
                 こんなかんたんに依頼できます
               </div>
               {/* Step indicator */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 16 }}>
                 {[
                   { label: '入力', step: 0 },
                   { label: 'AI解析', step: 1 },
@@ -292,7 +292,7 @@ export default function Home() {
               </div>
 
               {/* Steps container - fixed height, all steps absolute */}
-              <div style={{ position: 'relative', height: 290 }}>
+              <div style={{ position: 'relative', height: 300 }}>
 
               {/* Step 0: Input phase */}
               <div style={{

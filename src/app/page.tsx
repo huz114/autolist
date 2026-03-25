@@ -822,7 +822,7 @@ export default function Home() {
                   transition: 'opacity 0.3s ease',
                 }}>
                   <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#06C755', display: 'inline-block' }} />
-                  オートリスト 自動入力中...
+                  自動入力中...
                 </div>
 
                 {/* Form area */}
@@ -874,19 +874,22 @@ export default function Home() {
                     }}>
                       送信
                     </div>
-                    {/* Fake cursor */}
+                    {/* Fake finger tap */}
                     <svg
-                      width="20" height="20" viewBox="0 0 24 24" fill="white" stroke="#333" strokeWidth="1"
+                      width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
                       style={{
                         position: 'absolute',
-                        right: 30,
+                        right: 24,
                         transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
                         opacity: formDemoStep >= 4 ? 1 : 0,
-                        bottom: formDemoStep === 4 ? 8 : -20,
-                        filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))',
+                        bottom: formDemoStep === 4 ? 6 : -24,
+                        filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.6))',
                       }}
                     >
-                      <path d="M5 3l3.5 16 3.5-6.5L18.5 9z" />
+                      <path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v0" fill="rgba(255,255,255,0.9)" />
+                      <path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2" fill="rgba(255,255,255,0.9)" />
+                      <path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8" fill="rgba(255,255,255,0.9)" />
+                      <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" fill="rgba(255,255,255,0.9)" />
                     </svg>
                   </div>
                 </div>

@@ -261,16 +261,18 @@ export default function Home() {
                 こんなかんたんに依頼できます
               </div>
 
+              {/* Steps container - fixed height, all steps absolute */}
+              <div style={{ position: 'relative', height: 220 }}>
+
               {/* Step 0: Input phase */}
               <div style={{
                 opacity: demoStep === 0 ? 1 : 0,
                 transform: demoStep === 0 ? 'translateY(0)' : 'translateY(-20px)',
                 transition: 'opacity 0.4s ease, transform 0.4s ease',
-                position: demoStep === 0 ? 'relative' : 'absolute',
-                top: demoStep === 0 ? undefined : 0,
-                left: demoStep === 0 ? undefined : 0,
-                right: demoStep === 0 ? undefined : 0,
-                padding: demoStep === 0 ? undefined : '20px 24px',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
                 pointerEvents: demoStep === 0 ? 'auto' : 'none',
               }}>
                 <div style={{
@@ -308,11 +310,10 @@ export default function Home() {
               <div style={{
                 opacity: demoStep === 1 ? 1 : 0,
                 transition: 'opacity 0.4s ease',
-                position: demoStep === 1 ? 'relative' : 'absolute',
-                top: demoStep === 1 ? undefined : 0,
-                left: demoStep === 1 ? undefined : 0,
-                right: demoStep === 1 ? undefined : 0,
-                padding: demoStep === 1 ? undefined : '20px 24px',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
                 pointerEvents: demoStep === 1 ? 'auto' : 'none',
                 display: 'flex',
                 flexDirection: 'column' as const,
@@ -346,11 +347,10 @@ export default function Home() {
               <div style={{
                 opacity: demoStep === 2 ? 1 : 0,
                 transition: 'opacity 0.4s ease',
-                position: demoStep === 2 ? 'relative' : 'absolute',
-                top: demoStep === 2 ? undefined : 0,
-                left: demoStep === 2 ? undefined : 0,
-                right: demoStep === 2 ? undefined : 0,
-                padding: demoStep === 2 ? undefined : '20px 24px',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
                 pointerEvents: demoStep === 2 ? 'auto' : 'none',
               }}>
                 {[
@@ -394,6 +394,7 @@ export default function Home() {
                   🚀 収集スタート（無料）
                 </Link>
               </div>
+              </div>{/* end steps container */}
             </div>
           </div>
           <div className="hero-stats">

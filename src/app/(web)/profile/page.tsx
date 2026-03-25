@@ -163,7 +163,10 @@ export default function ProfilePage() {
 
           {/* 送信元メール */}
           <div>
-            <label className={labelClass}>送信元メールアドレス</label>
+            <label className={labelClass}>
+              送信元メールアドレス
+              <span className="text-[10px] text-[#6b7280] ml-2">フォーム送信時に相手に通知されるメールアドレス</span>
+            </label>
             <input
               type="email"
               className={inputClass}
@@ -175,7 +178,10 @@ export default function ProfilePage() {
 
           {/* 登録メール (readonly) */}
           <div>
-            <label className={labelClass}>登録メールアドレス</label>
+            <label className={labelClass}>
+              登録メールアドレス
+              <span className="text-[10px] text-[#6b7280] ml-2">ログイン・リスト完了通知に使用（変更不可）</span>
+            </label>
             <input
               type="email"
               className={`${inputClass} opacity-50 cursor-not-allowed`}

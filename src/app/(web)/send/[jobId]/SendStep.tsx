@@ -16,6 +16,9 @@ type Props = {
   canSend: boolean
   sending: boolean
   extensionNotFound: boolean
+  isSendStarted: boolean
+  sentCount: number
+  sentCompanies: string[]
   onSend: () => void
   onSetStep: (step: number) => void
   onOpenExtensionModal: () => void
@@ -35,10 +38,16 @@ export default function SendStep({
   canSend,
   sending,
   extensionNotFound,
+  isSendStarted,
+  sentCount,
+  sentCompanies,
   onSend,
   onSetStep,
   onOpenExtensionModal,
 }: Props) {
+  const totalCount = companies.length
+  const isAllComplete = isSendStarted && sentCount >= totalCount
+  const progressPercent = totalCount > 0 ? Math.min((sentCount / totalCount) * 100, 100) : 0
   return (
     <div className="space-y-6">
       {/* 最終確認サマリー */}
@@ -146,70 +155,132 @@ export default function SendStep({
         </p>
       </div>
 
-      {/* 送信ボタン */}
-      <div>
-        {!canSend && (
-          <p className="text-xs text-[#8494a7] text-center mb-3">
-            送信者情報（会社名・担当者名）とメッセージ（件名・本文）を入力してから送信できます
-          </p>
-        )}
-        {extensionNotFound && (
-          <div className="bg-[rgba(255,71,87,0.08)] border border-[rgba(255,71,87,0.25)] rounded-xl px-5 py-4 mb-4">
-            <div className="flex items-start gap-3">
-              <svg className="w-5 h-5 text-[#ff4757] shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              <div>
-                <p className="text-sm text-[#ff4757] font-medium mb-1">
-                  Chrome拡張機能が検出できませんでした
-                </p>
-                <p className="text-xs text-[#8fa3b8] mb-3">
-                  拡張機能がインストールされていないか、無効になっている可能性があります。インストール後はこのページを再読み込みしてください。
-                </p>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={onOpenExtensionModal}
-                    className="inline-flex items-center gap-1.5 text-sm font-medium text-[#06C755] hover:text-[#04a344] transition-colors cursor-pointer"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+      {/* 送信ボタン or 送信進捗パネル */}
+      {isSendStarted ? (
+        <div className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-2xl p-6 sm:p-8">
+          {/* 完了メッセージ or 進捗テキスト */}
+          {isAllComplete ? (
+            <div className="text-center mb-6">
+              <div className="text-3xl mb-2">&#127881;</div>
+              <h3 className="text-lg font-bold text-[#06C755]">
+                全{totalCount}件の送信が完了しました
+              </h3>
+            </div>
+          ) : (
+            <div className="mb-6">
+              <h3 className="text-base font-bold text-[#f0f4f8] mb-1">送信中...</h3>
+              <p className="text-2xl font-bold text-[#06C755]">
+                {sentCount}/{totalCount}件 <span className="text-sm font-normal text-[#8fa3b8]">送信完了</span>
+              </p>
+            </div>
+          )}
+
+          {/* プログレスバー */}
+          <div className="w-full bg-[rgba(255,255,255,0.07)] rounded-full h-3 mb-6 overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-500 ease-out"
+              style={{
+                width: `${progressPercent}%`,
+                backgroundColor: isAllComplete ? '#06C755' : '#06C755',
+                boxShadow: '0 0 8px rgba(6,199,85,0.4)',
+              }}
+            />
+          </div>
+
+          {/* 送信済み企業リスト */}
+          {sentCompanies.length > 0 && (
+            <div className="space-y-2 mb-6">
+              <h4 className="text-sm font-semibold text-[#8fa3b8]">送信済み</h4>
+              <div className="max-h-48 overflow-y-auto space-y-1.5">
+                {sentCompanies.map((name, idx) => (
+                  <div key={idx} className="flex items-center gap-2 text-sm">
+                    <svg className="w-4 h-4 text-[#06C755] shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
-                    インストール手順を見る
-                  </button>
-                  <button
-                    onClick={() => window.location.reload()}
-                    className="inline-flex items-center gap-1.5 text-sm font-medium text-[#8fa3b8] hover:text-[#f0f4f8] transition-colors cursor-pointer"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                    ページを再読み込み
-                  </button>
+                    <span className="text-[#f0f4f8] truncate">{name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 送信履歴リンク */}
+          <a
+            href="/send-history"
+            className={`block text-center text-sm font-medium transition-colors cursor-pointer ${
+              isAllComplete
+                ? 'bg-[#06C755] hover:bg-[#04a344] text-white py-3 rounded-xl'
+                : 'text-[#8fa3b8] hover:text-[#06C755] mt-2'
+            }`}
+          >
+            送信履歴を見る →
+          </a>
+        </div>
+      ) : (
+        <div>
+          {!canSend && (
+            <p className="text-xs text-[#8494a7] text-center mb-3">
+              送信者情報（会社名・担当者名）とメッセージ（件名・本文）を入力してから送信できます
+            </p>
+          )}
+          {extensionNotFound && (
+            <div className="bg-[rgba(255,71,87,0.08)] border border-[rgba(255,71,87,0.25)] rounded-xl px-5 py-4 mb-4">
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-[#ff4757] shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <div>
+                  <p className="text-sm text-[#ff4757] font-medium mb-1">
+                    Chrome拡張機能が検出できませんでした
+                  </p>
+                  <p className="text-xs text-[#8fa3b8] mb-3">
+                    拡張機能がインストールされていないか、無効になっている可能性があります。インストール後はこのページを再読み込みしてください。
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={onOpenExtensionModal}
+                      className="inline-flex items-center gap-1.5 text-sm font-medium text-[#06C755] hover:text-[#04a344] transition-colors cursor-pointer"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      インストール手順を見る
+                    </button>
+                    <button
+                      onClick={() => window.location.reload()}
+                      className="inline-flex items-center gap-1.5 text-sm font-medium text-[#8fa3b8] hover:text-[#f0f4f8] transition-colors cursor-pointer"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      ページを再読み込み
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
-        <button
-          onClick={onSend}
-          disabled={!canSend || sending}
-          className={`w-full font-medium py-4 rounded-xl transition-colors text-base ${
-            canSend && !sending
-              ? 'bg-[#06C755] hover:bg-[#04a344] text-white cursor-pointer'
-              : 'bg-gray-700 text-[#8494a7] cursor-not-allowed'
-          }`}
-        >
-          {sending
-            ? '送信準備中...'
-            : `${companies.length}件に送信する`}
-        </button>
-        <a
-          href="/send-history"
-          className="block text-center text-sm text-[#8fa3b8] hover:text-[#06C755] transition-colors mt-3 cursor-pointer"
-        >
-          送信履歴を見る →
-        </a>
-      </div>
+          )}
+          <button
+            onClick={onSend}
+            disabled={!canSend || sending}
+            className={`w-full font-medium py-4 rounded-xl transition-colors text-base ${
+              canSend && !sending
+                ? 'bg-[#06C755] hover:bg-[#04a344] text-white cursor-pointer'
+                : 'bg-gray-700 text-[#8494a7] cursor-not-allowed'
+            }`}
+          >
+            {sending
+              ? '送信準備中...'
+              : `${companies.length}件に送信する`}
+          </button>
+          <a
+            href="/send-history"
+            className="block text-center text-sm text-[#8fa3b8] hover:text-[#06C755] transition-colors mt-3 cursor-pointer"
+          >
+            送信履歴を見る →
+          </a>
+        </div>
+      )}
     </div>
   )
 }

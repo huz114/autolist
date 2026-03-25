@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useFocusTrap } from '@/lib/useFocusTrap'
 import type { Props, ToastState, Template } from './types'
@@ -152,6 +152,35 @@ export default function SendClient({
 
   const [sending, setSending] = useState(false)
 
+  // 送信完了カウンター
+  const [isSendStarted, setIsSendStarted] = useState(false)
+  const [sentCount, setSentCount] = useState(0)
+  const [sentCompanies, setSentCompanies] = useState<string[]>([])
+  const sentCompaniesRef = useRef<string[]>([])
+
+  // shiryolog-submission-completed リスナー
+  useEffect(() => {
+    if (!isSendStarted) return
+
+    const handler = (event: MessageEvent) => {
+      if (event.data?.type !== 'shiryolog-submission-completed') return
+      const { companyName: cn, formUrl } = event.data as {
+        companyId: string
+        companyName: string
+        formUrl: string
+      }
+      const label = cn || formUrl || '不明'
+      // 重複防止（formUrl ベース）
+      if (sentCompaniesRef.current.includes(formUrl)) return
+      sentCompaniesRef.current = [...sentCompaniesRef.current, formUrl]
+      setSentCompanies(prev => [...prev, label])
+      setSentCount(prev => prev + 1)
+    }
+
+    window.addEventListener('message', handler)
+    return () => window.removeEventListener('message', handler)
+  }, [isSendStarted])
+
   // 送信ハンドラ
   async function handleSend() {
     if (!canSend || sending) return
@@ -202,6 +231,11 @@ export default function SendClient({
         if (event.data?.type === 'shiryolog-fill-ready') {
           extensionResponded = true
           window.removeEventListener('message', handleExtensionResponse)
+          // 送信完了カウンターを開始
+          setSentCount(0)
+          setSentCompanies([])
+          sentCompaniesRef.current = []
+          setIsSendStarted(true)
           showToast(
             'Chrome拡張機能にデータを送信しました。各タブでフォーム送信を確認してください。',
             'success'
@@ -531,6 +565,9 @@ export default function SendClient({
             canSend={canSend}
             sending={sending}
             extensionNotFound={extensionNotFound}
+            isSendStarted={isSendStarted}
+            sentCount={sentCount}
+            sentCompanies={sentCompanies}
             onSend={handleSend}
             onSetStep={setCurrentStep}
             onOpenExtensionModal={() => setExtensionModalOpen(true)}

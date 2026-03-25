@@ -500,7 +500,7 @@ export default function Home() {
               <div className="stat-label">1件あたりの最安コスト</div>
             </div>
           </div>
-          <p className="hero-free-badge" style={{ marginTop: 24, textAlign: "center", fontSize: 16, color: "var(--accent)", fontWeight: 700, letterSpacing: "0.02em" }}>
+          <p className="hero-free-badge" style={{ marginTop: 20, textAlign: "center", fontSize: 15, color: "var(--accent)", fontWeight: 600, letterSpacing: "0.02em", opacity: 0.9 }}>
             <IconGift /> 最初の100件は無料で体験できます
           </p>
         </div>

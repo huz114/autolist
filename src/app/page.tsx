@@ -469,11 +469,15 @@ export default function Home() {
                   onClick={() => toggleSample(idx)}
                   style={{
                     fontSize: 12,
-                    color: '#8494a7',
+                    color: '#06C755',
                     cursor: 'pointer',
-                    background: 'none',
-                    border: 'none',
-                    padding: 0,
+                    background: 'rgba(6,199,85,0.08)',
+                    border: '1px solid rgba(6,199,85,0.25)',
+                    borderRadius: 999,
+                    padding: '6px 16px',
+                    fontWeight: 600,
+                    transition: 'all 0.2s',
+                    width: '100%',
                   }}
                 >
                   {expandedSamples.has(idx) ? '詳細を閉じる ▲' : '詳細を見る ▼'}

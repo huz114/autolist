@@ -164,9 +164,10 @@ export default function SendClient({
 
     const handler = (event: MessageEvent) => {
       if (event.data?.type !== 'shiryolog-submission-completed') return
-      const { companyName: cn, formUrl } = event.data as {
+      const { companyName: cn, formUrl, companyDomain } = event.data as {
         companyId: string
         companyName: string
+        companyDomain?: string
         formUrl: string
       }
       const label = cn || formUrl || '不明'
@@ -175,11 +176,27 @@ export default function SendClient({
       sentCompaniesRef.current = [...sentCompaniesRef.current, formUrl]
       setSentCompanies(prev => [...prev, label])
       setSentCount(prev => prev + 1)
+
+      // autolist DB に送信記録を保存
+      fetch('/api/send/record', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jobId,
+          companyName: cn || null,
+          companyDomain: companyDomain || null,
+          formUrl: formUrl || null,
+          subject,
+          messageBody,
+        }),
+      }).catch((err) => {
+        console.error('Failed to record send:', err)
+      })
     }
 
     window.addEventListener('message', handler)
     return () => window.removeEventListener('message', handler)
-  }, [isSendStarted])
+  }, [isSendStarted, jobId, subject, messageBody])
 
   // 送信ハンドラ
   async function handleSend() {

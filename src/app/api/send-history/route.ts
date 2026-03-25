@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
-import { prismaShiryolog } from '@/lib/prisma-shiryolog'
 
 export async function GET(request: NextRequest) {
   const session = await auth()
@@ -15,144 +14,67 @@ export async function GET(request: NextRequest) {
   const companyName = searchParams.get('company_name') || ''
   const status = searchParams.get('status') || ''
 
-  // User.id で直接 ListJob を検索
-  const jobs = await prisma.listJob.findMany({
-    where: { userId: session.user.id },
-    select: { id: true },
-  })
-
-  const jobIds = jobs.map((j) => j.id)
-
-  if (jobIds.length === 0) {
-    return NextResponse.json({
-      submissions: [],
-      pagination: { page, per_page: perPage, total: 0, total_pages: 0 },
-      stats: { thisWeek: 0, thisMonth: 0, allTime: 0 },
-    })
+  // WHERE条件を構築
+  const where: {
+    userId: string
+    companyName?: { contains: string; mode: 'insensitive' }
+    status?: string
+  } = {
+    userId: session.user.id,
   }
-
-  const collectedUrls = await prisma.collectedUrl.findMany({
-    where: {
-      jobId: { in: jobIds },
-      hasForm: true,
-      companyVerified: true,
-    },
-    select: { domain: true },
-    distinct: ['domain'],
-  })
-
-  const domains = collectedUrls.map((u) => u.domain)
-
-  if (domains.length === 0) {
-    return NextResponse.json({
-      submissions: [],
-      pagination: { page, per_page: perPage, total: 0, total_pages: 0 },
-      stats: { thisWeek: 0, thisMonth: 0, allTime: 0 },
-    })
-  }
-
-  // 2. Get shiryolog Company IDs matching those domains
-  const companies = await prismaShiryolog.company.findMany({
-    where: { domain: { in: domains } },
-    select: { id: true, domain: true },
-  })
-
-  const companyIds = companies.map((c) => c.id)
-
-  if (companyIds.length === 0) {
-    return NextResponse.json({
-      submissions: [],
-      pagination: { page, per_page: perPage, total: 0, total_pages: 0 },
-      stats: { thisWeek: 0, thisMonth: 0, allTime: 0 },
-    })
-  }
-
-  // 3. Build WHERE clause for FormSubmission query
-  const companyIdPlaceholders = companyIds.map((_, i) => `$${i + 1}`).join(', ')
-  const baseWhere = `WHERE fs.source = 'autolist' AND fs."companyId" IN (${companyIdPlaceholders})`
-
-  const filterParams: string[] = [...companyIds]
-  let extraWhere = ''
 
   if (companyName.trim()) {
-    filterParams.push(`%${companyName.trim()}%`)
-    extraWhere += ` AND c.name ILIKE $${filterParams.length}`
+    where.companyName = { contains: companyName.trim(), mode: 'insensitive' }
   }
 
   if (status.trim()) {
-    filterParams.push(status.trim())
-    extraWhere += ` AND fs.status = $${filterParams.length}`
+    where.status = status.trim()
   }
 
-  const fullWhere = baseWhere + extraWhere
-
-  // 4. Count total
-  const countResult = await prismaShiryolog.$queryRawUnsafe<[{ count: bigint }]>(
-    `SELECT COUNT(*) as count FROM "FormSubmission" fs LEFT JOIN "Company" c ON fs."companyId" = c.id ${fullWhere}`,
-    ...filterParams
-  )
-  const total = Number(countResult[0]?.count || 0)
+  // 総件数
+  const total = await prisma.sendRecord.count({ where })
   const totalPages = Math.ceil(total / perPage)
 
-  // 5. Fetch submissions with pagination
-  const offset = (page - 1) * perPage
-  const submissions = await prismaShiryolog.$queryRawUnsafe<Array<{
-    id: string
-    formUrl: string
-    subject: string | null
-    messageBody: string | null
-    status: string
-    submittedAt: Date
-    source: string
-    companyName: string | null
-    domain: string | null
-  }>>(
-    `SELECT fs.id, fs."formUrl", fs.subject, fs."messageBody", fs.status, fs."submittedAt", fs.source,
-            c.name as "companyName", c.domain
-     FROM "FormSubmission" fs
-     LEFT JOIN "Company" c ON fs."companyId" = c.id
-     ${fullWhere}
-     ORDER BY fs."submittedAt" DESC
-     LIMIT ${perPage} OFFSET ${offset}`,
-    ...filterParams
-  )
+  // 送信履歴取得
+  const records = await prisma.sendRecord.findMany({
+    where,
+    orderBy: { sentAt: 'desc' },
+    skip: (page - 1) * perPage,
+    take: perPage,
+  })
 
-  // 6. Stats
+  // 統計
   const now = new Date()
   const weekAgo = new Date(now)
   weekAgo.setDate(weekAgo.getDate() - 7)
   const monthAgo = new Date(now)
   monthAgo.setMonth(monthAgo.getMonth() - 1)
 
-  const statsResult = await prismaShiryolog.$queryRawUnsafe<[{
-    allTime: bigint
-    thisWeek: bigint
-    thisMonth: bigint
-  }]>(
-    `SELECT
-       COUNT(*) as "allTime",
-       COUNT(*) FILTER (WHERE fs."submittedAt" >= $${filterParams.length + 1}) as "thisWeek",
-       COUNT(*) FILTER (WHERE fs."submittedAt" >= $${filterParams.length + 2}) as "thisMonth"
-     FROM "FormSubmission" fs
-     LEFT JOIN "Company" c ON fs."companyId" = c.id
-     ${fullWhere}`,
-    ...filterParams,
-    weekAgo,
-    monthAgo
-  )
+  const [allTime, thisWeek, thisMonth] = await Promise.all([
+    prisma.sendRecord.count({ where: { userId: session.user.id } }),
+    prisma.sendRecord.count({
+      where: { userId: session.user.id, sentAt: { gte: weekAgo } },
+    }),
+    prisma.sendRecord.count({
+      where: { userId: session.user.id, sentAt: { gte: monthAgo } },
+    }),
+  ])
 
-  const stats = {
-    thisWeek: Number(statsResult[0]?.thisWeek || 0),
-    thisMonth: Number(statsResult[0]?.thisMonth || 0),
-    allTime: Number(statsResult[0]?.allTime || 0),
-  }
+  const submissions = records.map((r) => ({
+    id: r.id,
+    formUrl: r.formUrl || '',
+    subject: r.subject,
+    messageBody: r.messageBody,
+    status: r.status,
+    submittedAt: r.sentAt.toISOString(),
+    source: 'autolist',
+    companyName: r.companyName,
+    domain: r.companyDomain,
+  }))
 
   return NextResponse.json({
-    submissions: submissions.map((s) => ({
-      ...s,
-      submittedAt: s.submittedAt instanceof Date ? s.submittedAt.toISOString() : s.submittedAt,
-    })),
+    submissions,
     pagination: { page, per_page: perPage, total, total_pages: totalPages },
-    stats,
+    stats: { thisWeek, thisMonth, allTime },
   })
 }

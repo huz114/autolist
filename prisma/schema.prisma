@@ -138,3 +138,19 @@ model LineLinkCode {
   usedAt    DateTime?
   createdAt DateTime  @default(now())
 }
+
+model SendRecord {
+  id            String   @id @default(cuid())
+  userId        String
+  jobId         String
+  companyName   String?
+  companyDomain String?
+  formUrl       String?
+  subject       String?
+  messageBody   String?
+  status        String   @default("sent")  // sent, confirmed, bounced, replied
+  sentAt        DateTime @default(now())
+
+  @@index([userId])
+  @@index([jobId])
+}

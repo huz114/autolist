@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
-import { prismaShiryolog } from '@/lib/prisma-shiryolog'
 
 export async function POST(
   request: NextRequest,
@@ -98,39 +97,6 @@ export async function POST(
   const urls = fillEntries
     .map((e) => e.formUrl)
     .filter((url): url is string => Boolean(url))
-
-  // shiryolog DB に FormSubmission レコードを作成
-  // autolist の prismaShiryolog クライアントには FormSubmission モデルがないため、
-  // $executeRawUnsafe で直接 INSERT する
-  for (const company of companies) {
-    // domain で shiryolog Company を検索
-    const shiryologCompany = await prismaShiryolog.company.findUnique({
-      where: { domain: company.domain },
-    })
-
-    if (shiryologCompany && company.formUrl) {
-      try {
-        const id = crypto.randomUUID().replace(/-/g, '').slice(0, 25)
-        await prismaShiryolog.$executeRawUnsafe(
-          `INSERT INTO "FormSubmission" ("id", "companyId", "formUrl", "subject", "messageBody", "status", "source", "submittedAt")
-           VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
-          id,
-          shiryologCompany.id,
-          company.formUrl,
-          subject,
-          messageBody,
-          'submitted',
-          'autolist'
-        )
-      } catch (err) {
-        // 個別の FormSubmission 作成失敗はスキップ（送信自体は続行）
-        console.error(
-          `Failed to create FormSubmission for company ${company.domain}:`,
-          err
-        )
-      }
-    }
-  }
 
   return NextResponse.json({ fillEntries, urls })
 }

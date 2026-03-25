@@ -262,7 +262,7 @@ export default function Home() {
               </div>
 
               {/* Steps container - fixed height, all steps absolute */}
-              <div style={{ position: 'relative', height: 220 }}>
+              <div style={{ position: 'relative', height: 290 }}>
 
               {/* Step 0: Input phase */}
               <div style={{

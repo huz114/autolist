@@ -257,7 +257,7 @@ export default function Home() {
             </div>
             <h1>
               移動中に頼んで、<br />
-              <em>着いたらリストができてた。</em>
+              <em>着いたらリストが<br />できてた。</em>
             </h1>
             <p className="hero-sub">
               業種と地域を送るだけ。AIがGoogleからリアルタイム収集。<br />

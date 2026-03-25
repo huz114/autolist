@@ -36,10 +36,8 @@ const HELP_MESSAGE = `📋 オートリストの使い方
 
 2️⃣ 確認メッセージが届く → 「はい」で収集開始
 
-3️⃣ 完了したらメールに通知
-   → PCでリストを確認・精査
-
-4️⃣ フォーム送信の準備へ進む
+3️⃣ 完了したらLINEとメールでお知らせ
+   → PCでリスト確認・CSVダウンロード
 
 💰 最初の100件は無料！
    追加はメニューの「チャージ」から
@@ -682,10 +680,8 @@ ${paymentUrl}
             // クレジット仮押さえ済み（完了時に差分返却）
             const remainingAfterReserve = currentCredits - reservedCredits;
 
-            const isShiryologUser = !!userLineUser.userId;
             const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3007';
-            const acceptanceMessage = isShiryologUser
-              ? `✅ リスト収集を開始します！
+            const acceptanceMessage = `✅ リスト収集を開始します！
 
 条件:
 ・業種: ${pendingState.industry || '指定なし'}
@@ -695,23 +691,9 @@ ${paymentUrl}
 💳 ${reservedCredits}クレジット仮押さえ → 残り${remainingAfterReserve}クレジット
 （収集できた分だけ消費、残りは返却）
 
-完了後はこちらでご確認ください👇
-${appUrl}/my-lists?openExternalBrowser=1`
-              : `✅ リスト収集を開始します！
-
-条件:
-・業種: ${pendingState.industry || '指定なし'}
-・地域: ${pendingState.location || '指定なし'}
-・件数: ${pendingState.targetCount}社
-
-💳 ${reservedCredits}クレジット仮押さえ → 残り${remainingAfterReserve}クレジット
-（収集できた分だけ消費、残りは返却）
-
-完了したらメールでお知らせします。
-
-💡 収集完了後、PCのChromeでリスト確認→フォーム送信ができます。
-会員登録するとメールでもリストURLが届くので、PCですぐに作業を始められます。
-→ ${appUrl}/register?openExternalBrowser=1`;
+完了したらLINEとメールでお知らせします。
+リストの確認・CSVダウンロードはこちら👇
+${appUrl}/my-lists?openExternalBrowser=1`;
 
             if (replyToken) {
               await replyMessage(replyToken, acceptanceMessage);

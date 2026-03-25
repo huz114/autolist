@@ -129,6 +129,15 @@ function downloadCsv(urls: UrlItem[], keyword: string) {
 export default function ResultsClient({ jobId, keyword, industry, location, urls }: Props) {
   const [formFilter, setFormFilter] = useState<FormFilter>('all')
   const [phoneFilter, setPhoneFilter] = useState<PhoneFilter>('all')
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
+  const toggleExpand = useCallback((id: string) => {
+    setExpandedCards(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }, [])
 
   const filteredUrls = urls.filter(u => {
     if (formFilter === 'hasForm' && !u.hasForm) return false
@@ -275,259 +284,291 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
         </div>
       ) : (
         <div className="space-y-3">
-          {filteredUrls.map((u, idx) => (
-            <div
-              key={u.id}
-              className="bg-[#111827] border border-[rgba(255,255,255,0.07)] hover:border-[rgba(6,199,85,0.4)] rounded-2xl px-5 py-4 transition-all"
-            >
-              <div className="flex items-start gap-3">
-                <span className="text-xs tabular-nums mt-0.5 shrink-0 text-[#8494a7]">
-                  {String(idx + 1).padStart(2, '0')}
-                </span>
-                <div className="min-w-0 flex-1">
-                  {/* 企業名 + バッジ行 */}
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-medium text-[#f0f4f8] truncate">
-                      {u.companyName ?? u.url}
-                    </p>
-                    {u.hasForm ? (
-                      <span className="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full bg-[rgba(6,199,85,0.12)] text-[#06C755] border border-[rgba(6,199,85,0.25)]">
-                        フォームあり
-                      </span>
-                    ) : (
-                      <span className="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full bg-[rgba(255,255,255,0.05)] text-[#8494a7] border border-[rgba(255,255,255,0.1)]">
-                        フォームなし
-                      </span>
-                    )}
-                    {u.phoneNumber ? (
-                      <span className="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full bg-[rgba(59,130,246,0.12)] text-[#3b82f6] border border-[rgba(59,130,246,0.25)]">
-                        電話あり
-                      </span>
-                    ) : (
-                      <span className="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full bg-[rgba(255,255,255,0.05)] text-[#8494a7] border border-[rgba(255,255,255,0.1)]">
-                        電話なし
-                      </span>
-                    )}
-                    {u.isAdvertiser && (
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-[#713f12] text-[#facc15]">
-                        広告出稿中
-                      </span>
-                    )}
-                  </div>
+          {filteredUrls.map((u, idx) => {
+            const isExpanded = expandedCards.has(u.id)
+            let snsEntries: [string, string][] = []
+            try {
+              if (u.snsLinks) {
+                const sns = JSON.parse(u.snsLinks) as Record<string, string>
+                snsEntries = Object.entries(sns).filter(([, v]) => v) as [string, string][]
+              }
+            } catch { /* ignore */ }
+            const snsLabels: Record<string, string> = { x: 'X', instagram: 'Instagram', facebook: 'Facebook', youtube: 'YouTube' }
 
-                  {/* 業種・所在地 */}
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
-                    {u.industry && (
-                      <span className="text-xs text-[#8494a7]">{u.industry}</span>
-                    )}
-                    {u.location && (
-                      <span className="text-xs text-[#8494a7]">{u.location}</span>
-                    )}
-                  </div>
+            let parsedOfficers: { name: string; title: string }[] = []
+            try {
+              if (u.officers) parsedOfficers = JSON.parse(u.officers) as { name: string; title: string }[]
+            } catch { /* ignore */ }
 
-                  {/* URL */}
-                  <a
-                    href={`https://${u.domain}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-[#06C755] hover:text-[#04a344] transition-colors truncate block mt-0.5"
-                  >
-                    {`https://${u.domain}`}
-                  </a>
+            let parsedNews: { date: string; title: string }[] = []
+            try {
+              if (u.latestNews) parsedNews = JSON.parse(u.latestNews) as { date: string; title: string }[]
+            } catch { /* ignore */ }
 
-                  {/* 詳細情報 */}
-                  {(u.representativeName || u.establishedYear || u.employeeCount || u.capitalAmount || u.businessDescription || u.phoneNumber || u.formUrl || u.email || u.industryMajor || u.snsLinks || u.hasRecruitPage || u.siteUpdatedAt || (u.searchTags && u.searchTags.length > 0)) && (
-                    <div className="mt-3 pt-3 border-t border-[rgba(255,255,255,0.05)]">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
-                        {u.phoneNumber && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-[#8494a7] shrink-0">電話番号:</span>
-                            <span className="text-xs text-[#c8d6e5]">{u.phoneNumber}</span>
+            const hasLayer2 = u.establishedYear || u.employeeCount || u.capitalAmount ||
+              u.industryMajor || u.industryMinor || u.formUrl || snsEntries.length > 0 ||
+              u.siteUpdatedAt || (u.searchTags && u.searchTags.length > 0) ||
+              parsedOfficers.length > 0 || (u.relatedSites && u.relatedSites.length > 0) ||
+              u.officerPageUrl || parsedNews.length > 0
+
+            return (
+              <div
+                key={u.id}
+                className="bg-[#111827] border border-[rgba(255,255,255,0.07)] hover:border-[rgba(6,199,85,0.4)] rounded-2xl px-5 py-4 transition-all"
+              >
+                <div className="flex items-start gap-3">
+                  <span className="text-xs tabular-nums mt-0.5 shrink-0 text-[#8494a7]">
+                    {String(idx + 1).padStart(2, '0')}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    {/* Row 1: 企業名 + バッジ */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-medium text-[#f0f4f8] truncate">
+                        {u.companyName ?? u.url}
+                      </p>
+                      {u.hasForm ? (
+                        <span className="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full bg-[rgba(6,199,85,0.12)] text-[#06C755] border border-[rgba(6,199,85,0.25)]">
+                          フォームあり
+                        </span>
+                      ) : (
+                        <span className="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full bg-[rgba(255,255,255,0.05)] text-[#8494a7] border border-[rgba(255,255,255,0.1)]">
+                          フォームなし
+                        </span>
+                      )}
+                      {u.phoneNumber ? (
+                        <span className="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full bg-[rgba(59,130,246,0.12)] text-[#3b82f6] border border-[rgba(59,130,246,0.25)]">
+                          電話あり
+                        </span>
+                      ) : (
+                        <span className="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full bg-[rgba(255,255,255,0.05)] text-[#8494a7] border border-[rgba(255,255,255,0.1)]">
+                          電話なし
+                        </span>
+                      )}
+                      {u.hasRecruitPage && (
+                        <span className="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full bg-[rgba(6,199,85,0.12)] text-[#06C755] border border-[rgba(6,199,85,0.25)]">
+                          採用中
+                        </span>
+                      )}
+                      {u.isAdvertiser && (
+                        <span className="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full bg-[rgba(250,204,21,0.12)] text-[#facc15] border border-[rgba(250,204,21,0.25)]">
+                          広告出稿中
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Row 2: 業種 + 所在地 */}
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
+                      {u.industry && (
+                        <span className="text-xs text-[#8494a7]">{u.industry}</span>
+                      )}
+                      {u.location && (
+                        <span className="text-xs text-[#8494a7]">{u.location}</span>
+                      )}
+                    </div>
+
+                    {/* Row 3: URL */}
+                    <a
+                      href={`https://${u.domain}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-[#06C755] hover:text-[#04a344] transition-colors truncate block mt-0.5"
+                    >
+                      {`https://${u.domain}`}
+                    </a>
+
+                    {/* Row 4: Contact info grid (always visible) */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-3">
+                      <div className="bg-[rgba(255,255,255,0.03)] rounded-lg px-3 py-2">
+                        <span className="text-[11px] text-[#6b7280] block">電話番号</span>
+                        <span className="text-xs text-[#f0f4f8]">{u.phoneNumber ?? '-'}</span>
+                      </div>
+                      <div className="bg-[rgba(255,255,255,0.03)] rounded-lg px-3 py-2">
+                        <span className="text-[11px] text-[#6b7280] block">代表者名</span>
+                        <span className="text-xs text-[#f0f4f8]">{u.representativeName ?? '-'}</span>
+                      </div>
+                      <div className="bg-[rgba(255,255,255,0.03)] rounded-lg px-3 py-2">
+                        <span className="text-[11px] text-[#6b7280] block">メール</span>
+                        {u.email ? (
+                          <a href={`mailto:${u.email}`} className="text-xs text-[#06C755] hover:text-[#04a344] transition-colors truncate block">
+                            {u.email}
+                          </a>
+                        ) : (
+                          <span className="text-xs text-[#f0f4f8]">-</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Row 5: Business description + toggle */}
+                    <div className="flex items-end justify-between gap-4 mt-2">
+                      <div className="min-w-0 flex-1">
+                        {u.businessDescription && (
+                          <p className="text-xs text-[#8494a7] line-clamp-1">
+                            <span className="text-[#6b7280]">事業内容: </span>
+                            {u.businessDescription}
+                          </p>
+                        )}
+                      </div>
+                      {hasLayer2 && (
+                        <button
+                          onClick={() => toggleExpand(u.id)}
+                          className="shrink-0 text-xs text-[#8494a7] hover:text-[#c8d6e5] cursor-pointer transition-colors"
+                        >
+                          {isExpanded ? '閉じる \u25B2' : '詳細を見る \u25BC'}
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Layer 2: Expandable details */}
+                    {isExpanded && hasLayer2 && (
+                      <div className="mt-3">
+                        {/* 基本情報 */}
+                        <div className="border-t border-[rgba(255,255,255,0.05)] pt-3">
+                          <p className="text-[10px] uppercase tracking-wider text-[#6b7280] mb-1.5">基本情報</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <div className="bg-[rgba(255,255,255,0.03)] rounded-lg px-3 py-2">
+                              <span className="text-[11px] text-[#6b7280] block">設立</span>
+                              <span className="text-xs text-[#f0f4f8]">{u.establishedYear ? `${u.establishedYear}年` : '-'}</span>
+                            </div>
+                            <div className="bg-[rgba(255,255,255,0.03)] rounded-lg px-3 py-2">
+                              <span className="text-[11px] text-[#6b7280] block">従業員数</span>
+                              <span className="text-xs text-[#f0f4f8]">{u.employeeCount ?? '-'}</span>
+                            </div>
+                            <div className="bg-[rgba(255,255,255,0.03)] rounded-lg px-3 py-2">
+                              <span className="text-[11px] text-[#6b7280] block">資本金</span>
+                              <span className="text-xs text-[#f0f4f8]">{u.capitalAmount ?? '-'}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 業種・営業情報 */}
+                        {(u.industryMajor || u.industryMinor || u.formUrl || snsEntries.length > 0 || u.siteUpdatedAt) && (
+                          <div className="border-t border-[rgba(255,255,255,0.05)] mt-3 pt-3">
+                            <p className="text-[10px] uppercase tracking-wider text-[#6b7280] mb-1.5">業種・営業情報</p>
+                            <div className="space-y-1.5">
+                              {(u.industryMajor || u.industryMinor) && (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[11px] text-[#6b7280] shrink-0">業種分類:</span>
+                                  <span className="text-xs text-[#c8d6e5]">
+                                    {u.industryMajor}{u.industryMajor && u.industryMinor ? ' > ' : ''}{u.industryMinor ?? ''}
+                                  </span>
+                                </div>
+                              )}
+                              {u.formUrl && (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[11px] text-[#6b7280] shrink-0">フォームURL:</span>
+                                  <a
+                                    href={u.formUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-xs text-[#06C755] hover:text-[#04a344] transition-colors truncate"
+                                  >
+                                    {u.formUrl}
+                                  </a>
+                                </div>
+                              )}
+                              {snsEntries.length > 0 && (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[11px] text-[#6b7280] shrink-0">SNS:</span>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    {snsEntries.map(([key, snsUrl]) => (
+                                      <a
+                                        key={key}
+                                        href={snsUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[rgba(255,255,255,0.05)] text-[#8494a7] border border-[rgba(255,255,255,0.1)] hover:text-[#c8d6e5] hover:border-[rgba(255,255,255,0.2)] transition-colors"
+                                      >
+                                        {snsLabels[key] ?? key}
+                                      </a>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              {u.siteUpdatedAt && (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[11px] text-[#6b7280] shrink-0">更新日:</span>
+                                  <span className="text-xs text-[#c8d6e5]">{u.siteUpdatedAt}</span>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         )}
-                        {u.email && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-[#8494a7] shrink-0">メール:</span>
-                            <a
-                              href={`mailto:${u.email}`}
-                              className="text-xs text-[#06C755] hover:text-[#04a344] transition-colors truncate"
-                            >
-                              {u.email}
-                            </a>
+
+                        {/* 検索タグ */}
+                        {u.searchTags && u.searchTags.length > 0 && (
+                          <div className="border-t border-[rgba(255,255,255,0.05)] mt-3 pt-3">
+                            <p className="text-[10px] uppercase tracking-wider text-[#6b7280] mb-1.5">検索タグ</p>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {u.searchTags.map((tag, i) => (
+                                <span
+                                  key={i}
+                                  className="text-[10px] px-2 py-0.5 rounded-full bg-[#1e293b] text-[#8494a7]"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
                           </div>
                         )}
-                        {u.representativeName && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-[#8494a7] shrink-0">代表者名:</span>
-                            <span className="text-xs text-[#c8d6e5]">{u.representativeName}</span>
+
+                        {/* 役員 */}
+                        {parsedOfficers.length > 0 && (
+                          <div className="border-t border-[rgba(255,255,255,0.05)] mt-3 pt-3">
+                            <p className="text-[10px] uppercase tracking-wider text-[#6b7280] mb-1.5">役員</p>
+                            <p className="text-xs text-[#c8d6e5]">
+                              {parsedOfficers.map(o => `${o.title} ${o.name}`).join(' / ')}
+                            </p>
                           </div>
                         )}
-                        {u.establishedYear && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-[#8494a7] shrink-0">設立:</span>
-                            <span className="text-xs text-[#c8d6e5]">{u.establishedYear}年設立</span>
-                          </div>
-                        )}
-                        {u.employeeCount && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-[#8494a7] shrink-0">従業員数:</span>
-                            <span className="text-xs text-[#c8d6e5]">{u.employeeCount}</span>
-                          </div>
-                        )}
-                        {u.capitalAmount && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-[#8494a7] shrink-0">資本金:</span>
-                            <span className="text-xs text-[#c8d6e5]">{u.capitalAmount}</span>
-                          </div>
-                        )}
-                        {(u.industryMajor || u.industryMinor) && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-[#8494a7] shrink-0">業種分類:</span>
-                            <span className="text-xs text-[#c8d6e5]">
-                              {u.industryMajor}{u.industryMajor && u.industryMinor ? ' > ' : ''}{u.industryMinor ?? ''}
-                            </span>
-                          </div>
-                        )}
-                        {u.siteUpdatedAt && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-[#8494a7] shrink-0">更新日:</span>
-                            <span className="text-xs text-[#c8d6e5]">{u.siteUpdatedAt}</span>
-                          </div>
-                        )}
-                        {u.hasRecruitPage && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-[#8494a7] shrink-0">採用ページ:</span>
-                            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[rgba(6,199,85,0.12)] text-[#06C755] border border-[rgba(6,199,85,0.25)]">
-                              採用中
-                            </span>
-                          </div>
-                        )}
-                        {u.formUrl && (
-                          <div className="flex items-center gap-2 sm:col-span-2">
-                            <span className="text-xs text-[#8494a7] shrink-0">フォームURL:</span>
-                            <a
-                              href={u.formUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs text-[#06C755] hover:text-[#04a344] transition-colors truncate"
-                            >
-                              {u.formUrl}
-                            </a>
-                          </div>
-                        )}
-                        {u.snsLinks && (() => {
-                          try {
-                            const sns = JSON.parse(u.snsLinks) as Record<string, string>
-                            const entries = Object.entries(sns).filter(([, v]) => v)
-                            if (entries.length === 0) return null
-                            const labels: Record<string, string> = { x: 'X', instagram: 'Instagram', facebook: 'Facebook', youtube: 'YouTube' }
-                            return (
-                              <div className="flex items-center gap-2 sm:col-span-2">
-                                <span className="text-xs text-[#8494a7] shrink-0">SNS:</span>
+
+                        {/* 関連情報 */}
+                        {((u.relatedSites && u.relatedSites.length > 0) || u.officerPageUrl || parsedNews.length > 0) && (
+                          <div className="border-t border-[rgba(255,255,255,0.05)] mt-3 pt-3">
+                            <p className="text-[10px] uppercase tracking-wider text-[#6b7280] mb-1.5">関連情報</p>
+                            <div className="space-y-1.5">
+                              {u.relatedSites && u.relatedSites.length > 0 && (
                                 <div className="flex items-center gap-2 flex-wrap">
-                                  {entries.map(([key, url]) => (
-                                    <a
-                                      key={key}
-                                      href={url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[rgba(255,255,255,0.05)] text-[#8494a7] border border-[rgba(255,255,255,0.1)] hover:text-[#c8d6e5] hover:border-[rgba(255,255,255,0.2)] transition-colors"
-                                    >
-                                      {labels[key] ?? key}
+                                  <span className="text-[11px] text-[#6b7280] shrink-0">関連サイト:</span>
+                                  {u.relatedSites.map((site, i) => (
+                                    <a key={i} href={`https://${site}`} target="_blank" rel="noopener noreferrer"
+                                       className="text-xs text-[#60a5fa] hover:underline">
+                                      {site}
                                     </a>
                                   ))}
                                 </div>
-                              </div>
-                            )
-                          } catch { return null }
-                        })()}
-                      </div>
-                      {u.businessDescription && (
-                        <div className="mt-1.5">
-                          <span className="text-xs text-[#8494a7]">事業内容: </span>
-                          <span className="text-xs text-[#c8d6e5] line-clamp-2">{u.businessDescription}</span>
-                        </div>
-                      )}
-                      {u.searchTags && u.searchTags.length > 0 && (
-                        <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
-                          {u.searchTags.map((tag, i) => (
-                            <span
-                              key={i}
-                              className="text-[10px] px-2 py-0.5 rounded-full bg-[#1e293b] text-[#8494a7]"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      {/* 役員一覧 */}
-                      {u.officers && (() => {
-                        try {
-                          const officers = JSON.parse(u.officers) as { name: string; title: string }[];
-                          if (officers.length === 0) return null;
-                          return (
-                            <div className="col-span-2 mt-1">
-                              <span className="text-[#8494a7] text-xs">役員</span>
-                              <div className="flex flex-wrap gap-1.5 mt-0.5">
-                                {officers.map((o, i) => (
-                                  <span key={i} className="text-xs text-[#c9d1d9] bg-[#1e293b] px-2 py-0.5 rounded">
-                                    {o.title} {o.name}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          );
-                        } catch { return null; }
-                      })()}
-                      {/* 最新ニュース */}
-                      {u.latestNews && (() => {
-                        try {
-                          const news = JSON.parse(u.latestNews) as { date: string; title: string }[];
-                          if (news.length === 0) return null;
-                          return (
-                            <div className="col-span-2 mt-1">
-                              <span className="text-[#8494a7] text-xs">最新ニュース</span>
-                              <div className="space-y-0.5 mt-0.5">
-                                {news.slice(0, 3).map((n, i) => (
-                                  <div key={i} className="text-xs">
-                                    <span className="text-[#6b7280] mr-2">{n.date}</span>
-                                    <span className="text-[#c9d1d9]">{n.title}</span>
+                              )}
+                              {u.officerPageUrl && (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[11px] text-[#6b7280] shrink-0">役員ページ:</span>
+                                  <a href={u.officerPageUrl} target="_blank" rel="noopener noreferrer"
+                                     className="text-xs text-[#60a5fa] hover:underline truncate">
+                                    {u.officerPageUrl}
+                                  </a>
+                                </div>
+                              )}
+                              {parsedNews.length > 0 && (
+                                <div>
+                                  <span className="text-[11px] text-[#6b7280]">最新ニュース:</span>
+                                  <div className="space-y-0.5 mt-0.5">
+                                    {parsedNews.slice(0, 3).map((n, i) => (
+                                      <div key={i} className="text-xs">
+                                        <span className="text-[#6b7280] mr-2">{n.date}</span>
+                                        <span className="text-[#c9d1d9]">{n.title}</span>
+                                      </div>
+                                    ))}
                                   </div>
-                                ))}
-                              </div>
+                                </div>
+                              )}
                             </div>
-                          );
-                        } catch { return null; }
-                      })()}
-                      {/* 関連サイト */}
-                      {u.relatedSites && u.relatedSites.length > 0 && (
-                        <div className="col-span-2 mt-1">
-                          <span className="text-[#8494a7] text-xs">関連サイト</span>
-                          <div className="flex flex-wrap gap-1.5 mt-0.5">
-                            {u.relatedSites.map((site, i) => (
-                              <a key={i} href={`https://${site}`} target="_blank" rel="noopener noreferrer"
-                                 className="text-xs text-[#60a5fa] hover:underline">
-                                {site}
-                              </a>
-                            ))}
                           </div>
-                        </div>
-                      )}
-                      {u.officerPageUrl && (
-                        <div>
-                          <span className="text-[#8494a7] text-xs">役員ページ</span>
-                          <a href={u.officerPageUrl} target="_blank" rel="noopener noreferrer"
-                             className="block text-xs text-[#60a5fa] hover:underline truncate">
-                            {u.officerPageUrl}
-                          </a>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 

@@ -75,9 +75,14 @@ export default function ProfilePage() {
     <div className="min-h-[80vh] flex items-start justify-center px-4 py-12">
       <div className="w-full max-w-[600px]">
         <h1 className="text-2xl font-bold text-[#f0f4f8] mb-1">プロフィール設定</h1>
-        <p className="text-sm text-[#8494a7] mb-8">
-          フォーム送信時に使用される送信者情報を設定します
-        </p>
+        <div className="mb-8 bg-[rgba(6,199,85,0.08)] border border-[rgba(6,199,85,0.25)] rounded-lg px-4 py-3">
+          <p className="text-sm text-[#06C755] font-medium">
+            フォーム送信時に使用される送信者情報を設定します
+          </p>
+          <p className="text-xs text-[#8494a7] mt-1">
+            ここで設定した情報がChrome拡張のフォーム自動入力に使用されます
+          </p>
+        </div>
 
         <div className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-2xl p-6 space-y-5">
           {/* 会社名 + 担当者名 */}

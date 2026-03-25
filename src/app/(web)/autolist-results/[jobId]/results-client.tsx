@@ -129,6 +129,7 @@ function downloadCsv(urls: UrlItem[], keyword: string) {
 export default function ResultsClient({ jobId, keyword, industry, location, urls }: Props) {
   const [formFilter, setFormFilter] = useState<FormFilter>('all')
   const [phoneFilter, setPhoneFilter] = useState<PhoneFilter>('all')
+  const [csvDialogOpen, setCsvDialogOpen] = useState<boolean>(false)
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
   const toggleExpand = useCallback((id: string) => {
     setExpandedCards(prev => {
@@ -258,17 +259,46 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
 
         {/* アクションボタン群 */}
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => downloadCsv(urls, keyword)}
-            className="inline-flex items-center gap-2 text-sm font-medium px-5 py-2.5 rounded-full transition-all cursor-pointer border border-[rgba(255,255,255,0.15)] text-[#f0f4f8] bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.1)] hover:border-[rgba(255,255,255,0.25)]"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            CSVダウンロード
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setCsvDialogOpen(prev => !prev)}
+              className="inline-flex items-center gap-2 text-sm font-medium px-5 py-2.5 rounded-full transition-all cursor-pointer border border-[rgba(255,255,255,0.15)] text-[#f0f4f8] bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.1)] hover:border-[rgba(255,255,255,0.25)]"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              CSVダウンロード
+            </button>
+            {csvDialogOpen && (
+              <div className="absolute bottom-full mb-2 left-0 bg-[#1e293b] border border-[rgba(255,255,255,0.15)] rounded-xl p-4 shadow-xl z-50 w-72">
+                <button onClick={() => setCsvDialogOpen(false)} className="absolute top-2 right-3 text-[#6b7280] hover:text-[#c9d1d9] text-sm cursor-pointer">✕</button>
+                <p className="text-xs text-[#c9d1d9] mb-1">
+                  {formFilter !== 'all' || phoneFilter !== 'all' ? (
+                    <>フィルタ適用中: {formFilter === 'hasForm' ? 'フォームあり' : formFilter === 'noForm' ? 'フォームなし' : ''}{formFilter !== 'all' && phoneFilter !== 'all' ? ' / ' : ''}{phoneFilter === 'hasPhone' ? '電話あり' : phoneFilter === 'noPhone' ? '電話なし' : ''}</>
+                  ) : 'フィルタなし'}
+                </p>
+                <p className="text-[11px] text-[#8494a7] mb-3">表示中 {filteredUrls.length}件 / 全 {urls.length}件</p>
+                <div className="flex gap-2">
+                  {formFilter !== 'all' || phoneFilter !== 'all' ? (
+                    <>
+                      <button onClick={() => { downloadCsv(filteredUrls, keyword); setCsvDialogOpen(false) }} className="flex-1 text-xs font-medium py-2 rounded-lg bg-[rgba(255,255,255,0.08)] text-[#c9d1d9] hover:bg-[rgba(255,255,255,0.15)] transition-colors cursor-pointer">
+                        フィルタ適用（{filteredUrls.length}件）
+                      </button>
+                      <button onClick={() => { downloadCsv(urls, keyword); setCsvDialogOpen(false) }} className="flex-1 text-xs font-medium py-2 rounded-lg bg-[#06C755] text-white hover:bg-[#04a344] transition-colors cursor-pointer">
+                        全件（{urls.length}件）
+                      </button>
+                    </>
+                  ) : (
+                    <button onClick={() => { downloadCsv(urls, keyword); setCsvDialogOpen(false) }} className="flex-1 text-xs font-medium py-2 rounded-lg bg-[#06C755] text-white hover:bg-[#04a344] transition-colors cursor-pointer">
+                      {urls.length}件ダウンロード
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
           {hasFormUrls && (
             <Link
               href={`/send/${jobId}`}

@@ -36,6 +36,11 @@ export default async function SendPage({ params }: { params: { jobId: string } }
     redirect(`/autolist-results/${params.jobId}`)
   }
 
+  // 全URL件数（フォームの有無に関わらず）
+  const totalUrlCount = await prisma.collectedUrl.count({
+    where: { jobId: params.jobId, excluded: false },
+  })
+
   // 確定済み企業一覧（excluded=false）
   const companies = await prisma.collectedUrl.findMany({
     where: {
@@ -80,6 +85,7 @@ export default async function SendPage({ params }: { params: { jobId: string } }
       industry={job.industry}
       location={job.location}
       companies={companies}
+      totalUrlCount={totalUrlCount}
       initialProfile={{
         companyName: user?.companyName ?? '',
         personName: user?.name ?? '',

@@ -17,6 +17,7 @@ export default function SendClient({
   industry,
   location,
   companies,
+  totalUrlCount,
   initialProfile,
   initialMessage,
   hasProfile,
@@ -512,7 +513,7 @@ export default function SendClient({
         )}
 
         {currentStep === 2 && (
-          <ConfirmStep companies={companies} />
+          <ConfirmStep companies={companies} totalUrlCount={totalUrlCount} />
         )}
 
         {currentStep === 3 && (

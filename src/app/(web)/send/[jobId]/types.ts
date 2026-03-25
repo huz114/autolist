@@ -27,6 +27,7 @@ export type Props = {
   industry: string | null
   location: string | null
   companies: Company[]
+  totalUrlCount: number
   initialProfile: Profile
   initialMessage: Message
   hasProfile: boolean

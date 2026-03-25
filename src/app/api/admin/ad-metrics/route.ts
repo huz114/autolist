@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
+
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? '').split(',').map(e => e.trim()).filter(Boolean);
 
 /**
  * POST /api/admin/ad-metrics
@@ -9,6 +12,14 @@ export const dynamic = 'force-dynamic';
  * Body: { date: string, campaign: string, impressions: number, clicks: number, spend: number }
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: '未認証です' }, { status: 401 });
+  }
+  if (ADMIN_EMAILS.length > 0 && !ADMIN_EMAILS.includes(session.user.email ?? '')) {
+    return NextResponse.json({ error: '管理者権限が必要です' }, { status: 403 });
+  }
+
   try {
     const body = await request.json();
     const { date, campaign, impressions, clicks, spend } = body;
@@ -71,6 +82,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
  * Query: ?from=YYYY-MM-DD&to=YYYY-MM-DD
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: '未認証です' }, { status: 401 });
+  }
+  if (ADMIN_EMAILS.length > 0 && !ADMIN_EMAILS.includes(session.user.email ?? '')) {
+    return NextResponse.json({ error: '管理者権限が必要です' }, { status: 403 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const fromStr = searchParams.get('from');

@@ -1,13 +1,24 @@
 import { NextResponse } from 'next/server';
+import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
+
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? '').split(',').map(e => e.trim()).filter(Boolean);
 
 /**
  * GET /api/admin/exclusion-analytics
  * 除外分析データをまとめて返す
  */
 export async function GET(): Promise<NextResponse> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: '未認証です' }, { status: 401 });
+  }
+  if (ADMIN_EMAILS.length > 0 && !ADMIN_EMAILS.includes(session.user.email ?? '')) {
+    return NextResponse.json({ error: '管理者権限が必要です' }, { status: 403 });
+  }
+
   try {
     // --- 全体サマリー ---
     const [totalExcluded, totalCollected, confirmedJobs] = await Promise.all([

@@ -51,7 +51,7 @@ export default async function MyListsPage() {
       <div className="mb-4 flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-[#f0f4f8] mb-1">マイリスト</h1>
-          <p className="text-sm text-[#8fa3b8]">フォーム営業リストの一覧です</p>
+          <p className="text-sm text-[#8fa3b8]">作成した営業リストの一覧です</p>
         </div>
         <NewRequestButton />
       </div>
@@ -71,7 +71,7 @@ export default async function MyListsPage() {
           </div>
           <p className="text-[#f0f4f8] font-medium mb-2">まだリストがありません</p>
           <p className="text-sm text-[#8494a7] mb-6">
-            業種と地域を指定して、フォーム営業リストを作成しましょう
+            業種と地域を指定して、営業リストを作成しましょう
           </p>
           <NewRequestButton />
         </div>

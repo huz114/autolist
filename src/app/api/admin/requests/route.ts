@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
+
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? '').split(',').map(e => e.trim()).filter(Boolean);
 
 type ShiryologUser = {
   id: string;
@@ -17,6 +20,14 @@ type ShiryologUser = {
  * 新しい順でページネーション
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: '未認証です' }, { status: 401 });
+  }
+  if (ADMIN_EMAILS.length > 0 && !ADMIN_EMAILS.includes(session.user.email ?? '')) {
+    return NextResponse.json({ error: '管理者権限が必要です' }, { status: 403 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1', 10);

@@ -100,7 +100,7 @@ function LoginForm() {
       <div className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-2xl p-8">
         <h1 className="text-2xl font-bold text-[#f0f4f8] mb-2">ログイン</h1>
         <p className="text-sm text-[#8fa3b8] mb-8">
-          リスト管理・フォーム送信はログインが必要です
+          リスト管理・CSVダウンロードにはログインが必要です
         </p>
 
         {resetSuccess && (

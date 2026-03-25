@@ -132,7 +132,7 @@ export default function SendHistoryClient() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-[#f0f4f8] mb-1">送信履歴</h1>
-        <p className="text-sm text-[#8fa3b8]">フォーム営業の送信履歴を確認できます</p>
+        <p className="text-sm text-[#8fa3b8]">フォーム送信の履歴を確認できます</p>
       </div>
 
       {/* Stats Cards */}

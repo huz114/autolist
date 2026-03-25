@@ -58,12 +58,30 @@ const IconGift = () => (
     <rect x="3" y="8" width="18" height="4" rx="1" /><path d="M12 8v13" /><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7" /><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5" />
   </svg>
 );
+// SVG icon: play/start button (replaces rocket emoji)
+const IconPlay = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true" style={{ display: "inline-block", verticalAlign: "middle", marginRight: 4 }}>
+    <polygon points="5,3 19,12 5,21" />
+  </svg>
+);
+// SVG icon: hand pointer / tap (replaces finger emoji)
+const IconHandPointer = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v0" /><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2" /><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8" /><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 13" />
+  </svg>
+);
+// SVG icon: star (replaces star symbol)
+const IconStar = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true" style={{ display: "inline-block", verticalAlign: "middle", marginRight: 2 }}>
+    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+  </svg>
+);
 
 // Inline CTA component for repeating after sections
-const SectionCTA = () => (
+const SectionCTA = ({ label = "100件無料でお試し" }: { label?: string }) => (
   <div className="section-cta-wrap">
     <Link href="/register" className="btn-primary btn-section-cta">
-      100件無料でお試し
+      {label}
     </Link>
     <span className="section-cta-note">登録料無料 · カード不要 · いつでも解約</span>
   </div>
@@ -75,6 +93,7 @@ export default function Home() {
   const [demoStep, setDemoStep] = useState(0); // 0=input, 1=analyzing, 2=result
   const [dots, setDots] = useState(0);
   const [formDemoStep, setFormDemoStep] = useState(0);
+  const [completedCount, setCompletedCount] = useState<number | null>(null);
 
   const toggleSample = (idx: number) => {
     setExpandedSamples(prev => {
@@ -102,6 +121,18 @@ export default function Home() {
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Fetch completed list count for social proof
+  useEffect(() => {
+    fetch("/api/stats")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.completedCount > 0) {
+          setCompletedCount(data.completedCount);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   // Demo auto-advance
@@ -262,6 +293,11 @@ export default function Home() {
                 </a>
               </div>
               <span className="btn-note" style={{ display: 'block', marginTop: 10 }}>登録料無料 · カード不要でお試し · いつでも解約</span>
+              {completedCount !== null && completedCount > 0 && (
+                <span style={{ display: 'block', marginTop: 8, fontSize: 12, color: 'var(--text-muted)' }}>
+                  累計 {completedCount.toLocaleString()} 件のリスト生成実績
+                </span>
+              )}
             </div>
           </div>
 
@@ -444,7 +480,7 @@ export default function Home() {
                     transition: 'opacity 0.4s ease 450ms, transform 0.4s ease 450ms, background 0.2s',
                   }}
                 >
-                  🚀 収集スタート
+                  <IconPlay />収集スタート
                 </Link>
               </div>
               </div>{/* end steps container */}
@@ -502,7 +538,7 @@ export default function Home() {
       </section>
 
       {/* CTA after Problem */}
-      <SectionCTA />
+      <SectionCTA label="無料で試してみる" />
 
       {/* COMPARISON */}
       <section className="lp-section comparison-section">
@@ -820,7 +856,7 @@ export default function Home() {
       </section>
 
       {/* CTA after Steps */}
-      <SectionCTA />
+      <SectionCTA label="今すぐリストを作成する" />
 
       {/* BENEFITS */}
       <section className="lp-section benefits-section">
@@ -937,13 +973,13 @@ export default function Home() {
                         transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
                         opacity: formDemoStep >= 4 ? 1 : 0,
                         bottom: formDemoStep === 4 ? 2 : -24,
-                        fontSize: 20,
+                        color: '#06C755',
                         filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.6))',
                         pointerEvents: 'none',
                       }}
                       aria-hidden="true"
                     >
-                      👆
+                      <IconHandPointer />
                     </span>
                   </div>
                 </div>
@@ -1029,7 +1065,7 @@ export default function Home() {
       </section>
 
       {/* CTA after ROI */}
-      <SectionCTA />
+      <SectionCTA label="コスト削減を始める" />
 
       {/* PRICING */}
       <section id="pricing" className="lp-section pricing-section">
@@ -1056,7 +1092,7 @@ export default function Home() {
                 className={`pricing-card${plan.featured ? " featured" : ""} reveal reveal-delay-${i + 1}`}
                 ref={addRevealRef}
               >
-                {plan.featured && <div className="pricing-badge">★ おすすめ</div>}
+                {plan.featured && <div className="pricing-badge"><IconStar /> おすすめ</div>}
                 <div className="pricing-volume">{plan.volume}</div>
                 <div className="pricing-price">
                   <sup>&yen;</sup>{plan.price}
@@ -1124,7 +1160,7 @@ export default function Home() {
                 className="btn-primary"
                 style={{ fontSize: 17, padding: "20px 40px" }}
               >
-                100件無料でお試し
+                今夜依頼して、明日から営業開始
               </Link>
               <a
                 href="#data-sample"
@@ -1151,14 +1187,17 @@ export default function Home() {
             <p style={{ marginTop: 24, fontSize: 13, color: "var(--text-muted)" }}>
               登録料無料 &middot; クレジットカード不要でお試し &middot; いつでも解約
             </p>
+            <p style={{ marginTop: 12, fontSize: 11, color: "#8fa3b8" }}>
+              ※ 初回100件無料キャンペーンは予告なく終了する場合があります
+            </p>
           </div>
         </div>
       </section>
 
       {/* MOBILE STICKY CTA */}
-      <div className="sticky-cta-mobile" aria-label="100件無料でお試し">
+      <div className="sticky-cta-mobile" aria-label="無料でお試し">
         <Link href="/register" className="btn-primary sticky-cta-btn">
-          100件無料でお試し
+          無料でお試し
         </Link>
       </div>
 

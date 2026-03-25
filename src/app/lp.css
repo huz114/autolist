@@ -1007,6 +1007,17 @@ summary:focus-visible,
   .roi-row div { padding: 10px 8px; font-size: 11px; }
 }
 
+/* ===== REDUCED MOTION ===== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reveal { opacity: 1 !important; transform: none !important; }
+}
+
 /* Comparison table horizontal scroll on very small screens */
 @media (max-width: 360px) {
   .comparison-table {

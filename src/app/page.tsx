@@ -857,20 +857,37 @@ export default function Home() {
                     </div>
                   ))}
 
-                  {/* Send button */}
-                  <div style={{
-                    width: '100%',
-                    padding: 10,
-                    borderRadius: 8,
-                    fontSize: 13,
-                    fontWeight: 700,
-                    textAlign: 'center',
-                    transition: 'all 0.3s',
-                    background: formDemoStep === 4 ? '#06C755' : 'rgba(255,255,255,0.06)',
-                    color: formDemoStep === 4 ? 'white' : '#6b7280',
-                    boxShadow: formDemoStep === 4 ? '0 0 16px rgba(6,199,85,0.4)' : 'none',
-                  }}>
-                    送信
+                  {/* Send button + cursor */}
+                  <div style={{ position: 'relative' }}>
+                    <div style={{
+                      width: '100%',
+                      padding: 10,
+                      borderRadius: 8,
+                      fontSize: 13,
+                      fontWeight: 700,
+                      textAlign: 'center',
+                      transition: 'all 0.3s',
+                      background: formDemoStep === 4 ? '#06C755' : 'rgba(255,255,255,0.06)',
+                      color: formDemoStep === 4 ? 'white' : '#6b7280',
+                      boxShadow: formDemoStep === 4 ? '0 0 16px rgba(6,199,85,0.4)' : 'none',
+                      transform: formDemoStep === 4 ? 'scale(0.97)' : 'scale(1)',
+                    }}>
+                      送信
+                    </div>
+                    {/* Fake cursor */}
+                    <svg
+                      width="20" height="20" viewBox="0 0 24 24" fill="white" stroke="#333" strokeWidth="1"
+                      style={{
+                        position: 'absolute',
+                        right: 30,
+                        transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+                        opacity: formDemoStep >= 4 ? 1 : 0,
+                        bottom: formDemoStep === 4 ? 8 : -20,
+                        filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))',
+                      }}
+                    >
+                      <path d="M5 3l3.5 16 3.5-6.5L18.5 9z" />
+                    </svg>
                   </div>
                 </div>
               </div>

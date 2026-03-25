@@ -224,6 +224,12 @@ export default function Home() {
               テレアポにもフォーム営業にも、すぐ使える。<br />
               <strong style={{ color: "var(--accent)" }}>最初の100件は無料。</strong>
             </p>
+            <div style={{ marginTop: 28 }}>
+              <Link href="/register" className="btn-primary">
+                100件無料でお試し
+              </Link>
+              <span className="btn-note" style={{ display: 'block', marginTop: 10 }}>登録料無料 · カード不要でお試し · いつでも解約</span>
+            </div>
           </div>
 
           {/* インタラクティブデモ（右カラム） */}

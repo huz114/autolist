@@ -387,6 +387,10 @@ export async function collectUrls(jobId: string): Promise<number> {
           searchTags: companyInfo.searchTags || [],
           industryMajor: companyInfo.industryMajor || null,
           industryMinor: companyInfo.industryMinor || null,
+          officerPageUrl: companyInfo.officerPageUrl || null,
+          officers: companyInfo.officers ? JSON.stringify(companyInfo.officers) : null,
+          relatedSites: companyInfo.relatedSites || [],
+          latestNews: companyInfo.latestNews ? JSON.stringify(companyInfo.latestNews) : null,
           status: 'collected',
         },
       });
@@ -463,6 +467,10 @@ async function scrapeAndSave(
         searchTags: companyInfo.searchTags || [],
         industryMajor: companyInfo.industryMajor || null,
         industryMinor: companyInfo.industryMinor || null,
+        officerPageUrl: companyInfo.officerPageUrl || null,
+        officers: companyInfo.officers ? JSON.stringify(companyInfo.officers) : null,
+        relatedSites: companyInfo.relatedSites || [],
+        latestNews: companyInfo.latestNews ? JSON.stringify(companyInfo.latestNews) : null,
         companyVerified,
         status: 'collected',
       },
@@ -583,6 +591,10 @@ export async function collectUrlsWithQueries(
       searchTags: string[];
       industryMajor: string | null;
       industryMinor: string | null;
+      officerPageUrl: string | null;
+      officers: string | null;
+      relatedSites: string[];
+      latestNews: string | null;
       companyVerified: boolean;
       status: string;
       createdAt: Date;
@@ -648,6 +660,10 @@ export async function collectUrlsWithQueries(
           searchTags: u.searchTags,
           industryMajor: u.industryMajor,
           industryMinor: u.industryMinor,
+          officerPageUrl: u.officerPageUrl,
+          officers: u.officers,
+          relatedSites: u.relatedSites,
+          latestNews: u.latestNews,
           companyVerified: u.companyVerified,
           status: u.status,
           createdAt: now,
@@ -691,6 +707,10 @@ export async function collectUrlsWithQueries(
           searchTags: u.searchTags,
           industryMajor: u.industryMajor,
           industryMinor: u.industryMinor,
+          officerPageUrl: u.officerPageUrl,
+          officers: u.officers,
+          relatedSites: u.relatedSites,
+          latestNews: u.latestNews,
           companyVerified: u.companyVerified,
           status: u.status,
           createdAt: now,

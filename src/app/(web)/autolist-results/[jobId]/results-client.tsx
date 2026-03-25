@@ -25,6 +25,10 @@ type UrlItem = {
   searchTags?: string[]
   industryMajor?: string | null
   industryMinor?: string | null
+  officerPageUrl?: string | null
+  officers?: string | null
+  relatedSites?: string[]
+  latestNews?: string | null
 }
 
 type FormFilter = 'all' | 'hasForm' | 'noForm'
@@ -44,6 +48,7 @@ function downloadCsv(urls: UrlItem[], keyword: string) {
     '設立年', '従業員数', '資本金', '事業内容', 'フォームURL', 'フォームあり',
     '業種大分類', '業種小分類', 'X', 'Instagram', 'Facebook', 'YouTube',
     '採用ページあり', 'サイト更新日', '検索タグ',
+    '役員ページURL', '役員一覧', '関連サイト', '最新ニュース',
   ]
 
   const escapeField = (value: string) => {
@@ -57,6 +62,22 @@ function downloadCsv(urls: UrlItem[], keyword: string) {
     let sns: Record<string, string> = {}
     try {
       if (u.snsLinks) sns = JSON.parse(u.snsLinks)
+    } catch { /* ignore */ }
+
+    let officersStr = ''
+    try {
+      if (u.officers) {
+        const parsed = JSON.parse(u.officers) as { name: string; title: string }[]
+        officersStr = parsed.map(o => `${o.title}:${o.name}`).join(' / ')
+      }
+    } catch { /* ignore */ }
+
+    let latestNewsStr = ''
+    try {
+      if (u.latestNews) {
+        const parsed = JSON.parse(u.latestNews) as { date: string; title: string }[]
+        latestNewsStr = parsed.map(n => `${n.date}:${n.title}`).join(' / ')
+      }
     } catch { /* ignore */ }
 
     return [
@@ -82,6 +103,10 @@ function downloadCsv(urls: UrlItem[], keyword: string) {
       u.hasRecruitPage ? 'はい' : 'いいえ',
       u.siteUpdatedAt ?? '',
       (u.searchTags ?? []).join('/'),
+      u.officerPageUrl ?? '',
+      officersStr,
+      (u.relatedSites ?? []).join(' / '),
+      latestNewsStr,
     ].map(escapeField).join(',')
   })
 
@@ -425,6 +450,68 @@ export default function ResultsClient({ jobId, keyword, industry, location, urls
                               {tag}
                             </span>
                           ))}
+                        </div>
+                      )}
+                      {/* 役員一覧 */}
+                      {u.officers && (() => {
+                        try {
+                          const officers = JSON.parse(u.officers) as { name: string; title: string }[];
+                          if (officers.length === 0) return null;
+                          return (
+                            <div className="col-span-2 mt-1">
+                              <span className="text-[#8494a7] text-xs">役員</span>
+                              <div className="flex flex-wrap gap-1.5 mt-0.5">
+                                {officers.map((o, i) => (
+                                  <span key={i} className="text-xs text-[#c9d1d9] bg-[#1e293b] px-2 py-0.5 rounded">
+                                    {o.title} {o.name}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        } catch { return null; }
+                      })()}
+                      {/* 最新ニュース */}
+                      {u.latestNews && (() => {
+                        try {
+                          const news = JSON.parse(u.latestNews) as { date: string; title: string }[];
+                          if (news.length === 0) return null;
+                          return (
+                            <div className="col-span-2 mt-1">
+                              <span className="text-[#8494a7] text-xs">最新ニュース</span>
+                              <div className="space-y-0.5 mt-0.5">
+                                {news.slice(0, 3).map((n, i) => (
+                                  <div key={i} className="text-xs">
+                                    <span className="text-[#6b7280] mr-2">{n.date}</span>
+                                    <span className="text-[#c9d1d9]">{n.title}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        } catch { return null; }
+                      })()}
+                      {/* 関連サイト */}
+                      {u.relatedSites && u.relatedSites.length > 0 && (
+                        <div className="col-span-2 mt-1">
+                          <span className="text-[#8494a7] text-xs">関連サイト</span>
+                          <div className="flex flex-wrap gap-1.5 mt-0.5">
+                            {u.relatedSites.map((site, i) => (
+                              <a key={i} href={`https://${site}`} target="_blank" rel="noopener noreferrer"
+                                 className="text-xs text-[#60a5fa] hover:underline">
+                                {site}
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {u.officerPageUrl && (
+                        <div>
+                          <span className="text-[#8494a7] text-xs">役員ページ</span>
+                          <a href={u.officerPageUrl} target="_blank" rel="noopener noreferrer"
+                             className="block text-xs text-[#60a5fa] hover:underline truncate">
+                            {u.officerPageUrl}
+                          </a>
                         </div>
                       )}
                     </div>

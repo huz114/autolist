@@ -84,6 +84,10 @@ model CollectedUrl {
   searchTags          String[]             // 検索タグ（5-10個）
   industryMajor       String?              // 業種大分類
   industryMinor       String?              // 業種小分類
+  officerPageUrl      String?
+  officers            String?              // JSON: [{"name":"田中太郎","title":"代表取締役"}]
+  relatedSites        String[]             // サブドメインの関連サイト
+  latestNews          String?              // JSON: [{"date":"2026-03-20","title":"新製品を発表"}]
   hasForm             Boolean  @default(false)
   formUrl             String?
   companyVerified     Boolean  @default(false)

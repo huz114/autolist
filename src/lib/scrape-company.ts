@@ -30,6 +30,10 @@ export interface CompanyInfo {
   industryMinor?: string;        // 業種小分類
   hasForm: boolean;
   formUrl?: string;
+  officerPageUrl?: string;        // 役員ページURL
+  officers?: { name: string; title: string }[];  // 役員一覧
+  relatedSites?: string[];        // 関連サイト（サブドメイン）
+  latestNews?: { date: string; title: string }[];  // 最新ニュース
 }
 
 /** ユーザーエージェント */
@@ -293,6 +297,190 @@ async function findCompanyPageByTitleFetch(urls: string[], _baseUrl: string): Pr
   return null;
 }
 
+interface LinkInfo {
+  url: string;
+  text: string;
+}
+
+/**
+ * HTMLからリンクを抽出し、同一ドメインのURLのみ返す（擬似サイトマップ）
+ */
+function extractLinksFromHtml(html: string, domain: string): LinkInfo[] {
+  // Extract <a href="...">text</a> patterns
+  const aTagRegex = /<a\s[^>]*href=["'](https?:\/\/[^"'<>\s]+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+  const seen = new Set<string>();
+  const links: LinkInfo[] = [];
+  let match;
+
+  while ((match = aTagRegex.exec(html)) !== null) {
+    const rawUrl = match[1].split('#')[0].split('?')[0];
+    const text = match[2].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+    if (!rawUrl || seen.has(rawUrl)) continue;
+
+    try {
+      const urlObj = new URL(rawUrl);
+      const urlDomain = urlObj.hostname.replace(/^www\./, '');
+      if (urlDomain === domain && urlObj.pathname !== '/') {
+        seen.add(rawUrl);
+        links.push({ url: rawUrl, text });
+      }
+    } catch {
+      // skip
+    }
+  }
+
+  // Also extract relative links
+  const relATagRegex = /<a\s[^>]*href=["'](\/[^"'<>\s]+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+  while ((match = relATagRegex.exec(html)) !== null) {
+    const path = match[1].split('#')[0].split('?')[0];
+    const text = match[2].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+    if (!path || path === '/') continue;
+    const fullUrl = `https://${domain}${path}`;
+    if (!seen.has(fullUrl)) {
+      seen.add(fullUrl);
+      links.push({ url: fullUrl, text });
+    }
+  }
+
+  return links;
+}
+
+/**
+ * リンクテキストから役員ページURLを検出する
+ */
+function findOfficerPageUrl(links: LinkInfo[]): string | null {
+  const textPatterns = /役員|取締役|経営陣|マネジメント|management|officer|director|executive|board.?of/i;
+  const urlPatterns = /\/officer|\/yakuin|\/directors|\/board|\/management|\/executive/i;
+
+  // First try: text match
+  for (const link of links) {
+    if (textPatterns.test(link.text)) {
+      return link.url;
+    }
+  }
+
+  // Second try: URL pattern match
+  for (const link of links) {
+    if (urlPatterns.test(link.url)) {
+      return link.url;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * HTMLからサブドメインの関連サイトを抽出する
+ */
+function extractRelatedSites(html: string, domain: string): string[] {
+  const hrefRegex = /href=["'](https?:\/\/[^"'<>\s]+)["']/gi;
+  const seen = new Set<string>();
+  const sites: string[] = [];
+  let match;
+
+  while ((match = hrefRegex.exec(html)) !== null) {
+    try {
+      const urlObj = new URL(match[1]);
+      const hostname = urlObj.hostname.replace(/^www\./, '');
+      // Same base domain but different subdomain
+      if (hostname !== domain && hostname.endsWith('.' + domain)) {
+        if (!seen.has(hostname)) {
+          seen.add(hostname);
+          sites.push(hostname);
+        }
+      }
+      // Also detect common second-level domain matches
+      // e.g., openhouse-group.co.jp links to openhouse.co.jp
+      const baseParts = domain.split('.');
+      const hostParts = hostname.split('.');
+      if (baseParts.length >= 2 && hostParts.length >= 2) {
+        const baseSld = baseParts[baseParts.length - 2]; // second-level domain
+        const hostSld = hostParts[hostParts.length - 2];
+        // If SLDs share a common root and aren't generic TLDs
+        if (baseSld !== hostSld && hostname !== domain &&
+            !['co', 'or', 'ne', 'ac', 'go', 'com', 'net', 'org'].includes(hostSld) &&
+            (baseSld.includes(hostSld) || hostSld.includes(baseSld)) &&
+            !seen.has(hostname)) {
+          seen.add(hostname);
+          sites.push(hostname);
+        }
+      }
+    } catch {
+      // skip
+    }
+  }
+
+  // Limit to 10 related sites
+  return sites.slice(0, 10);
+}
+
+/**
+ * HTMLから外部ドメインの企業情報ページリンクを検出する
+ * 大手企業のサービスサイト→コーポレートサイトのパターンに対応
+ */
+function findExternalCorporateLink(html: string, currentDomain: string): string | null {
+  const aTagRegex = /<a\s[^>]*href=["'](https?:\/\/[^"'<>\s]+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+  const corporateTextPatterns = /^(?:会社情報|会社概要|企業情報|企業概要|運営会社|コーポレート|Corporate|About\s*Us|Company)$/i;
+
+  let match;
+  while ((match = aTagRegex.exec(html)) !== null) {
+    const href = match[1];
+    const text = match[2].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+
+    if (!corporateTextPatterns.test(text)) continue;
+
+    try {
+      const urlObj = new URL(href);
+      const linkDomain = urlObj.hostname.replace(/^www\./, '');
+      // Only follow if it's a DIFFERENT domain (external corporate site)
+      if (linkDomain !== currentDomain) {
+        console.log(`  -> External corporate link found: "${text}" -> ${href}`);
+        return href;
+      }
+    } catch {
+      // skip
+    }
+  }
+
+  return null;
+}
+
+interface NewsItem {
+  date: string;
+  title: string;
+}
+
+/**
+ * トップページHTMLから最新ニュース/お知らせを抽出する（最新5件）
+ */
+function extractNewsFromHtml(html: string): NewsItem[] {
+  const news: NewsItem[] = [];
+
+  // Find date+text pairs in common news list structures
+  // Look for patterns like: date ... title within list items, table rows, etc.
+  const newsBlockRegex = /(?:<(?:li|tr|div|dl)[^>]*>\s*(?:<[^>]*>)*\s*)(\d{4}[-\/.\s年]\d{1,2}[-\/.\s月]\d{1,2}日?)\s*(?:<[^>]*>)*\s*(?:<a[^>]*>)?\s*([^<]{5,100})/gi;
+
+  let match;
+  const seen = new Set<string>();
+
+  while ((match = newsBlockRegex.exec(html)) !== null && news.length < 5) {
+    const dateStr = match[1].replace(/[年月]/g, '-').replace(/日/g, '').replace(/\./g, '-').replace(/\//g, '-').trim();
+    const title = match[2].replace(/\s+/g, ' ').trim();
+
+    // Validate it's a reasonable date
+    const dateParts = dateStr.split('-').map(Number);
+    if (dateParts[0] >= 2020 && dateParts[0] <= 2030 && title.length >= 5) {
+      const key = `${dateStr}:${title}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        news.push({ date: dateStr, title });
+      }
+    }
+  }
+
+  return news;
+}
+
 // ─── HTML解析 ───
 
 interface StructuredContent {
@@ -362,7 +550,7 @@ function extractFromHtmlRegex(html: string): RegexExtracted {
   // --- Email ---
   const mailtoMatch = html.match(/mailto:([^\s"'<>]+)/i);
   const emailPatternRegex = /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g;
-  const excludeEmailPatterns = /@example\.|@sample\.|@xxx\.|\.png$|\.jpg$|\.jpeg$|\.gif$|\.svg$|\.webp$/i;
+  const excludeEmailPatterns = /@example\.|@sample\.|@xxx\.|@mail\.com|@email\.com|@test\.|@dummy\.|@placeholder\.|\.png$|\.jpg$|\.jpeg$|\.gif$|\.svg$|\.webp$/i;
 
   if (mailtoMatch) {
     const email = mailtoMatch[1].split("?")[0]; // remove ?subject= etc
@@ -507,6 +695,7 @@ interface GeminiExtractedInfo {
   industryMajor: string | null;
   industryMinor: string | null;
   searchTags: string[] | null;
+  officers: { name: string; title: string }[] | null;
 }
 
 /**
@@ -567,13 +756,14 @@ isCompanySite: true の場合、以下の情報を抽出してください（見
 - industryMajor: 日本標準産業分類の大分類（例: 製造業, 情報通信業, 卸売業・小売業, 建設業, 医療・福祉, サービス業）
 - industryMinor: 小分類（例: 化粧品製造業, ソフトウェア業, 一般診療所, 美容業）
 - searchTags: 5-10個の検索用キーワード配列（事業内容から連想される実用的なタグ。例: ["化粧品","コスメ","スキンケア","D2C","通販"]）
+- officers: 役員一覧（会社概要ページに記載されている場合のみ。最大10名。見つからなければ空配列[]）。形式: [{"name": "田中太郎", "title": "代表取締役"}]
 
 【会社名の重要ルール】法人格（株式会社・有限会社・合同会社・一般社団法人・医療法人等）を必ず含めること。ページ内に法人格が記載されている場合は必ず付与する。英語名の場合も Co., Ltd. や Inc. 等を含めること。例: ×「山田商事」→ ○「株式会社山田商事」${industryCheckInstruction}
 
 ${structuredText}
 
 JSONのみ返してください：
-{"isCompanySite": true, "isRelevantIndustry": true, "companyName": "", "industry": "", "location": "", "employeeCount": "", "capitalAmount": "", "phoneNumber": "", "representativeName": "", "establishedYear": null, "businessDescription": "", "industryMajor": "", "industryMinor": "", "searchTags": []}`;
+{"isCompanySite": true, "isRelevantIndustry": true, "companyName": "", "industry": "", "location": "", "employeeCount": "", "capitalAmount": "", "phoneNumber": "", "representativeName": "", "establishedYear": null, "businessDescription": "", "industryMajor": "", "industryMinor": "", "searchTags": [], "officers": []}`;
 
   try {
     const result = await model.generateContent(prompt);
@@ -616,6 +806,9 @@ JSONのみ返してください：
       searchTags: Array.isArray(parsed.searchTags) && parsed.searchTags.length > 0
         ? parsed.searchTags
         : null,
+      officers: Array.isArray(parsed.officers) && parsed.officers.length > 0
+        ? parsed.officers.slice(0, 10)
+        : null,
     };
   } catch {
     return defaultGeminiResult();
@@ -638,6 +831,7 @@ function defaultGeminiResult(): GeminiExtractedInfo {
     industryMajor: null,
     industryMinor: null,
     searchTags: null,
+    officers: null,
   };
 }
 
@@ -684,6 +878,48 @@ export async function scrapeCompanyInfo(url: string, requestedIndustry?: string,
       }
     }
 
+    // Step 2.5: トップページのリンクから擬似サイトマップを作成
+    if (!companyPageHtml && mainHtml) {
+      const pageLinks = extractLinksFromHtml(mainHtml, domain);
+      if (pageLinks.length > 0) {
+        const pageUrls = pageLinks.map(l => l.url);
+
+        // まずURLパターンマッチ
+        const companyPageUrl = findCompanyPageFromSitemap(pageUrls, baseUrl);
+        if (companyPageUrl) {
+          companyPageHtml = await fetchHtml(companyPageUrl);
+          if (companyPageHtml) {
+            companyPageSource = "homepage-links";
+            console.log(`  -> Company page found via homepage links: ${companyPageUrl}`);
+          }
+        }
+
+        // パターンマッチで見つからなければタイトルフェッチ
+        if (!companyPageHtml) {
+          const titlePageUrl = await findCompanyPageByTitleFetch(pageUrls, baseUrl);
+          if (titlePageUrl) {
+            companyPageHtml = await fetchHtml(titlePageUrl);
+            if (companyPageHtml) {
+              companyPageSource = "homepage-links-title";
+              console.log(`  -> Company page found via homepage links title fetch: ${titlePageUrl}`);
+            }
+          }
+        }
+      }
+    }
+
+    // Step 2.75: 外部コーポレートサイトリンクをフォロー（サービスサイト→企業サイトパターン）
+    if (!companyPageHtml && mainHtml) {
+      const externalCorporateUrl = findExternalCorporateLink(mainHtml, domain);
+      if (externalCorporateUrl) {
+        companyPageHtml = await fetchHtml(externalCorporateUrl);
+        if (companyPageHtml) {
+          companyPageSource = "external-corporate";
+          console.log(`  -> Company page found via external corporate link: ${externalCorporateUrl}`);
+        }
+      }
+    }
+
     // Step 3: パス推測フォールバック
     if (!companyPageHtml) {
       for (const path of COMPANY_PAGE_PATHS) {
@@ -723,6 +959,29 @@ export async function scrapeCompanyInfo(url: string, requestedIndustry?: string,
       ? mergeRegexExtracted(mainRegex, companyRegex)
       : (companyPageHtml ? companyRegex : mainRegex);
 
+    // 役員ページURL検出（トップページ + 会社概要ページのリンクから）
+    const allLinks = [
+      ...(mainHtml ? extractLinksFromHtml(mainHtml, domain) : []),
+      ...(companyPageHtml ? extractLinksFromHtml(companyPageHtml, domain) : []),
+    ];
+    const officerPageUrl = findOfficerPageUrl(allLinks);
+
+    // 関連サイト抽出
+    let relatedSites = mainHtml ? extractRelatedSites(mainHtml, domain) : [];
+
+    // 外部コーポレートサイト経由の場合、企業サイトからの関連サイトも追加
+    if (companyPageSource === "external-corporate" && companyPageHtml) {
+      const corpRelated = extractRelatedSites(companyPageHtml, domain);
+      for (const site of corpRelated) {
+        if (!relatedSites.includes(site)) {
+          relatedSites.push(site);
+        }
+      }
+    }
+
+    // 最新ニュース抽出
+    const latestNews = mainHtml ? extractNewsFromHtml(mainHtml) : [];
+
     // Geminiで企業情報を抽出（依頼業種を渡して一致チェック）
     const extracted = await extractInfoWithGemini(structuredContent, requestedIndustry);
 
@@ -759,9 +1018,19 @@ export async function scrapeCompanyInfo(url: string, requestedIndustry?: string,
       }
     }
 
-    // フォーム検出（トップページHTMLを使用）
+    // フォーム検出（トップページHTMLを使用）— 15秒タイムアウト
     const overviewHtml = mainHtml || htmlForExtraction;
-    const formResult = await detectContactForm(domain, overviewHtml);
+    let formResult: { has_form: boolean; form_url?: string | null } = { has_form: false };
+    try {
+      formResult = await Promise.race([
+        detectContactForm(domain, overviewHtml),
+        new Promise<{ has_form: boolean; form_url?: string | null }>((_, reject) =>
+          setTimeout(() => reject(new Error('Form detection timeout')), 15000)
+        ),
+      ]);
+    } catch {
+      console.log(`  -> Form detection timed out for ${domain}`);
+    }
 
     // 最終結果を組み立て: Gemini + regex + フォーム検出
     const result: CompanyInfo = {
@@ -787,6 +1056,12 @@ export async function scrapeCompanyInfo(url: string, requestedIndustry?: string,
     if (regexData.snsLinks) result.snsLinks = regexData.snsLinks;
     if (regexData.hasRecruitPage) result.hasRecruitPage = regexData.hasRecruitPage;
     if (regexData.siteUpdatedAt) result.siteUpdatedAt = regexData.siteUpdatedAt;
+
+    // 新規抽出データをマージ
+    if (officerPageUrl) result.officerPageUrl = officerPageUrl;
+    if (extracted.officers && extracted.officers.length > 0) result.officers = extracted.officers;
+    if (relatedSites.length > 0) result.relatedSites = relatedSites;
+    if (latestNews.length > 0) result.latestNews = latestNews;
 
     return result;
   } catch {

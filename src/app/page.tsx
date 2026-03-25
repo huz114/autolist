@@ -17,6 +17,58 @@ const LINE_ICON = (
   </svg>
 );
 
+// SVG icons to replace emoji (no-emoji-icons rule)
+const IconSearch = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
+  </svg>
+);
+const IconClipboard = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect width="8" height="4" x="8" y="2" rx="1" ry="1" /><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+  </svg>
+);
+const IconYenSign = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M12 20V10" /><path d="m4 4 8 8 8-8" /><path d="M8 14h8" /><path d="M8 18h8" />
+  </svg>
+);
+const IconPhone = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
+  </svg>
+);
+const IconChart = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M3 3v18h18" /><path d="m19 9-5 5-4-4-3 3" />
+  </svg>
+);
+const IconTarget = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" />
+  </svg>
+);
+const IconBot = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M12 8V4H8" /><rect width="16" height="12" x="4" y="8" rx="2" /><path d="M2 14h2" /><path d="M20 14h2" /><path d="M15 13v2" /><path d="M9 13v2" />
+  </svg>
+);
+const IconGift = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ display: "inline-block", verticalAlign: "middle", marginRight: 6 }}>
+    <rect x="3" y="8" width="18" height="4" rx="1" /><path d="M12 8v13" /><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7" /><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5" />
+  </svg>
+);
+
+// Inline CTA component for repeating after sections
+const SectionCTA = () => (
+  <div className="section-cta-wrap">
+    <Link href="/register" className="btn-primary btn-section-cta">
+      100件無料でお試し
+    </Link>
+    <span className="section-cta-note">登録料無料 · カード不要 · いつでも解約</span>
+  </div>
+);
+
 export default function Home() {
   const [navScrolled, setNavScrolled] = useState(false);
   const revealRefs = useRef<(HTMLElement | null)[]>([]);
@@ -78,7 +130,7 @@ export default function Home() {
     },
     {
       q: "どれくらいで収集できますか？",
-      a: "100件あたり1〜2時間が目安です。完了したらメールで通知します。前日の夜に依頼して翌朝営業開始、といった使い方がスムーズです。",
+      a: "100件あたり1〜2時間が目安です。完了したらメールでお知らせします。LINEから依頼した場合はLINEにも通知が届きます。前日の夜に依頼して翌朝営業開始、といった使い方がスムーズです。",
     },
     {
       q: "リスト業者と何が違いますか？",
@@ -103,20 +155,21 @@ export default function Home() {
       {/* NAVBAR */}
       <nav className={`navbar${navScrolled ? " scrolled" : ""}`}>
         <div className="nav-logo">
-          <span className="nav-subtitle" style={{ display: "block", fontSize: 11, color: "var(--text-secondary)", fontWeight: 500, letterSpacing: "0.08em", marginBottom: 2 }}>AI企業リスト自動生成</span>
+          <span className="nav-subtitle" style={{ display: "block", fontSize: 12, color: "var(--text-secondary)", fontWeight: 500, letterSpacing: "0.08em", marginBottom: 2 }}>AI企業リスト自動生成</span>
           オート<span>リスト</span>
         </div>
         <div className="nav-right" style={{ display: "flex", alignItems: "center", gap: 20 }}>
           <Link
             href="/my-lists"
             className="nav-member-link"
+            aria-label="会員ログイン"
           >
             <span className="nav-member-text-full">会員ログイン</span>
             <span className="nav-member-text-short">ログイン</span>
           </Link>
           <div className="nav-cta-wrap" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-            <span className="nav-free-badge" style={{ fontSize: 11, color: "var(--accent)", fontWeight: 700 }}>最初の100件は無料</span>
-            <Link href="/register" className="nav-cta">
+            <span className="nav-free-badge" style={{ fontSize: 12, color: "var(--accent)", fontWeight: 700 }}>最初の100件は無料</span>
+            <Link href="/register" className="nav-cta" aria-label="100件無料でお試し">
               100件無料でお試し
             </Link>
           </div>
@@ -160,8 +213,8 @@ export default function Home() {
               <div className="stat-label">1件あたりの最安コスト</div>
             </div>
           </div>
-          <p className="hero-free-badge" style={{ marginTop: 24, textAlign: "center", fontSize: 15, color: "var(--accent)", fontWeight: 700, letterSpacing: "0.02em" }}>
-            🎁 最初の100件は無料で体験できます
+          <p className="hero-free-badge" style={{ marginTop: 24, textAlign: "center", fontSize: 16, color: "var(--accent)", fontWeight: 700, letterSpacing: "0.02em" }}>
+            <IconGift /> 最初の100件は無料で体験できます
           </p>
         </div>
       </section>
@@ -177,10 +230,10 @@ export default function Home() {
           </div>
           <div className="problem-grid">
             {[
-              { icon: "\uD83D\uDD0D", title: "Googleで1社ずつ調べて", desc: "企業名・電話番号・担当者名...Excelに手入力する作業が延々と続く", consequence: "月20時間を失い、その分だけ商談のチャンスが減っていく" },
-              { icon: "\uD83D\uDCCB", title: "買ったリストが使えない", desc: "電話番号が古い、担当者名がない、事業内容が不明", consequence: "リストの精査にさらに時間を取られ、結局自分で調べ直す羽目に" },
-              { icon: "\uD83D\uDCB8", title: "リスト業者に頼んだら", desc: "高い・古い・情報が足りない", consequence: "1件¥30〜60。しかも代表者名や従業員数は別料金。コスパが見えない" },
-              { icon: "\uD83D\uDCDE", title: "テレアポ前の下調べが重い", desc: "会社の規模感も事業内容もわからず電話するのは怖い", consequence: "準備不足のまま架電 → 的外れなトーク → アポが取れない悪循環" },
+              { icon: <IconSearch />, title: "Googleで1社ずつ調べて", desc: "企業名・電話番号・担当者名...Excelに手入力する作業が延々と続く", consequence: "月20時間を失い、その分だけ商談のチャンスが減っていく" },
+              { icon: <IconClipboard />, title: "買ったリストが使えない", desc: "電話番号が古い、担当者名がない、事業内容が不明", consequence: "リストの精査にさらに時間を取られ、結局自分で調べ直す羽目に" },
+              { icon: <IconYenSign />, title: "リスト業者に頼んだら", desc: "高い・古い・情報が足りない", consequence: "1件¥5〜60。しかも代表者名や従業員数は別料金。コスパが見えない" },
+              { icon: <IconPhone />, title: "テレアポ前の下調べが重い", desc: "会社の規模感も事業内容もわからず電話するのは怖い", consequence: "準備不足のまま架電 → 的外れなトーク → アポが取れない悪循環" },
             ].map((item, i) => (
               <div key={i} className={`problem-card reveal reveal-delay-${i + 1}`} ref={addRevealRef}>
                 <div className="problem-icon">{item.icon}</div>
@@ -196,6 +249,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* CTA after Problem */}
+      <SectionCTA />
 
       {/* COMPARISON */}
       <section className="lp-section comparison-section">
@@ -215,8 +271,8 @@ export default function Home() {
             {[
               {
                 label: "コスト",
-                before: <>¥30〜60/件</>,
-                after: <>¥6.4〜20/件</>,
+                before: <>¥5〜60/件</>,
+                after: <>¥6.4〜9.9/件</>,
               },
               {
                 label: "情報の充実度",
@@ -341,7 +397,7 @@ export default function Home() {
                 num: "02",
                 time: "依頼したら放置でOK",
                 title: "AIが自動で収集・精査",
-                desc: "Googleから企業名・URL・電話番号・フォームURLを収集。さらに代表者名・設立年・従業員数・資本金・事業内容をAIが自動取得。完了したらメールで通知します。",
+                desc: "Googleから企業名・URL・電話番号・フォームURLを収集。さらに代表者名・設立年・従業員数・資本金・事業内容をAIが自動取得。完了したらメールでお知らせ。LINEから依頼した場合はLINEにも通知。",
               },
               {
                 num: "03",
@@ -365,6 +421,9 @@ export default function Home() {
         </div>
       </section>
 
+      {/* CTA after Steps */}
+      <SectionCTA />
+
       {/* BENEFITS */}
       <section className="lp-section benefits-section">
         <div className="container">
@@ -375,17 +434,17 @@ export default function Home() {
           <div className="benefits-grid">
             {[
               {
-                icon: "\uD83D\uDCCA",
+                icon: <IconChart />,
                 title: <>企業名だけじゃない。<br />中身がわかる。</>,
                 desc: "代表者名・設立年・従業員数・資本金・事業内容。営業に必要な情報をAIが自動で取得。テレアポの下調べも、提案書の準備も、リストを開くだけで済みます。",
               },
               {
-                icon: "\uD83C\uDFAF",
+                icon: <IconTarget />,
                 title: <>1つのリストで、<br />2つの営業手法。</>,
                 desc: "電話番号でテレアポ。フォームURLでフォーム営業。同じリストからどちらの手法にも展開できます。CSVダウンロードで、お使いのCRMやスプレッドシートにそのまま。",
               },
               {
-                icon: "\uD83E\uDD16",
+                icon: <IconBot />,
                 title: <>頼んだら、<br />あとは放置でいい。</>,
                 desc: "AIが自動でGoogleを検索し、企業情報を収集・精査します。移動中でも、商談中でも関係なし。気づいたら出来上がっています。",
               },
@@ -428,8 +487,8 @@ export default function Home() {
               },
               {
                 label: "リスト単価",
-                before: "¥30〜60/件（業者）or 人件費換算¥500/件以上",
-                after: "¥6.4〜20/件",
+                before: "¥5〜60/件（業者）or 人件費換算¥500/件以上",
+                after: "¥6.4〜9.9/件",
               },
               {
                 label: "月の営業時間",
@@ -450,6 +509,9 @@ export default function Home() {
         </div>
       </section>
 
+      {/* CTA after ROI */}
+      <SectionCTA />
+
       {/* PRICING */}
       <section id="pricing" className="lp-section pricing-section">
         <div className="container">
@@ -461,7 +523,7 @@ export default function Home() {
             </p>
           </div>
           <p style={{ marginTop: 24, textAlign: "center", fontSize: 16, color: "var(--accent)", fontWeight: 700 }}>
-            🎁 無料登録で、最初の100件はプレゼント！
+            <IconGift /> 無料登録で、最初の100件はプレゼント！
           </p>
           <div className="pricing-grid" style={{ marginTop: 56 }}>
             {[
@@ -552,6 +614,13 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* MOBILE STICKY CTA */}
+      <div className="sticky-cta-mobile" aria-label="100件無料でお試し">
+        <Link href="/register" className="btn-primary sticky-cta-btn">
+          100件無料でお試し
+        </Link>
+      </div>
 
       {/* FOOTER */}
       <footer className="lp-footer">

@@ -229,7 +229,8 @@ export default function CompanyCard({
   const handleCopy = useCallback(() => {
     const c = company
     const lines = [c.companyName || c.domain]
-    if (c.industry || c.location) lines.push(`${c.industry || ''} / ${c.location || ''}`)
+    if (c.industry) lines.push(`業種: ${c.industry}`)
+    if (c.location) lines.push(`住所: ${c.location}`)
     if (c.phoneNumber) lines.push(`電話: ${c.phoneNumber}`)
     if (c.email) lines.push(`メール: ${c.email}`)
     if (c.url) lines.push(`URL: ${c.url.replace('https://', '').replace('http://', '')}`)

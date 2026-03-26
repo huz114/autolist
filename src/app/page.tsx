@@ -66,7 +66,7 @@ const IconPlay = () => (
 );
 // SVG icon: hand pointer / tap (replaces finger emoji)
 const IconHandPointer = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v0" /><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2" /><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8" /><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 13" />
   </svg>
 );
@@ -973,9 +973,9 @@ export default function Home() {
                         marginLeft: 20,
                         transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
                         opacity: formDemoStep >= 4 ? 1 : 0,
-                        bottom: formDemoStep === 4 ? 2 : -24,
-                        color: '#06C755',
-                        filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.6))',
+                        bottom: formDemoStep === 4 ? 38 : -24,
+                        color: '#ffffff',
+                        filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.8))',
                         pointerEvents: 'none',
                       }}
                       aria-hidden="true"

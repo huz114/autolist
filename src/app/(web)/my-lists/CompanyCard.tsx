@@ -355,11 +355,11 @@ export default function CompanyCard({
             </div>
           </div>
 
-          {/* Meta: industry / location */}
+          {/* Meta: industry / short location */}
           <div className="text-[13px] text-[#8fa3b8] mb-2">
             {company.industry && <>{company.industry}</>}
             {company.industry && company.location && <span className="mx-1.5 text-[#5a6a7a]">/</span>}
-            {company.location && <>{company.location}</>}
+            {company.location && <>{company.location.replace(/^(.*?[都道府県].*?[市区町村郡]).*$/, '$1')}</>}
           </div>
 
           {/* Contacts */}
@@ -434,9 +434,13 @@ export default function CompanyCard({
                 <span className="text-[#5a6a7a] min-w-[80px] flex-shrink-0">資本金</span>
                 <span className="text-[#8fa3b8]">{company.capitalAmount || '-'}</span>
               </div>
-              <div className="flex gap-2 text-[13px]">
+              <div className="flex gap-2 mb-1.5 text-[13px]">
                 <span className="text-[#5a6a7a] min-w-[80px] flex-shrink-0">事業内容</span>
                 <span className="text-[#8fa3b8]">{company.businessDescription || '-'}</span>
+              </div>
+              <div className="flex gap-2 text-[13px]">
+                <span className="text-[#5a6a7a] min-w-[80px] flex-shrink-0">住所</span>
+                <span className="text-[#8fa3b8]">{company.location || '-'}</span>
               </div>
             </div>
 

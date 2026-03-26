@@ -253,7 +253,12 @@ export default function UnifiedCompanyList() {
     setStatFilter(prev => prev === filter ? 'all' : filter)
   }, [])
 
-  const selectedCount = Array.from(selectedIds).filter(id => filteredCompanies.some(c => c.id === id)).length
+  const selectedCompanies = filteredCompanies.filter(c => selectedIds.has(c.id))
+  const selectedCount = selectedCompanies.length
+  const cooldownMs = 30 * 24 * 60 * 60 * 1000
+  const selectedCooldownCount = selectedCompanies.filter(c => c.sentAt && (Date.now() - new Date(c.sentAt).getTime()) < cooldownMs).length
+  const allSelectedInCooldown = selectedCount > 0 && selectedCooldownCount === selectedCount
+  const someSelectedInCooldown = selectedCooldownCount > 0 && selectedCooldownCount < selectedCount
 
   // Loading state
   if (loading) {
@@ -448,13 +453,25 @@ export default function UnifiedCompanyList() {
           >
             <DownloadIcon /> CSVダウンロード
           </button>
-          <button
-            disabled={selectedCount === 0}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-[6px] text-[13px] font-semibold bg-[#06C755] text-white border-none min-h-[38px] cursor-pointer hover:bg-[#04a344] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-            aria-label="フォーム送信"
-          >
-            <SendIcon /> フォーム送信
-          </button>
+          <div className="relative">
+            <button
+              disabled={selectedCount === 0 || allSelectedInCooldown}
+              onClick={() => {
+                if (someSelectedInCooldown) {
+                  alert(`選択中の${selectedCount}件のうち${selectedCooldownCount}件はクールダウン期間中（送信後30日以内）のため、送信対象から除外されます。残り${selectedCount - selectedCooldownCount}件に送信します。`)
+                }
+              }}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-[6px] text-[13px] font-semibold bg-[#06C755] text-white border-none min-h-[38px] cursor-pointer hover:bg-[#04a344] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              aria-label="フォーム送信"
+            >
+              <SendIcon /> フォーム送信
+            </button>
+            {allSelectedInCooldown && selectedCount > 0 && (
+              <p className="absolute top-full left-0 mt-1 text-[11px] text-[#f59e0b] whitespace-nowrap">
+                選択中の企業は全てクールダウン期間中です
+              </p>
+            )}
+          </div>
         </div>
       </div>
 

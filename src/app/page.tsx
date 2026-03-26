@@ -123,6 +123,16 @@ export default function Home() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // 時間帯別コピー
+  const hour = new Date().getHours();
+  const timeCopy = hour >= 6 && hour < 12
+    ? { heading: "今日の午後、100件のリストが", sub: "今すぐ依頼すれば、数時間後には企業詳細付きリストが届きます。", cta: "今すぐ依頼して、午後から営業開始" }
+    : hour >= 12 && hour < 18
+    ? { heading: "明日の朝、100件のリストが", sub: "今すぐ依頼すれば、明日の朝には企業詳細付きリストが届きます。", cta: "今すぐ依頼して、明日から営業開始" }
+    : hour >= 18
+    ? { heading: "明日の朝、100件のリストが", sub: "今夜依頼すれば、明日の朝には企業詳細付きリストが届きます。", cta: "今夜依頼して、明日から営業開始" }
+    : { heading: "朝起きたら、100件のリストが", sub: "今すぐ依頼すれば、朝には企業詳細付きリストが届きます。", cta: "今すぐ依頼して、朝から営業開始" };
+
   // Fetch completed list count for social proof
   useEffect(() => {
     fetch("/api/stats")
@@ -1153,16 +1163,16 @@ export default function Home() {
           <div className="final-cta-inner reveal" ref={addRevealRef}>
             <div className="section-label" style={{ textAlign: "center" }}>Get Started</div>
             <h2 className="final-cta-title">
-              明日の朝、100件のリストが<br />手元にある状態で営業を始めませんか？
+              {timeCopy.heading}<br />手元にある状態で営業を始めませんか？
             </h2>
-            <p className="final-cta-sub">今夜依頼すれば、明日の朝には企業詳細付きリストが届きます。<br />最初の100件は無料。月額なし、いつでも始められます。</p>
+            <p className="final-cta-sub">{timeCopy.sub}<br />最初の100件は無料。月額なし、いつでも始められます。</p>
             <div className="final-cta-group">
               <Link
                 href="/register"
                 className="btn-primary"
                 style={{ fontSize: 17, padding: "20px 40px" }}
               >
-                今夜依頼して、明日から営業開始
+                {timeCopy.cta}
               </Link>
             </div>
             <p style={{ marginTop: 24, fontSize: 13, color: "var(--text-muted)" }}>

@@ -68,6 +68,7 @@ export default function SendHistoryTab() {
   const [stats, setStats] = useState<Stats>({ thisWeek: 0, thisMonth: 0, allTime: 0 })
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [expandedId, setExpandedId] = useState<string | null>(null)
   const perPage = 20
 
   // Debounce search
@@ -224,9 +225,14 @@ export default function SendHistoryTab() {
                 <tbody>
                   {submissions.map((s) => {
                     const st = getStatus(s.status)
+                    const isExpanded = expandedId === s.id
                     return (
-                      <tr key={s.id} className="border-b border-[rgba(255,255,255,0.04)] hover:bg-[rgba(255,255,255,0.02)] transition-colors">
-                        <td className="px-4 py-3 text-[#8fa3b8] whitespace-nowrap">
+                      <tr
+                        key={s.id}
+                        className="border-b border-[rgba(255,255,255,0.04)] hover:bg-[rgba(255,255,255,0.02)] transition-colors cursor-pointer"
+                        onClick={() => setExpandedId(isExpanded ? null : s.id)}
+                      >
+                        <td className="px-4 py-3 text-[#8fa3b8] whitespace-nowrap align-top">
                           {new Date(s.submittedAt).toLocaleString('ja-JP', {
                             month: 'numeric',
                             day: 'numeric',
@@ -234,26 +240,42 @@ export default function SendHistoryTab() {
                             minute: '2-digit',
                           })}
                         </td>
-                        <td className="px-4 py-3 text-[#f0f4f8] font-medium max-w-[200px] truncate">
+                        <td className="px-4 py-3 text-[#f0f4f8] font-medium max-w-[200px] truncate align-top">
                           {s.companyName || '-'}
                         </td>
-                        <td className="px-4 py-3 max-w-[200px] truncate">
+                        <td className="px-4 py-3 max-w-[200px] truncate align-top">
                           <a
                             href={s.formUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-[#06C755] hover:text-[#04a344] hover:underline transition-colors"
+                            onClick={(e) => e.stopPropagation()}
                           >
                             {s.formUrl ? (() => { try { return new URL(s.formUrl).hostname } catch { return s.formUrl } })() : '-'}
                           </a>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3 align-top">
                           <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${st.bg} ${st.text}`}>
                             {st.label}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-[#8fa3b8] max-w-[250px] truncate" title={s.messageBody || ''}>
-                          {s.subject || (s.messageBody ? s.messageBody.slice(0, 40) + '...' : '-')}
+                        <td className="px-4 py-3 align-top">
+                          {isExpanded ? (
+                            <div>
+                              {s.subject && (
+                                <p className="text-[#f0f4f8] font-semibold text-sm mb-2">件名: {s.subject}</p>
+                              )}
+                              {s.messageBody ? (
+                                <p className="text-[#8fa3b8] text-xs whitespace-pre-wrap leading-relaxed">{s.messageBody}</p>
+                              ) : (
+                                <p className="text-[#5a6a7a] text-xs">本文なし</p>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-[#8fa3b8] max-w-[250px] truncate block">
+                              {s.subject || (s.messageBody ? s.messageBody.slice(0, 40) + '...' : '-')}
+                            </span>
+                          )}
                         </td>
                       </tr>
                     )

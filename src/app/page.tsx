@@ -486,10 +486,8 @@ export default function Home() {
               </div>{/* end steps container */}
             </div>
           </div>
-        </div>
-        {/* 2カラム解除 → フル幅1カラムで中央配置 */}
-        <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px" }}>
-          <div className="hero-stats">
+          {/* 2カラム解除 → hero-inner内でフル幅中央配置 */}
+          <div className="hero-stats" style={{ gridColumn: "1 / -1" }}>
             <div>
               <div className="stat-num">1分</div>
               <div className="stat-label">依頼するだけ</div>
@@ -503,7 +501,7 @@ export default function Home() {
               <div className="stat-label">1件あたりの最安コスト</div>
             </div>
           </div>
-          <p style={{ marginTop: 20, textAlign: "center", fontSize: 15, color: "var(--accent)", fontWeight: 600, letterSpacing: "0.02em", opacity: 0.9 }}>
+          <p style={{ gridColumn: "1 / -1", marginTop: 20, textAlign: "center", fontSize: 15, color: "var(--accent)", fontWeight: 600, letterSpacing: "0.02em", opacity: 0.9 }}>
             <IconGift /> 最初の100件は無料で体験できます
           </p>
         </div>

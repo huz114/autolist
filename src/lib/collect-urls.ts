@@ -315,7 +315,7 @@ async function searchWithSerper(query: string, page: number = 1): Promise<{ resu
 /**
  * ジョブのURLを収集してDBに保存する
  */
-export async function collectUrls(jobId: string): Promise<number> {
+export async function collectUrls(jobId: string, userId?: string): Promise<number> {
   // ジョブ情報を取得
   const job = await prisma.listJob.findUnique({
     where: { id: jobId },
@@ -325,6 +325,22 @@ export async function collectUrls(jobId: string): Promise<number> {
   if (!job) {
     throw new Error(`Job not found: ${jobId}`);
   }
+
+  // ユーザーの過去収集済みドメインを取得（重複除外用）
+  const effectiveUserId = userId || job.userId;
+  const userPastJobs = await prisma.listJob.findMany({
+    where: { userId: effectiveUserId, id: { not: jobId } },
+    select: { id: true },
+  });
+  const existingDomains = new Set<string>();
+  if (userPastJobs.length > 0) {
+    const pastUrls = await prisma.collectedUrl.findMany({
+      where: { jobId: { in: userPastJobs.map(j => j.id) } },
+      select: { domain: true },
+    });
+    pastUrls.filter(u => u.domain).forEach(u => existingDomains.add(u.domain));
+  }
+  console.log(`[Job ${jobId}] ユーザー過去収集済みドメイン数: ${existingDomains.size}`);
 
   // 検索クエリを取得（jobのkeywordから再解析が必要な場合はanalyzeQueryを呼ぶ）
   // ここでは簡易的に業種と地域から生成
@@ -339,6 +355,7 @@ export async function collectUrls(jobId: string): Promise<number> {
   const collectedDomains = new Set<string>(job.urls.map(u => u.domain));
   const newUrls: CollectedUrlData[] = [];
   const advertiserDomains = new Set<string>();
+  let skippedByUserHistory = 0;
 
   // targetCountに達するまで検索を繰り返す
   for (const query of searchQueries) {
@@ -354,6 +371,12 @@ export async function collectUrls(jobId: string): Promise<number> {
       adDomains.forEach(d => advertiserDomains.add(d));
 
       for (const result of results) {
+        // ユーザーの過去収集済みドメインはスキップ
+        if (existingDomains.has(result.domain)) {
+          console.log(`  [USER DUPLICATE] ${result.domain} はユーザーの過去依頼で収集済み`);
+          skippedByUserHistory++;
+          continue;
+        }
         if (!collectedDomains.has(result.domain)) {
           collectedDomains.add(result.domain);
           newUrls.push(result);
@@ -365,6 +388,10 @@ export async function collectUrls(jobId: string): Promise<number> {
     } catch (error) {
       console.error(`Search failed for query "${query}":`, error);
     }
+  }
+
+  if (skippedByUserHistory > 0) {
+    console.log(`[Job ${jobId}] ユーザー過去収集済みスキップ: ${skippedByUserHistory} 件`);
   }
 
   // 各URLに対して企業情報をクローリングして保存
@@ -542,10 +569,10 @@ export async function collectUrlsWithQueries(
   }
 
   // ユーザーが過去に収集したdomain一覧を取得（重複排除用）
+  // completed/cancelled/failed/runningすべてのジョブの収集済みドメインを除外
   const pastJobs = await prisma.listJob.findMany({
     where: {
       userId: userId,
-      status: { in: ['completed', 'cancelled'] },
       id: { not: jobId },
     },
     select: { id: true },
@@ -559,7 +586,7 @@ export async function collectUrlsWithQueries(
       },
       select: { domain: true },
     });
-    pastUrls.forEach(u => excludedDomains.add(u.domain));
+    pastUrls.filter(u => u.domain).forEach(u => excludedDomains.add(u.domain));
   }
 
   console.log(`[Job ${jobId}] 除外ドメイン数: ${excludedDomains.size}`);

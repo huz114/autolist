@@ -40,11 +40,8 @@ function hasProcessingJobs(jobs: Job[]): boolean {
 }
 
 function getStatusBadge(job: { status: string; confirmedAt: string | null }) {
-  if (job.status === 'completed' && job.confirmedAt) {
-    return { label: '確定済み(送信可能)', color: 'text-blue-400 bg-blue-900/30' }
-  }
   if (job.status === 'completed') {
-    return { label: '収集完了(未確定)', color: 'text-[#06C755] bg-[rgba(6,199,85,0.1)]' }
+    return { label: '収集完了', color: 'text-[#06C755] bg-[rgba(6,199,85,0.1)]' }
   }
   const map: Record<string, { label: string; color: string }> = {
     pending:    { label: '処理中', color: 'text-amber-400 bg-amber-900/30' },
@@ -207,8 +204,6 @@ export default function JobList({ initialJobs }: JobListProps) {
                   <span>依頼: <span className="text-[#f0f4f8]">{job.targetCount}件</span></span>
                   <span className="text-[#8494a7]">&rarr;</span>
                   <span>収集: <span className="text-[#f0f4f8]">{actualCollected}件</span></span>
-                  <span className="text-[#8494a7]">&rarr;</span>
-                  <span>確定: <span className="text-[#f0f4f8]">{confirmedCount !== null ? `${confirmedCount}件` : '-'}</span></span>
                 </div>
                 {job.completedAt && (
                   <p className="text-xs text-[#8494a7] mt-1">

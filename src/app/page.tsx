@@ -1043,6 +1043,7 @@ export default function Home() {
                 <p style={{ fontSize: 12, color: "var(--red)", fontWeight: 700, marginBottom: 8, textTransform: "uppercase", letterSpacing: 1 }}>手作業の場合</p>
                 <p style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.8 }}>
                   月20時間 &times; 時給2,500円<br />
+                  <span style={{ fontSize: 10, color: "var(--text-muted)" }}>※ 月給40万円 &divide; 160h換算</span><br />
                   <span style={{ fontSize: 28, fontWeight: 900, color: "#ff8090" }}>= 月5万円</span>
                 </p>
               </div>

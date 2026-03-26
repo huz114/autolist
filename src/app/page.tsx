@@ -973,7 +973,7 @@ export default function Home() {
                         marginLeft: 20,
                         transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
                         opacity: formDemoStep >= 4 ? 1 : 0,
-                        bottom: formDemoStep === 4 ? 38 : -24,
+                        bottom: formDemoStep === 4 ? 12 : -24,
                         color: '#ffffff',
                         filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.8))',
                         pointerEvents: 'none',

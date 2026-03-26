@@ -782,7 +782,7 @@ async function extractInfoWithGemini(
   requestedIndustry?: string
 ): Promise<GeminiExtractedInfo> {
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
   const industryCheckInstruction = requestedIndustry
     ? `\n\n【業種一致チェック】依頼された業種: 「${requestedIndustry}」

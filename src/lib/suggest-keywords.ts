@@ -24,7 +24,7 @@ export async function suggestAlternativeKeywords(keyword: string): Promise<strin
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
   const prompt = `あなたは営業リスト収集の専門家です。
 

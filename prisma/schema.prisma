@@ -93,9 +93,13 @@ model CollectedUrl {
   formUrl             String?
   companyVerified     Boolean  @default(false)
   excluded            Boolean  @default(false)
+  isPinned            Boolean  @default(false)
+  isArchived          Boolean  @default(false)
+  downloadedAt        DateTime?
   status              String   @default("collected")
   createdAt           DateTime @default(now())
   job                 ListJob  @relation(fields: [jobId], references: [id])
+  companyNotes        CompanyNote[]
 }
 
 model SearchLog {
@@ -137,6 +141,19 @@ model LineLinkCode {
   expiresAt DateTime
   usedAt    DateTime?
   createdAt DateTime  @default(now())
+}
+
+model CompanyNote {
+  id              String       @id @default(cuid())
+  userId          String
+  collectedUrlId  String
+  collectedUrl    CollectedUrl @relation(fields: [collectedUrlId], references: [id])
+  memo            String
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@unique([userId, collectedUrlId])
+  @@index([userId])
 }
 
 model SendRecord {

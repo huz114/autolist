@@ -7,6 +7,7 @@ import NewRequestButton from './NewRequestButton'
 import LineLinkButton from './LineLinkButton'
 import JobList from './JobList'
 import type { Job } from './JobList'
+import MyListsTabs from './MyListsTabs'
 
 export default async function MyListsPage() {
   const session = await auth()
@@ -59,25 +60,7 @@ export default async function MyListsPage() {
         <LineLinkButton />
       </div>
 
-      {jobs.length === 0 ? (
-        <div className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-2xl p-12 text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[rgba(6,199,85,0.1)] border border-[rgba(6,199,85,0.4)] flex items-center justify-center">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#06C755]">
-              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-              <line x1="12" y1="18" x2="12" y2="12" />
-              <line x1="9" y1="15" x2="15" y2="15" />
-            </svg>
-          </div>
-          <p className="text-[#f0f4f8] font-medium mb-2">まだリストがありません</p>
-          <p className="text-sm text-[#8494a7] mb-6">
-            業種と地域を指定して、営業リストを作成しましょう
-          </p>
-          <NewRequestButton />
-        </div>
-      ) : (
-        <JobList initialJobs={jobs} />
-      )}
+      <MyListsTabs jobs={jobs} />
     </div>
   )
 }

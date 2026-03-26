@@ -1,0 +1,488 @@
+'use client'
+
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import CompanyCard, { type Company } from './CompanyCard'
+
+// -- Types --
+
+type StatusFilter = 'all' | 'unsent' | 'sent' | 'dl' | 'hasPhone'
+type StatFilter = 'all' | 'hasForm' | 'sent' | 'downloaded'
+
+// -- Icons --
+
+const SearchIcon = () => (
+  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5a6a7a] pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="11" cy="11" r="8"/>
+    <path d="m21 21-4.3-4.3"/>
+  </svg>
+)
+
+const DownloadIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+    <polyline points="7 10 12 15 17 10"/>
+    <line x1="12" y1="15" x2="12" y2="3"/>
+  </svg>
+)
+
+const SendIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M22 2 11 13"/>
+    <path d="M22 2 15 22 11 13 2 9z"/>
+  </svg>
+)
+
+const UsersIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+    <circle cx="9" cy="7" r="4"/>
+    <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+  </svg>
+)
+
+const ClockIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/>
+    <polyline points="12 6 12 12 16 14"/>
+  </svg>
+)
+
+// -- Component --
+
+export default function UnifiedCompanyList() {
+  const [companies, setCompanies] = useState<Company[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Filter state
+  const [statFilter, setStatFilter] = useState<StatFilter>('all')
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+  const [hasPhoneFilter, setHasPhoneFilter] = useState(false)
+  const [memoFilter, setMemoFilter] = useState(false)
+  const [showArchived, setShowArchived] = useState(false)
+  const [industryFilter, setIndustryFilter] = useState<string>('all')
+  const [locationFilter, setLocationFilter] = useState<string>('all')
+  const [searchQuery, setSearchQuery] = useState('')
+
+  // Selection state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+
+  // Ref for select all checkbox
+  const selectAllRef = useRef<HTMLInputElement>(null)
+
+  // Fetch companies
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      try {
+        const res = await fetch('/api/companies')
+        if (!res.ok) throw new Error('企業データの取得に失敗しました')
+        const data = await res.json()
+        setCompanies(data.companies || [])
+      } catch (err) {
+        setError(err instanceof Error ? err.message : '企業データの取得に失敗しました')
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchCompanies()
+  }, [])
+
+  // Compute unique industries and locations for filters
+  const { industries, locations } = useMemo(() => {
+    const industrySet = new Set<string>()
+    const locationSet = new Set<string>()
+    companies.forEach(c => {
+      if (c.industry) industrySet.add(c.industry)
+      if (c.location) locationSet.add(c.location)
+    })
+    return {
+      industries: Array.from(industrySet).sort(),
+      locations: Array.from(locationSet).sort(),
+    }
+  }, [companies])
+
+  // Stats
+  const stats = useMemo(() => {
+    const nonArchived = companies.filter(c => !c.isArchived)
+    return {
+      total: nonArchived.length,
+      hasForm: nonArchived.filter(c => c.hasForm).length,
+      sent: nonArchived.filter(c => !!c.sentAt).length,
+      downloaded: nonArchived.filter(c => !!c.downloadedAt).length,
+    }
+  }, [companies])
+
+  // Filtered and sorted companies
+  const filteredCompanies = useMemo(() => {
+    let result = companies.filter(c => {
+      // Archive filter
+      if (c.isArchived && !showArchived) return false
+
+      // Stat filter (quick filter from stats bar)
+      if (statFilter === 'hasForm' && !c.hasForm) return false
+      if (statFilter === 'sent' && !c.sentAt) return false
+      if (statFilter === 'downloaded' && !c.downloadedAt) return false
+
+      // Status filter
+      if (statusFilter === 'unsent' && (c.sentAt || c.downloadedAt)) return false
+      if (statusFilter === 'sent' && !c.sentAt) return false
+      if (statusFilter === 'dl' && !c.downloadedAt) return false
+
+      // HasPhone filter
+      if (hasPhoneFilter && !c.phoneNumber) return false
+
+      // Memo filter
+      if (memoFilter && !c.memo) return false
+
+      // Industry filter
+      if (industryFilter !== 'all' && c.industry !== industryFilter) return false
+
+      // Location filter
+      if (locationFilter !== 'all' && c.location !== locationFilter) return false
+
+      // Search
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase()
+        const name = (c.companyName || '').toLowerCase()
+        const memo = (c.memo || '').toLowerCase()
+        const domain = (c.domain || '').toLowerCase()
+        if (!name.includes(q) && !memo.includes(q) && !domain.includes(q)) return false
+      }
+
+      return true
+    })
+
+    // Sort: pinned first
+    result.sort((a, b) => {
+      if (a.isPinned && !b.isPinned) return -1
+      if (!a.isPinned && b.isPinned) return 1
+      return 0
+    })
+
+    return result
+  }, [companies, statFilter, statusFilter, hasPhoneFilter, memoFilter, showArchived, industryFilter, locationFilter, searchQuery])
+
+  // Update select all checkbox state
+  useEffect(() => {
+    if (!selectAllRef.current) return
+    const visibleIds = new Set(filteredCompanies.map(c => c.id))
+    const selectedVisible = Array.from(selectedIds).filter(id => visibleIds.has(id)).length
+    if (selectedVisible === 0) {
+      selectAllRef.current.checked = false
+      selectAllRef.current.indeterminate = false
+    } else if (selectedVisible === filteredCompanies.length) {
+      selectAllRef.current.checked = true
+      selectAllRef.current.indeterminate = false
+    } else {
+      selectAllRef.current.checked = false
+      selectAllRef.current.indeterminate = true
+    }
+  }, [selectedIds, filteredCompanies])
+
+  // Handlers
+  const handleSelectAll = useCallback((checked: boolean) => {
+    if (checked) {
+      setSelectedIds(new Set(filteredCompanies.map(c => c.id)))
+    } else {
+      setSelectedIds(new Set())
+    }
+  }, [filteredCompanies])
+
+  const handleSelect = useCallback((id: string, checked: boolean) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (checked) next.add(id)
+      else next.delete(id)
+      return next
+    })
+  }, [])
+
+  const handlePinToggle = useCallback(async (id: string) => {
+    // Optimistic update
+    setCompanies(prev => prev.map(c =>
+      c.id === id ? { ...c, isPinned: !c.isPinned } : c
+    ))
+    try {
+      await fetch(`/api/companies/${id}/pin`, { method: 'POST' })
+    } catch {
+      // Revert on error
+      setCompanies(prev => prev.map(c =>
+        c.id === id ? { ...c, isPinned: !c.isPinned } : c
+      ))
+    }
+  }, [])
+
+  const handleArchive = useCallback(async (id: string) => {
+    // Optimistic update
+    setCompanies(prev => prev.map(c =>
+      c.id === id ? { ...c, isArchived: true } : c
+    ))
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      next.delete(id)
+      return next
+    })
+    try {
+      await fetch(`/api/companies/${id}/archive`, { method: 'POST' })
+    } catch {
+      // Revert on error
+      setCompanies(prev => prev.map(c =>
+        c.id === id ? { ...c, isArchived: false } : c
+      ))
+    }
+  }, [])
+
+  const handleMemoSave = useCallback(async (id: string, memo: string) => {
+    // Optimistic update
+    setCompanies(prev => prev.map(c =>
+      c.id === id ? { ...c, memo, memoUpdatedAt: new Date().toLocaleString('ja-JP') } : c
+    ))
+    try {
+      await fetch(`/api/companies/${id}/note`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ memo }),
+      })
+    } catch {
+      // Silent fail
+    }
+  }, [])
+
+  const handleStatFilter = useCallback((filter: StatFilter) => {
+    setStatFilter(prev => prev === filter ? 'all' : filter)
+  }, [])
+
+  const selectedCount = Array.from(selectedIds).filter(id => filteredCompanies.some(c => c.id === id)).length
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <svg className="animate-spin h-6 w-6 text-[#06C755]" viewBox="0 0 24 24" role="status" aria-label="読み込み中">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+        </svg>
+        <span className="ml-3 text-[#8fa3b8] text-sm">企業データを読み込み中...</span>
+      </div>
+    )
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="bg-[rgba(255,71,87,0.1)] border border-[rgba(255,71,87,0.3)] rounded-xl px-4 py-3">
+        <p className="text-[#ff4757] text-sm">{error}</p>
+      </div>
+    )
+  }
+
+  // Empty state
+  if (companies.length === 0) {
+    return (
+      <div className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-2xl p-12 text-center">
+        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[rgba(6,199,85,0.1)] border border-[rgba(6,199,85,0.4)] flex items-center justify-center">
+          <UsersIcon />
+        </div>
+        <p className="text-[#f0f4f8] font-medium mb-2">まだ企業データがありません</p>
+        <p className="text-sm text-[#8494a7]">
+          リストを依頼すると、収集された企業がここに表示されます
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      {/* Stats Bar */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+        {([
+          { key: 'all' as StatFilter, label: '全企業', value: stats.total },
+          { key: 'hasForm' as StatFilter, label: 'フォームあり', value: stats.hasForm },
+          { key: 'sent' as StatFilter, label: '送信済み', value: stats.sent },
+          { key: 'downloaded' as StatFilter, label: 'DL済み', value: stats.downloaded },
+        ]).map(({ key, label, value }) => (
+          <button
+            key={key}
+            onClick={() => handleStatFilter(key)}
+            className={`bg-[#111827] border rounded-[10px] px-4 py-3.5 text-left cursor-pointer transition-all min-h-[44px] ${
+              statFilter === key
+                ? 'border-[rgba(6,199,85,0.4)] bg-[rgba(6,199,85,0.05)]'
+                : 'border-[rgba(255,255,255,0.07)] hover:border-[rgba(255,255,255,0.15)] hover:bg-[#151d2e]'
+            }`}
+          >
+            <div className="text-[12px] text-[#5a6a7a] font-medium mb-1">{label}</div>
+            <div className={`text-[22px] font-bold tabular-nums ${statFilter === key ? 'text-[#06C755]' : 'text-[#f0f4f8]'}`}>
+              {value}
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {/* Filter Bar */}
+      <div className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-[14px] px-5 py-4 mb-4 flex flex-col gap-3">
+        {/* Row 1: Industry & Location */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="text-[12px] font-semibold text-[#5a6a7a] min-w-[70px] whitespace-nowrap">業種</span>
+          <select
+            value={industryFilter}
+            onChange={(e) => setIndustryFilter(e.target.value)}
+            className="appearance-none bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-[6px] text-[#8fa3b8] text-[13px] py-[7px] pl-3 pr-8 font-[inherit] cursor-pointer min-h-[36px] transition-colors hover:border-[rgba(255,255,255,0.2)] focus-visible:outline-2 focus-visible:outline-[#06C755] focus-visible:outline-offset-1 bg-no-repeat bg-[right_10px_center] bg-[length:12px_12px]"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238fa3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`
+            }}
+            aria-label="業種フィルタ"
+          >
+            <option value="all">全て</option>
+            {industries.map(i => <option key={i} value={i}>{i}</option>)}
+          </select>
+
+          <span className="text-[12px] font-semibold text-[#5a6a7a] min-w-[70px] whitespace-nowrap">地域</span>
+          <select
+            value={locationFilter}
+            onChange={(e) => setLocationFilter(e.target.value)}
+            className="appearance-none bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-[6px] text-[#8fa3b8] text-[13px] py-[7px] pl-3 pr-8 font-[inherit] cursor-pointer min-h-[36px] transition-colors hover:border-[rgba(255,255,255,0.2)] focus-visible:outline-2 focus-visible:outline-[#06C755] focus-visible:outline-offset-1 bg-no-repeat bg-[right_10px_center] bg-[length:12px_12px]"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238fa3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`
+            }}
+            aria-label="地域フィルタ"
+          >
+            <option value="all">全て</option>
+            {locations.map(l => <option key={l} value={l}>{l}</option>)}
+          </select>
+        </div>
+
+        {/* Row 2: Status pills */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="text-[12px] font-semibold text-[#5a6a7a] min-w-[70px] whitespace-nowrap">ステータス</span>
+          <div className="flex gap-1.5 flex-wrap">
+            {([
+              { key: 'all' as StatusFilter, label: '全て' },
+              { key: 'unsent' as StatusFilter, label: '未連絡' },
+              { key: 'sent' as StatusFilter, label: '送信済み' },
+              { key: 'dl' as StatusFilter, label: 'DL済み' },
+            ]).map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => setStatusFilter(key)}
+                className={`inline-flex items-center px-3.5 py-1.5 rounded-full text-[13px] font-medium border cursor-pointer transition-all min-h-[36px] select-none ${
+                  statusFilter === key
+                    ? 'bg-[rgba(6,199,85,0.15)] text-[#06C755] border-[rgba(6,199,85,0.4)]'
+                    : 'bg-[rgba(255,255,255,0.05)] text-[#8fa3b8] border-[rgba(255,255,255,0.1)] hover:border-[rgba(255,255,255,0.2)] hover:text-[#f0f4f8]'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+            <button
+              onClick={() => setHasPhoneFilter(prev => !prev)}
+              className={`inline-flex items-center px-3.5 py-1.5 rounded-full text-[13px] font-medium border cursor-pointer transition-all min-h-[36px] select-none ${
+                hasPhoneFilter
+                  ? 'bg-[rgba(6,199,85,0.15)] text-[#06C755] border-[rgba(6,199,85,0.4)]'
+                  : 'bg-[rgba(255,255,255,0.05)] text-[#8fa3b8] border-[rgba(255,255,255,0.1)] hover:border-[rgba(255,255,255,0.2)] hover:text-[#f0f4f8]'
+              }`}
+            >
+              電話あり
+            </button>
+          </div>
+        </div>
+
+        {/* Row 3: Misc filters + Search */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex gap-1.5 flex-wrap">
+            <button
+              onClick={() => setMemoFilter(prev => !prev)}
+              className={`inline-flex items-center px-3.5 py-1.5 rounded-full text-[13px] font-medium border cursor-pointer transition-all min-h-[36px] select-none ${
+                memoFilter
+                  ? 'bg-[rgba(6,199,85,0.15)] text-[#06C755] border-[rgba(6,199,85,0.4)]'
+                  : 'bg-[rgba(255,255,255,0.05)] text-[#8fa3b8] border-[rgba(255,255,255,0.1)] hover:border-[rgba(255,255,255,0.2)] hover:text-[#f0f4f8]'
+              }`}
+            >
+              メモあり
+            </button>
+            <button
+              onClick={() => setShowArchived(prev => !prev)}
+              className={`inline-flex items-center px-3.5 py-1.5 rounded-full text-[13px] font-medium border cursor-pointer transition-all min-h-[36px] select-none ${
+                showArchived
+                  ? 'bg-[rgba(6,199,85,0.15)] text-[#06C755] border-[rgba(6,199,85,0.4)]'
+                  : 'bg-[rgba(255,255,255,0.05)] text-[#8fa3b8] border-[rgba(255,255,255,0.1)] hover:border-[rgba(255,255,255,0.2)] hover:text-[#f0f4f8]'
+              }`}
+            >
+              アーカイブ済みを表示
+            </button>
+          </div>
+          <div className="relative flex-1 min-w-[200px]">
+            <SearchIcon />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="企業名・メモで検索..."
+              className="w-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-[6px] text-[#f0f4f8] text-[13px] py-2 pl-9 pr-3 font-[inherit] min-h-[36px] transition-colors placeholder:text-[#5a6a7a] hover:border-[rgba(255,255,255,0.2)] focus:border-[#06C755] focus:outline-none"
+              aria-label="企業検索"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Bulk Actions Bar */}
+      <div className="flex items-center gap-3 px-4 py-3 bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-[10px] mb-4 sticky top-[56px] z-50 flex-wrap">
+        <label className="flex items-center gap-2 min-h-[44px] cursor-pointer">
+          <input
+            ref={selectAllRef}
+            type="checkbox"
+            onChange={(e) => handleSelectAll(e.target.checked)}
+            className="w-[18px] h-[18px] accent-[#06C755] cursor-pointer"
+            aria-label="全て選択"
+          />
+          <span className="text-[13px] text-[#8fa3b8] font-medium">全選択</span>
+        </label>
+        <span className="text-[13px] text-[#06C755] font-semibold tabular-nums ml-auto">
+          {selectedCount}件選択中
+        </span>
+        <div className="flex gap-2">
+          <button
+            disabled={selectedCount === 0}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-[6px] text-[13px] font-semibold bg-[rgba(255,255,255,0.06)] text-[#8fa3b8] border border-[rgba(255,255,255,0.07)] min-h-[38px] cursor-pointer hover:bg-[rgba(255,255,255,0.1)] hover:text-[#f0f4f8] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            aria-label="CSVダウンロード"
+          >
+            <DownloadIcon /> CSVダウンロード
+          </button>
+          <button
+            disabled={selectedCount === 0}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-[6px] text-[13px] font-semibold bg-[#06C755] text-white border-none min-h-[38px] cursor-pointer hover:bg-[#04a344] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            aria-label="フォーム送信"
+          >
+            <SendIcon /> フォーム送信
+          </button>
+        </div>
+      </div>
+
+      {/* Display Count */}
+      <div className="text-[13px] text-[#5a6a7a] mb-3 tabular-nums">
+        表示: <strong className="text-[#8fa3b8] font-semibold">{filteredCompanies.length}</strong> / {stats.total}件
+      </div>
+
+      {/* Company Card List */}
+      <div className="flex flex-col gap-2">
+        {filteredCompanies.map(company => (
+          <CompanyCard
+            key={company.id}
+            company={company}
+            selected={selectedIds.has(company.id)}
+            onSelect={handleSelect}
+            onPinToggle={handlePinToggle}
+            onArchive={handleArchive}
+            onMemoSave={handleMemoSave}
+          />
+        ))}
+      </div>
+
+      {filteredCompanies.length === 0 && companies.length > 0 && (
+        <div className="text-center py-12 text-[#5a6a7a] text-sm">
+          条件に一致する企業が見つかりません
+        </div>
+      )}
+    </div>
+  )
+}

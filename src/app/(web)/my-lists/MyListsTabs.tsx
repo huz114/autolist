@@ -1,0 +1,93 @@
+'use client'
+
+import { useState } from 'react'
+import JobList from './JobList'
+import type { Job } from './JobList'
+import UnifiedCompanyList from './UnifiedCompanyList'
+import NewRequestButton from './NewRequestButton'
+
+interface MyListsTabsProps {
+  jobs: Job[]
+}
+
+export default function MyListsTabs({ jobs }: MyListsTabsProps) {
+  const [activeTab, setActiveTab] = useState<'companies' | 'jobs'>('companies')
+
+  return (
+    <>
+      {/* Tabs */}
+      <div className="flex gap-[2px] border-b border-[rgba(255,255,255,0.07)] mb-5">
+        <button
+          onClick={() => setActiveTab('companies')}
+          className={`flex items-center gap-2 px-5 py-3 border-none bg-transparent text-[14px] font-semibold cursor-pointer border-b-2 transition-colors min-h-[44px] font-[inherit] ${
+            activeTab === 'companies'
+              ? 'text-[#06C755] border-b-[#06C755]'
+              : 'text-[#8fa3b8] border-b-transparent hover:text-[#f0f4f8]'
+          }`}
+          role="tab"
+          aria-selected={activeTab === 'companies'}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          企業一覧
+        </button>
+        <button
+          onClick={() => setActiveTab('jobs')}
+          className={`flex items-center gap-2 px-5 py-3 border-none bg-transparent text-[14px] font-semibold cursor-pointer border-b-2 transition-colors min-h-[44px] font-[inherit] ${
+            activeTab === 'jobs'
+              ? 'text-[#06C755] border-b-[#06C755]'
+              : 'text-[#8fa3b8] border-b-transparent hover:text-[#f0f4f8]'
+          }`}
+          role="tab"
+          aria-selected={activeTab === 'jobs'}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+          依頼履歴
+          <span className={`px-2 py-[2px] rounded-full text-[12px] font-semibold tabular-nums ${
+            activeTab === 'jobs'
+              ? 'bg-[rgba(6,199,85,0.15)] text-[#06C755]'
+              : 'bg-[rgba(255,255,255,0.06)]'
+          }`}>
+            {jobs.length}
+          </span>
+        </button>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === 'companies' && (
+        <UnifiedCompanyList />
+      )}
+
+      {activeTab === 'jobs' && (
+        <>
+          {jobs.length === 0 ? (
+            <div className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-2xl p-12 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[rgba(6,199,85,0.1)] border border-[rgba(6,199,85,0.4)] flex items-center justify-center">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#06C755]">
+                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="12" y1="18" x2="12" y2="12" />
+                  <line x1="9" y1="15" x2="15" y2="15" />
+                </svg>
+              </div>
+              <p className="text-[#f0f4f8] font-medium mb-2">まだリストがありません</p>
+              <p className="text-sm text-[#8494a7] mb-6">
+                業種と地域を指定して、営業リストを作成しましょう
+              </p>
+              <NewRequestButton />
+            </div>
+          ) : (
+            <JobList initialJobs={jobs} />
+          )}
+        </>
+      )}
+    </>
+  )
+}

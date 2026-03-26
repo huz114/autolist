@@ -431,7 +431,7 @@ export default function UnifiedCompanyList() {
       </div>
 
       {/* Bulk Actions Bar */}
-      <div className="flex items-center gap-3 px-4 py-3 bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-[10px] mb-4 sticky top-[56px] z-50 flex-wrap">
+      <div className="flex items-center gap-3 px-4 py-3 bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-[10px] mb-4 sticky top-[56px] z-10 flex-wrap">
         <label className="flex items-center gap-2 min-h-[44px] cursor-pointer">
           <input
             ref={selectAllRef}

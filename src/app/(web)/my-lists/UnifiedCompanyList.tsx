@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import CompanyCard, { type Company } from './CompanyCard'
 
 // -- Types --
@@ -51,6 +52,7 @@ const ClockIcon = () => (
 // -- Component --
 
 export default function UnifiedCompanyList() {
+  const router = useRouter()
   const [companies, setCompanies] = useState<Company[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -471,8 +473,7 @@ export default function UnifiedCompanyList() {
                   alert('送信可能な企業がありません。フォームが検出された企業を選択してください。')
                   return
                 }
-                // TODO: 統合リストからの一括送信フロー実装後に遷移先を変更
-                alert(`${sendableIds.length}件のフォーム送信を開始します（統合リストからの一括送信は現在開発中です。依頼履歴タブからリスト詳細→フォーム送信をご利用ください）`)
+                router.push(`/send/bulk?ids=${sendableIds.join(',')}`)
               }}
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-[6px] text-[13px] font-semibold bg-[#06C755] text-white border-none min-h-[38px] cursor-pointer hover:bg-[#04a344] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               aria-label="フォーム送信"

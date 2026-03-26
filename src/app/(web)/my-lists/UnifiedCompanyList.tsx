@@ -457,9 +457,22 @@ export default function UnifiedCompanyList() {
             <button
               disabled={selectedCount === 0 || allSelectedInCooldown}
               onClick={() => {
+                const sendableCount = selectedCount - selectedCooldownCount
                 if (someSelectedInCooldown) {
-                  alert(`選択中の${selectedCount}件のうち${selectedCooldownCount}件はクールダウン期間中（送信後30日以内）のため、送信対象から除外されます。残り${selectedCount - selectedCooldownCount}件に送信します。`)
+                  const ok = confirm(`選択中の${selectedCount}件のうち${selectedCooldownCount}件はクールダウン期間中（送信後30日以内）のため、送信対象から除外されます。残り${sendableCount}件に送信しますか？`)
+                  if (!ok) return
                 }
+                // 送信可能な企業のIDを取得してフォーム送信ページへ遷移
+                const sendableIds = selectedCompanies
+                  .filter(c => !c.sentAt || (Date.now() - new Date(c.sentAt).getTime()) >= cooldownMs)
+                  .filter(c => c.hasForm && c.formUrl)
+                  .map(c => c.id)
+                if (sendableIds.length === 0) {
+                  alert('送信可能な企業がありません。フォームが検出された企業を選択してください。')
+                  return
+                }
+                // TODO: 統合リストからの一括送信フロー実装後に遷移先を変更
+                alert(`${sendableIds.length}件のフォーム送信を開始します（統合リストからの一括送信は現在開発中です。依頼履歴タブからリスト詳細→フォーム送信をご利用ください）`)
               }}
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-[6px] text-[13px] font-semibold bg-[#06C755] text-white border-none min-h-[38px] cursor-pointer hover:bg-[#04a344] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               aria-label="フォーム送信"

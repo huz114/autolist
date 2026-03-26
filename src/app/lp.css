@@ -219,7 +219,7 @@ summary:focus-visible,
   text-align: center;
 }
 .stat-num {
-  font-size: 40px;
+  font-size: 48px;
   font-weight: 900;
   color: var(--accent);
   letter-spacing: -1px;

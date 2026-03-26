@@ -228,14 +228,6 @@ export default function JobList({ initialJobs }: JobListProps) {
                     >
                       リストを見る &rarr;
                     </Link>
-                    {job.confirmedAt && (
-                      <Link
-                        href={`/send/${job.id}`}
-                        className="border border-blue-400/50 text-blue-400 hover:bg-blue-400/10 text-sm font-bold px-5 py-2 rounded-full transition-all whitespace-nowrap"
-                      >
-                        フォーム送信 &rarr;
-                      </Link>
-                    )}
                   </>
                 )}
               </div>

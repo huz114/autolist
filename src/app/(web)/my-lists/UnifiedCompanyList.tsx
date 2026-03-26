@@ -66,6 +66,7 @@ export default function UnifiedCompanyList() {
   const [industryFilter, setIndustryFilter] = useState<string>('all')
   const [locationFilter, setLocationFilter] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [jobFilter, setJobFilter] = useState<string>('all')
 
   // Selection state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -102,6 +103,28 @@ export default function UnifiedCompanyList() {
       industries: Array.from(industrySet).sort(),
       locations: Array.from(locationSet).sort(),
     }
+  }, [companies])
+
+  // Compute unique job options for filter
+  const jobOptions = useMemo(() => {
+    const jobMap = new Map<string, { keyword: string; date: string }>()
+    companies.forEach(c => {
+      const keyword = c.sourceJob || c.jobKeyword
+      const date = c.sourceDate || c.jobCreatedAt
+      if (keyword) {
+        const key = `${keyword}__${date || ''}`
+        if (!jobMap.has(key)) {
+          jobMap.set(key, { keyword, date: date || '' })
+        }
+      }
+    })
+    return Array.from(jobMap.values()).sort((a, b) => {
+      // Sort by date descending
+      if (a.date && b.date) return b.date.localeCompare(a.date)
+      if (a.date) return -1
+      if (b.date) return 1
+      return a.keyword.localeCompare(b.keyword)
+    })
   }, [companies])
 
   // Stats
@@ -143,6 +166,14 @@ export default function UnifiedCompanyList() {
       // Location filter
       if (locationFilter !== 'all' && c.location !== locationFilter) return false
 
+      // Job filter
+      if (jobFilter !== 'all') {
+        const keyword = c.sourceJob || c.jobKeyword
+        const date = c.sourceDate || c.jobCreatedAt
+        const jobKey = `${keyword || ''}__${date || ''}`
+        if (jobKey !== jobFilter) return false
+      }
+
       // Search
       if (searchQuery) {
         const q = searchQuery.toLowerCase()
@@ -163,7 +194,7 @@ export default function UnifiedCompanyList() {
     })
 
     return result
-  }, [companies, statFilter, statusFilter, hasPhoneFilter, memoFilter, showArchived, industryFilter, locationFilter, searchQuery])
+  }, [companies, statFilter, statusFilter, hasPhoneFilter, memoFilter, showArchived, industryFilter, locationFilter, jobFilter, searchQuery])
 
   // Update select all checkbox state
   useEffect(() => {
@@ -360,6 +391,24 @@ export default function UnifiedCompanyList() {
           >
             <option value="all">全て</option>
             {locations.map(l => <option key={l} value={l}>{l}</option>)}
+          </select>
+
+          <span className="text-[12px] font-semibold text-[#5a6a7a] min-w-[70px] whitespace-nowrap">依頼ジョブ</span>
+          <select
+            value={jobFilter}
+            onChange={(e) => setJobFilter(e.target.value)}
+            className="appearance-none bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-[6px] text-[#8fa3b8] text-[13px] py-[7px] pl-3 pr-8 font-[inherit] cursor-pointer min-h-[36px] transition-colors hover:border-[rgba(255,255,255,0.2)] focus-visible:outline-2 focus-visible:outline-[#06C755] focus-visible:outline-offset-1 bg-no-repeat bg-[right_10px_center] bg-[length:12px_12px]"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238fa3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`
+            }}
+            aria-label="依頼ジョブフィルタ"
+          >
+            <option value="all">全て</option>
+            {jobOptions.map(j => {
+              const key = `${j.keyword}__${j.date}`
+              const dateLabel = j.date ? ` (${new Date(j.date).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' })})` : ''
+              return <option key={key} value={key}>{j.keyword}{dateLabel}</option>
+            })}
           </select>
         </div>
 

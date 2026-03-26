@@ -27,6 +27,8 @@ export interface Company {
   createdAt: string
   jobKeyword: string | null
   jobCreatedAt: string | null
+  sourceJob?: string
+  sourceDate?: string
   memo: string | null
   memoUpdatedAt: string | null
   sentAt: string | null

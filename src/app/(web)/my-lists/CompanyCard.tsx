@@ -234,6 +234,11 @@ export default function CompanyCard({
     if (c.email) lines.push(`メール: ${c.email}`)
     if (c.url) lines.push(`URL: ${c.url.replace('https://', '').replace('http://', '')}`)
     if (c.representativeName) lines.push(`代表者: ${c.representativeName}`)
+    if (c.establishedYear) lines.push(`設立: ${c.establishedYear}年`)
+    if (c.employeeCount) lines.push(`従業員数: ${c.employeeCount}`)
+    if (c.capitalAmount) lines.push(`資本金: ${c.capitalAmount}`)
+    if (c.businessDescription) lines.push(`事業内容: ${c.businessDescription}`)
+    if (c.memo) lines.push(`メモ: ${c.memo}`)
     const text = lines.join('\n')
 
     navigator.clipboard.writeText(text).then(() => {

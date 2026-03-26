@@ -1168,8 +1168,8 @@ export default function Home() {
             <p style={{ marginTop: 24, fontSize: 13, color: "var(--text-muted)" }}>
               登録料無料 &middot; クレジットカード不要でお試し &middot; いつでも解約
             </p>
-            <p style={{ marginTop: 12, fontSize: 13, color: "var(--text-muted)" }}>
-              無料登録で、最初の100件はプレゼント！
+            <p style={{ marginTop: 16, fontSize: 16, color: "var(--accent)", fontWeight: 700, letterSpacing: "0.02em" }}>
+              <IconGift /> 無料登録で、最初の100件はプレゼント！
             </p>
             <p style={{ marginTop: 8, fontSize: 11, color: "#8fa3b8" }}>
               ※ 初回100件無料キャンペーンは予告なく終了する場合があります

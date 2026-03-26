@@ -65,7 +65,7 @@ export async function GET(req: NextRequest) {
     orderBy: { createdAt: 'desc' },
   })
 
-  // SendRecordを取得（domain単位で最新の送信記録）
+  // SendRecordを取得（domain or companyName で突合）
   const sendRecords = await prisma.sendRecord.findMany({
     where: {
       userId,
@@ -74,9 +74,13 @@ export async function GET(req: NextRequest) {
     orderBy: { sentAt: 'desc' },
   })
   const sentByDomain = new Map<string, Date>()
+  const sentByName = new Map<string, Date>()
   for (const sr of sendRecords) {
     if (sr.companyDomain && !sentByDomain.has(sr.companyDomain)) {
       sentByDomain.set(sr.companyDomain, sr.sentAt)
+    }
+    if (sr.companyName && !sentByName.has(sr.companyName)) {
+      sentByName.set(sr.companyName, sr.sentAt)
     }
   }
 
@@ -93,7 +97,7 @@ export async function GET(req: NextRequest) {
   // 企業データ整形
   let companies = Array.from(domainMap.values()).map((url) => {
     const note = url.companyNotes[0] || null
-    const sentAt = sentByDomain.get(url.domain) || null
+    const sentAt = sentByDomain.get(url.domain) || sentByName.get(url.companyName || '') || null
     const jobInfo = jobInfoMap.get(url.jobId)
 
     // 情報充実度スコア（richness）
@@ -190,7 +194,7 @@ export async function GET(req: NextRequest) {
     total: allCompanies.filter((c) => !c.isArchived).length,
     hasForm: allCompanies.filter((c) => c.hasForm && !c.isArchived).length,
     sent: allCompanies.filter(
-      (c) => sentByDomain.has(c.domain) && !c.isArchived
+      (c) => (sentByDomain.has(c.domain) || sentByName.has(c.companyName || '')) && !c.isArchived
     ).length,
     downloaded: allCompanies.filter(
       (c) => c.downloadedAt !== null && !c.isArchived

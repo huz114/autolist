@@ -73,14 +73,20 @@ export async function GET(req: NextRequest) {
     },
     orderBy: { sentAt: 'desc' },
   })
-  const sentByDomain = new Map<string, Date>()
-  const sentByName = new Map<string, Date>()
+  interface SentInfo {
+    sentAt: Date
+    subject: string | null
+    messageBody: string | null
+  }
+  const sentByDomain = new Map<string, SentInfo>()
+  const sentByName = new Map<string, SentInfo>()
   for (const sr of sendRecords) {
+    const info: SentInfo = { sentAt: sr.sentAt, subject: sr.subject, messageBody: sr.messageBody }
     if (sr.companyDomain && !sentByDomain.has(sr.companyDomain)) {
-      sentByDomain.set(sr.companyDomain, sr.sentAt)
+      sentByDomain.set(sr.companyDomain, info)
     }
     if (sr.companyName && !sentByName.has(sr.companyName)) {
-      sentByName.set(sr.companyName, sr.sentAt)
+      sentByName.set(sr.companyName, info)
     }
   }
 
@@ -97,7 +103,8 @@ export async function GET(req: NextRequest) {
   // 企業データ整形
   let companies = Array.from(domainMap.values()).map((url) => {
     const note = url.companyNotes[0] || null
-    const sentAt = sentByDomain.get(url.domain) || sentByName.get(url.companyName || '') || null
+    const sentInfo = sentByDomain.get(url.domain) || sentByName.get(url.companyName || '') || null
+    const sentAt = sentInfo?.sentAt || null
     const jobInfo = jobInfoMap.get(url.jobId)
 
     // 情報充実度スコア（richness）
@@ -138,6 +145,8 @@ export async function GET(req: NextRequest) {
       isArchived: url.isArchived,
       downloadedAt: url.downloadedAt,
       sentAt,
+      sentSubject: sentInfo?.subject || null,
+      sentMessageBody: sentInfo?.messageBody || null,
       note: note?.memo || null,
       noteUpdatedAt: note?.updatedAt || null,
       sourceJob: jobInfo?.keyword || '',

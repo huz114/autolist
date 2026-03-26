@@ -30,6 +30,8 @@ export interface Company {
   memo: string | null
   memoUpdatedAt: string | null
   sentAt: string | null
+  sentSubject: string | null
+  sentMessageBody: string | null
   selected?: boolean
 }
 
@@ -195,6 +197,7 @@ export default function CompanyCard({
   const [memoSaved, setMemoSaved] = useState(false)
   const [copied, setCopied] = useState(false)
   const [fadingOut, setFadingOut] = useState(false)
+  const [showFullMessage, setShowFullMessage] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const statusInfo = getStatusInfo(company)
@@ -488,6 +491,46 @@ export default function CompanyCard({
               aria-label={`${company.companyName || company.domain}のメモ`}
             />
           </div>
+
+          {/* Sent Content Section */}
+          {company.sentAt && (company.sentSubject || company.sentMessageBody) && (
+            <div className="bg-[rgba(6,199,85,0.05)] border border-[rgba(6,199,85,0.15)] rounded-lg p-4">
+              <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[#5a6a7a] uppercase tracking-[0.5px] mb-2.5">
+                <SendIcon /> 送信内容
+                <span className="ml-auto text-[11px] font-normal normal-case tracking-normal text-[#5a6a7a]">
+                  {new Date(company.sentAt).toLocaleString('ja-JP', {
+                    year: 'numeric',
+                    month: 'numeric',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </span>
+              </div>
+              {company.sentSubject && (
+                <div className="mb-2">
+                  <span className="text-[11px] text-[#5a6a7a] mr-2">件名:</span>
+                  <span className="text-[#f0f4f8] font-semibold text-sm">{company.sentSubject}</span>
+                </div>
+              )}
+              {company.sentMessageBody && (
+                <div>
+                  <span className="text-[11px] text-[#5a6a7a] block mb-1">本文:</span>
+                  <div className={`text-[#8fa3b8] text-xs whitespace-pre-wrap ${!showFullMessage ? 'line-clamp-3' : ''}`}>
+                    {company.sentMessageBody}
+                  </div>
+                  {company.sentMessageBody.split('\n').length > 3 || company.sentMessageBody.length > 200 ? (
+                    <button
+                      onClick={() => setShowFullMessage(!showFullMessage)}
+                      className="text-[11px] text-[#06C755] mt-1 bg-transparent border-none cursor-pointer hover:underline font-[inherit] p-0"
+                    >
+                      {showFullMessage ? '折りたたむ' : '全文を見る'}
+                    </button>
+                  ) : null}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Action Buttons */}
           <div className="flex gap-2 flex-wrap">

@@ -13,7 +13,7 @@ function NavBar() {
 
   const isActive = (href: string) => {
     if (href === '/my-lists') {
-      return pathname === '/my-lists' || pathname.startsWith('/autolist-results') || pathname.startsWith('/send/')
+      return pathname === '/my-lists' || pathname.startsWith('/autolist-results') || pathname.startsWith('/send/') || pathname.startsWith('/send-history')
     }
     return pathname === href || pathname.startsWith(href + '/')
   }
@@ -44,12 +44,6 @@ function NavBar() {
                 className={`text-sm transition-colors pb-1 ${isActive('/profile') ? 'text-[#f0f4f8] font-semibold border-b-2 border-[#06C755]' : 'text-[#8fa3b8] hover:text-[#c8d6e5]'}`}
               >
                 プロフィール
-              </Link>
-              <Link
-                href="/send-history"
-                className={`text-sm transition-colors pb-1 ${isActive('/send-history') ? 'text-[#f0f4f8] font-semibold border-b-2 border-[#06C755]' : 'text-[#8fa3b8] hover:text-[#c8d6e5]'}`}
-              >
-                送信履歴
               </Link>
               <Link
                 href="/purchase"
@@ -137,13 +131,6 @@ function NavBar() {
                 className={`text-sm transition-colors py-2 border-b border-[rgba(255,255,255,0.07)] ${isActive('/profile') ? 'text-[#f0f4f8] font-semibold border-l-2 border-l-[#06C755] pl-2' : 'text-[#8fa3b8] hover:text-[#c8d6e5]'}`}
               >
                 プロフィール
-              </Link>
-              <Link
-                href="/send-history"
-                onClick={closeMenu}
-                className={`text-sm transition-colors py-2 border-b border-[rgba(255,255,255,0.07)] ${isActive('/send-history') ? 'text-[#f0f4f8] font-semibold border-l-2 border-l-[#06C755] pl-2' : 'text-[#8fa3b8] hover:text-[#c8d6e5]'}`}
-              >
-                送信履歴
               </Link>
               <Link
                 href="/purchase"

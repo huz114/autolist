@@ -1,25 +1,40 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import JobList from './JobList'
 import type { Job } from './JobList'
 import UnifiedCompanyList from './UnifiedCompanyList'
 import NewRequestButton from './NewRequestButton'
+import SendHistoryTab from './SendHistoryTab'
+
+type TabType = 'companies' | 'jobs' | 'send-history'
 
 interface MyListsTabsProps {
   jobs: Job[]
+  sendCount?: number
 }
 
-export default function MyListsTabs({ jobs }: MyListsTabsProps) {
-  const [activeTab, setActiveTab] = useState<'companies' | 'jobs'>('companies')
+export default function MyListsTabs({ jobs, sendCount }: MyListsTabsProps) {
+  const searchParams = useSearchParams()
+  const tabParam = searchParams.get('tab')
+  const [activeTab, setActiveTab] = useState<TabType>(
+    tabParam === 'jobs' ? 'jobs' : tabParam === 'send-history' ? 'send-history' : 'companies'
+  )
+
+  // Sync tab with URL param on mount
+  useEffect(() => {
+    if (tabParam === 'jobs') setActiveTab('jobs')
+    else if (tabParam === 'send-history') setActiveTab('send-history')
+  }, [tabParam])
 
   return (
     <>
       {/* Tabs */}
-      <div className="flex gap-[2px] border-b border-[rgba(255,255,255,0.07)] mb-5">
+      <div className="flex gap-[2px] border-b border-[rgba(255,255,255,0.07)] mb-5 overflow-x-auto">
         <button
           onClick={() => setActiveTab('companies')}
-          className={`flex items-center gap-2 px-5 py-3 border-none bg-transparent text-[14px] font-semibold cursor-pointer border-b-2 transition-colors min-h-[44px] font-[inherit] ${
+          className={`flex items-center gap-2 px-5 py-3 border-none bg-transparent text-[14px] font-semibold cursor-pointer border-b-2 transition-colors min-h-[44px] font-[inherit] whitespace-nowrap ${
             activeTab === 'companies'
               ? 'text-[#06C755] border-b-[#06C755]'
               : 'text-[#8fa3b8] border-b-transparent hover:text-[#f0f4f8]'
@@ -37,7 +52,7 @@ export default function MyListsTabs({ jobs }: MyListsTabsProps) {
         </button>
         <button
           onClick={() => setActiveTab('jobs')}
-          className={`flex items-center gap-2 px-5 py-3 border-none bg-transparent text-[14px] font-semibold cursor-pointer border-b-2 transition-colors min-h-[44px] font-[inherit] ${
+          className={`flex items-center gap-2 px-5 py-3 border-none bg-transparent text-[14px] font-semibold cursor-pointer border-b-2 transition-colors min-h-[44px] font-[inherit] whitespace-nowrap ${
             activeTab === 'jobs'
               ? 'text-[#06C755] border-b-[#06C755]'
               : 'text-[#8fa3b8] border-b-transparent hover:text-[#f0f4f8]'
@@ -57,6 +72,31 @@ export default function MyListsTabs({ jobs }: MyListsTabsProps) {
           }`}>
             {jobs.length}
           </span>
+        </button>
+        <button
+          onClick={() => setActiveTab('send-history')}
+          className={`flex items-center gap-2 px-5 py-3 border-none bg-transparent text-[14px] font-semibold cursor-pointer border-b-2 transition-colors min-h-[44px] font-[inherit] whitespace-nowrap ${
+            activeTab === 'send-history'
+              ? 'text-[#06C755] border-b-[#06C755]'
+              : 'text-[#8fa3b8] border-b-transparent hover:text-[#f0f4f8]'
+          }`}
+          role="tab"
+          aria-selected={activeTab === 'send-history'}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 2 11 13"/>
+            <path d="M22 2 15 22 11 13 2 9z"/>
+          </svg>
+          送信履歴
+          {typeof sendCount === 'number' && (
+            <span className={`px-2 py-[2px] rounded-full text-[12px] font-semibold tabular-nums ${
+              activeTab === 'send-history'
+                ? 'bg-[rgba(6,199,85,0.15)] text-[#06C755]'
+                : 'bg-[rgba(255,255,255,0.06)]'
+            }`}>
+              {sendCount}
+            </span>
+          )}
         </button>
       </div>
 
@@ -87,6 +127,10 @@ export default function MyListsTabs({ jobs }: MyListsTabsProps) {
             <JobList initialJobs={jobs} />
           )}
         </>
+      )}
+
+      {activeTab === 'send-history' && (
+        <SendHistoryTab />
       )}
     </>
   )

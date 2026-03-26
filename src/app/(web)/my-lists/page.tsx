@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 
+import { Suspense } from 'react'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
@@ -31,6 +32,11 @@ export default async function MyListsPage() {
     },
   })
 
+  // Get send record count for badge
+  const sendCount = await prisma.sendRecord.count({
+    where: { userId: session.user.id },
+  })
+
   // Serialize dates for client component
   const jobs: Job[] = rawJobs.map((job) => ({
     id: job.id,
@@ -60,7 +66,9 @@ export default async function MyListsPage() {
         <LineLinkButton />
       </div>
 
-      <MyListsTabs jobs={jobs} />
+      <Suspense fallback={null}>
+        <MyListsTabs jobs={jobs} sendCount={sendCount} />
+      </Suspense>
     </div>
   )
 }

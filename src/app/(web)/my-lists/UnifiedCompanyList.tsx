@@ -258,9 +258,13 @@ export default function UnifiedCompanyList() {
   const selectedCompanies = filteredCompanies.filter(c => selectedIds.has(c.id))
   const selectedCount = selectedCompanies.length
   const cooldownMs = 30 * 24 * 60 * 60 * 1000
-  const selectedCooldownCount = selectedCompanies.filter(c => c.sentAt && (Date.now() - new Date(c.sentAt).getTime()) < cooldownMs).length
-  const allSelectedInCooldown = selectedCount > 0 && selectedCooldownCount === selectedCount
-  const someSelectedInCooldown = selectedCooldownCount > 0 && selectedCooldownCount < selectedCount
+  const sendableCompanies = selectedCompanies.filter(c =>
+    c.hasForm && c.formUrl &&
+    (!c.sentAt || (Date.now() - new Date(c.sentAt).getTime()) >= cooldownMs)
+  )
+  const sendableCount = sendableCompanies.length
+  const noFormCount = selectedCompanies.filter(c => !c.hasForm || !c.formUrl).length
+  const cooldownCount = selectedCompanies.filter(c => c.hasForm && c.formUrl && c.sentAt && (Date.now() - new Date(c.sentAt).getTime()) < cooldownMs).length
 
   // Loading state
   if (loading) {
@@ -457,32 +461,25 @@ export default function UnifiedCompanyList() {
           </button>
           <div className="relative">
             <button
-              disabled={selectedCount === 0 || allSelectedInCooldown}
+              disabled={selectedCount === 0 || sendableCount === 0}
               onClick={() => {
-                const sendableCount = selectedCount - selectedCooldownCount
-                if (someSelectedInCooldown) {
-                  const ok = confirm(`選択中の${selectedCount}件のうち${selectedCooldownCount}件はクールダウン期間中（送信後30日以内）のため、送信対象から除外されます。残り${sendableCount}件に送信しますか？`)
+                const excluded: string[] = []
+                if (noFormCount > 0) excluded.push(`フォームなし${noFormCount}件`)
+                if (cooldownCount > 0) excluded.push(`クールダウン中${cooldownCount}件`)
+                if (excluded.length > 0) {
+                  const ok = confirm(`選択中の${selectedCount}件のうち${excluded.join('・')}を除外し、${sendableCount}件に送信します。よろしいですか？`)
                   if (!ok) return
                 }
-                // 送信可能な企業のIDを取得してフォーム送信ページへ遷移
-                const sendableIds = selectedCompanies
-                  .filter(c => !c.sentAt || (Date.now() - new Date(c.sentAt).getTime()) >= cooldownMs)
-                  .filter(c => c.hasForm && c.formUrl)
-                  .map(c => c.id)
-                if (sendableIds.length === 0) {
-                  alert('送信可能な企業がありません。フォームが検出された企業を選択してください。')
-                  return
-                }
-                router.push(`/send/bulk?ids=${sendableIds.join(',')}`)
+                router.push(`/send/bulk?ids=${sendableCompanies.map(c => c.id).join(',')}`)
               }}
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-[6px] text-[13px] font-semibold bg-[#06C755] text-white border-none min-h-[38px] cursor-pointer hover:bg-[#04a344] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               aria-label="フォーム送信"
             >
-              <SendIcon /> フォーム送信
+              <SendIcon /> フォーム送信{sendableCount > 0 && selectedCount !== sendableCount ? ` (${sendableCount}件)` : ''}
             </button>
-            {allSelectedInCooldown && selectedCount > 0 && (
+            {selectedCount > 0 && sendableCount === 0 && (
               <p className="absolute top-full left-0 mt-1 text-[11px] text-[#f59e0b] whitespace-nowrap">
-                選択中の企業は全てクールダウン期間中です
+                送信可能な企業がありません
               </p>
             )}
           </div>

@@ -1164,27 +1164,6 @@ export default function Home() {
               >
                 今夜依頼して、明日から営業開始
               </Link>
-              <a
-                href="#data-sample"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 8,
-                  color: "var(--text-secondary)",
-                  fontSize: 15,
-                  fontWeight: 600,
-                  textDecoration: "none",
-                  padding: "16px 28px",
-                  border: "1px solid var(--border)",
-                  borderRadius: 50,
-                  transition: "border-color 0.3s, color 0.3s",
-                  minHeight: 48,
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--border-accent)"; e.currentTarget.style.color = "var(--accent)"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--text-secondary)"; }}
-              >
-                まずサンプルを見る
-              </a>
             </div>
             <p style={{ marginTop: 24, fontSize: 13, color: "var(--text-muted)" }}>
               登録料無料 &middot; クレジットカード不要でお試し &middot; いつでも解約

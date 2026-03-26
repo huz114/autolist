@@ -317,10 +317,11 @@ summary:focus-visible,
   flex: 1;
 }
 .problem-desc {
-  min-height: 72px;
+  flex: 1;
 }
 .problem-consequence {
   padding-top: 8px;
+  margin-top: auto;
   font-size: 12px;
   color: #ff6b6b;
   font-weight: 500;

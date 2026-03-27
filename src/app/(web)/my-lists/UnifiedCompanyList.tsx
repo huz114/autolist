@@ -231,7 +231,7 @@ export default function UnifiedCompanyList() {
       if (statusFilter === 'dl' && !c.downloadedAt) return false
 
       // HasPhone filter
-      if (hasPhoneFilter && !c.phoneNumber) return false
+      if (hasPhoneFilter && (!c.phoneNumber || c.phoneNumber === '記載なし')) return false
 
       // Memo filter
       if (memoFilter && !c.memo) return false

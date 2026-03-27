@@ -367,7 +367,7 @@ export default function CompanyCard({
 
           {/* Contacts */}
           <div className="flex gap-4 flex-wrap items-center">
-            {company.phoneNumber && (
+            {company.phoneNumber && company.phoneNumber !== '記載なし' && (
               <span className="inline-flex items-center gap-[5px] text-[13px] text-[#8fa3b8]">
                 <span className="text-[#5a6a7a]"><PhoneIcon /></span>
                 {company.phoneNumber}

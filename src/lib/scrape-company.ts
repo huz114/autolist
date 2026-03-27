@@ -5,6 +5,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { detectContactForm } from "./form-detector";
 import { logGeminiUsage } from "@/lib/gemini-usage-logger";
+import { getIndustryMasterPromptText } from "./industry-master";
 
 export interface CompanyInfo {
   companyName?: string;          // 会社名
@@ -36,12 +37,70 @@ export interface CompanyInfo {
   latestNews?: { date: string; title: string }[];  // 最新ニュース
 }
 
+// ─── 地域フィルタリング用ヘルパー ───
+
+/** 都道府県・市区町村を構造的に抽出 */
+function extractPrefectureAndCity(address: string): { prefecture: string | null; city: string | null } {
+  let prefecture: string | null = null;
+  let city: string | null = null;
+
+  // 都道府県を抽出（北海道、東京都、大阪府、京都府、○○県）
+  const prefMatch = address.match(/(北海道|東京都|大阪府|京都府|.{2,3}県)/);
+  if (prefMatch) {
+    prefecture = prefMatch[1];
+  }
+
+  // 市区町村を抽出（○○市、○○区、○○町、○○村、○○郡）
+  // 都道府県の後ろから探す（都道府県がマッチした場合はその後ろ）
+  const afterPref = prefMatch ? address.slice(address.indexOf(prefMatch[1]) + prefMatch[1].length) : address;
+  // 政令指定都市の「○○市○○区」パターン: 市を取る
+  const cityMatch = afterPref.match(/^(.{1,5}?[市郡])/) || afterPref.match(/^(.{1,5}?[区町村])/);
+  if (cityMatch) {
+    city = cityMatch[1];
+  }
+
+  return { prefecture, city };
+}
+
+/** 依頼地域と取得住所が一致するか判定 */
+function isLocationMatch(requestedLocation: string, foundLocation: string): boolean {
+  const req = extractPrefectureAndCity(requestedLocation);
+  const found = extractPrefectureAndCity(foundLocation);
+
+  // 依頼地域から都道府県すら抽出できない場合はフォールバック（文字列包含）
+  if (!req.prefecture) {
+    return foundLocation.includes(requestedLocation) || requestedLocation.includes(foundLocation);
+  }
+
+  // 都道府県が一致しない場合は不一致
+  if (req.prefecture !== found.prefecture) {
+    return false;
+  }
+
+  // 依頼地域に市区町村が指定されている場合は市区町村も一致を要求
+  if (req.city) {
+    if (!found.city) {
+      // 取得住所から市区町村を抽出できない場合は通過させる（情報不足で除外しない）
+      return true;
+    }
+    return req.city === found.city;
+  }
+
+  // 都道府県のみ指定の場合は都道府県一致でOK
+  return true;
+}
+
 /** ユーザーエージェント */
 const USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
 /** 会社概要ページの候補パス */
 const COMPANY_PAGE_PATHS = [
+  "/company/profile",
+  "/company/about",
+  "/company/overview",
+  "/corporate/profile",
+  "/corporate/about",
   "/company",
   "/company/",
   "/about",
@@ -54,6 +113,18 @@ const COMPANY_PAGE_PATHS = [
   "/about-us/",
   "/company-profile",
   "/gaiyou",
+];
+
+/** アクセスページの候補パス */
+const ACCESS_PAGE_PATHS = [
+  "/company/access",
+  "/access",
+  "/office",
+  "/location",
+  "/map",
+  "/company/office",
+  "/corporate/access",
+  "/company/map",
 ];
 
 // ─── HTML取得 ───
@@ -154,7 +225,7 @@ async function fetchSitemap(baseUrl: string): Promise<string[] | null> {
     if (!xml || xml.length < 50) return null;
 
     // ネストされたサイトマップをチェック
-    const nestedSitemapRegex = /<sitemap>\s*<loc>\s*(https?:\/\/[^<\s]+)\s*<\/loc>/gi;
+    const nestedSitemapRegex = /<sitemap>\s*<loc>\s*(?:<!\[CDATA\[)?\s*(https?:\/\/[^\s<\]]+)\s*(?:\]\]>)?\s*<\/loc>/gi;
     const nestedMatches: string[] = [];
     let nestedMatch;
     while ((nestedMatch = nestedSitemapRegex.exec(xml)) !== null) {
@@ -176,7 +247,7 @@ async function fetchSitemap(baseUrl: string): Promise<string[] | null> {
           });
           if (subResponse.ok) {
             const subXml = await subResponse.text();
-            const locRegex = /<url>\s*<loc>\s*(https?:\/\/[^<\s]+)\s*<\/loc>/gi;
+            const locRegex = /<url>\s*<loc>\s*(?:<!\[CDATA\[)?\s*(https?:\/\/[^\s<\]]+)\s*(?:\]\]>)?\s*<\/loc>/gi;
             let locMatch;
             while ((locMatch = locRegex.exec(subXml)) !== null) {
               urls.push(locMatch[1].trim());
@@ -191,7 +262,7 @@ async function fetchSitemap(baseUrl: string): Promise<string[] | null> {
 
     // メインサイトマップからも直接URLを抽出
     if (urls.length < 500) {
-      const locRegex = /<url>\s*<loc>\s*(https?:\/\/[^<\s]+)\s*<\/loc>/gi;
+      const locRegex = /<url>\s*<loc>\s*(?:<!\[CDATA\[)?\s*(https?:\/\/[^\s<\]]+)\s*(?:\]\]>)?\s*<\/loc>/gi;
       let locMatch;
       while ((locMatch = locRegex.exec(xml)) !== null) {
         const u = locMatch[1].trim();
@@ -210,16 +281,19 @@ async function fetchSitemap(baseUrl: string): Promise<string[] | null> {
 
 /**
  * サイトマップURLリストから会社概要ページを見つける
- * パスのパターンマッチで検索し、短いパスを優先する
+ * パスのパターンマッチで検索し、より詳細なページ（深いパス）を優先する
+ * /profile, /overview, /about などのサブパスにはボーナスを与える
  */
 function findCompanyPageFromSitemap(urls: string[], _baseUrl: string): string | null {
   const companyPatterns = [
+    /\/company\/(?:profile|about|overview)\/?$/i,
+    /\/corporate\/(?:profile|about|overview)\/?$/i,
+    /\/company-profile\/?$/i,
     /\/company\/?$/i,
     /\/about\/?$/i,
     /\/corporate\/?$/i,
     /\/kaisha\/?$/i,
     /\/about-us\/?$/i,
-    /\/company-profile\/?$/i,
     /\/gaiyou\/?$/i,
     /\/outline\/?$/i,
     // URL-encoded Japanese
@@ -228,15 +302,19 @@ function findCompanyPageFromSitemap(urls: string[], _baseUrl: string): string | 
     /%E4%BC%81%E6%A5%AD/i,     // 企業
   ];
 
-  const matches: { url: string; pathLength: number }[] = [];
+  // サブパスボーナス: /profile, /overview, /about を含むパスにボーナスを与える
+  const detailSubPaths = /\/(profile|overview|about|gaiyou|outline)\/?$/i;
+
+  const matches: { url: string; patternIndex: number; bonus: number }[] = [];
 
   for (const u of urls) {
     try {
       const parsed = new URL(u);
       const path = parsed.pathname;
-      for (const pattern of companyPatterns) {
-        if (pattern.test(path)) {
-          matches.push({ url: u, pathLength: path.split("/").filter(Boolean).length });
+      for (let i = 0; i < companyPatterns.length; i++) {
+        if (companyPatterns[i].test(path)) {
+          const bonus = detailSubPaths.test(path) ? -1 : 0; // -1 = higher priority in sort
+          matches.push({ url: u, patternIndex: i, bonus });
           break;
         }
       }
@@ -247,8 +325,12 @@ function findCompanyPageFromSitemap(urls: string[], _baseUrl: string): string | 
 
   if (matches.length === 0) return null;
 
-  // 短いパスを優先
-  matches.sort((a, b) => a.pathLength - b.pathLength);
+  // パターンの優先度順にソートし、同一パターンならサブパスボーナスがある方を優先
+  matches.sort((a, b) => {
+    const indexDiff = a.patternIndex - b.patternIndex;
+    if (indexDiff !== 0) return indexDiff;
+    return a.bonus - b.bonus;
+  });
   return matches[0].url;
 }
 
@@ -557,6 +639,404 @@ function extractOfficersFromHtml(html: string): { representativeName?: string; o
   return { representativeName, officers };
 }
 
+// ─── JSON-LD抽出 ───
+
+interface JsonLdData {
+  name?: string;
+  address?: string;
+  telephone?: string;
+  email?: string;
+  founder?: string;
+  description?: string;
+  foundingDate?: string;
+  url?: string;
+  sameAs?: string[];
+  employeeCount?: string;
+}
+
+/**
+ * HTMLから JSON-LD (schema.org) の企業情報を抽出する
+ * <script type="application/ld+json"> タグから Organization, LocalBusiness, Corporation 等を探す
+ */
+function extractJsonLd(html: string): JsonLdData | null {
+  const scriptRegex = /<script\s+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  let match;
+  const targetTypes = ['Organization', 'LocalBusiness', 'Corporation', 'MedicalBusiness',
+    'LegalService', 'FinancialService', 'RealEstateAgent', 'Store', 'Restaurant',
+    'AutoDealer', 'HomeAndConstructionBusiness', 'ProfessionalService'];
+
+  while ((match = scriptRegex.exec(html)) !== null) {
+    try {
+      const raw = match[1].trim();
+      if (!raw) continue;
+      const parsed = JSON.parse(raw);
+
+      // Handle @graph arrays
+      const candidates = Array.isArray(parsed) ? parsed :
+        parsed['@graph'] ? (Array.isArray(parsed['@graph']) ? parsed['@graph'] : [parsed['@graph']]) :
+        [parsed];
+
+      for (const obj of candidates) {
+        const type = obj['@type'];
+        const typeStr = Array.isArray(type) ? type.join(',') : (type || '');
+        const isTarget = targetTypes.some(t => typeStr.includes(t));
+        if (!isTarget) continue;
+
+        const result: JsonLdData = {};
+
+        // name
+        if (obj.name) result.name = typeof obj.name === 'string' ? obj.name : String(obj.name);
+
+        // address
+        if (obj.address) {
+          if (typeof obj.address === 'string') {
+            result.address = obj.address;
+          } else if (typeof obj.address === 'object') {
+            const a = obj.address;
+            const parts = [a.postalCode, a.addressRegion, a.addressLocality, a.streetAddress].filter(Boolean);
+            if (parts.length > 0) {
+              result.address = parts.join(' ');
+            }
+          }
+        }
+        if (!result.address && obj.location) {
+          if (typeof obj.location === 'string') {
+            result.address = obj.location;
+          } else if (typeof obj.location === 'object' && obj.location.address) {
+            const a = obj.location.address;
+            if (typeof a === 'string') {
+              result.address = a;
+            } else {
+              const parts = [a.postalCode, a.addressRegion, a.addressLocality, a.streetAddress].filter(Boolean);
+              if (parts.length > 0) result.address = parts.join(' ');
+            }
+          }
+        }
+
+        // telephone
+        if (obj.telephone) result.telephone = String(obj.telephone);
+
+        // email
+        if (obj.email) result.email = String(obj.email);
+
+        // founder
+        if (obj.founder) {
+          if (typeof obj.founder === 'string') result.founder = obj.founder;
+          else if (obj.founder.name) result.founder = String(obj.founder.name);
+        }
+
+        // description
+        if (obj.description) result.description = typeof obj.description === 'string'
+          ? obj.description.substring(0, 300) : String(obj.description).substring(0, 300);
+
+        // foundingDate
+        if (obj.foundingDate) result.foundingDate = String(obj.foundingDate);
+
+        // url
+        if (obj.url) result.url = String(obj.url);
+
+        // sameAs (SNS links etc.)
+        if (obj.sameAs) {
+          result.sameAs = Array.isArray(obj.sameAs) ? obj.sameAs.map(String) : [String(obj.sameAs)];
+        }
+
+        // numberOfEmployees
+        if (obj.numberOfEmployees) {
+          if (typeof obj.numberOfEmployees === 'object' && obj.numberOfEmployees.value) {
+            result.employeeCount = String(obj.numberOfEmployees.value);
+          } else if (typeof obj.numberOfEmployees === 'string' || typeof obj.numberOfEmployees === 'number') {
+            result.employeeCount = String(obj.numberOfEmployees);
+          }
+        }
+
+        // At least name or address must be present
+        if (result.name || result.address) {
+          return result;
+        }
+      }
+    } catch {
+      // JSON parse error, skip this script tag
+    }
+  }
+
+  return null;
+}
+
+// ─── キーワードベーススマート抽出 ───
+
+/** フラグメント抽出のキーワード定義（設計書準拠）
+ * contextBefore/contextAfter で切り出し範囲を制御
+ */
+interface KeywordGroupDef {
+  keywords: string[];
+  contextBefore: number;
+  contextAfter: number;
+  maxTotalChars?: number; // グループ全体の上限
+}
+
+const KEYWORD_GROUP_DEFS: Record<string, KeywordGroupDef> = {
+  company_name: {
+    keywords: ['株式会社', '有限会社', '合同会社', '一般社団法人', '医療法人', '社会福祉法人'],
+    contextBefore: 30,
+    contextAfter: 30,
+  },
+  representative: {
+    keywords: ['代表取締役', '代表者', 'CEO', '社長', '代表者名', '代表 '],
+    contextBefore: 0,
+    contextAfter: 50,
+  },
+  address: {
+    keywords: ['所在地', '住所', '本社', '〒', '本店所在地', 'アクセス',
+      '北海道', '東京都', '大阪府', '京都府', '愛知県', '福岡県', '神奈川県', '埼玉県', '千葉県', '兵庫県'],
+    contextBefore: 0,
+    contextAfter: 100,
+  },
+  business: {
+    keywords: ['事業内容', '事業概要', '主な事業', 'サービス内容', '業務内容'],
+    contextBefore: 0,
+    contextAfter: 200,
+  },
+  officers: {
+    keywords: ['取締役', '監査役', '執行役員'],
+    contextBefore: 0,
+    contextAfter: 30,
+    maxTotalChars: 500,
+  },
+  capital: {
+    keywords: ['資本金', '資本'],
+    contextBefore: 0,
+    contextAfter: 50,
+  },
+  founded: {
+    keywords: ['設立', '創業', '設立年月', '創立'],
+    contextBefore: 0,
+    contextAfter: 50,
+  },
+  employees: {
+    keywords: ['従業員数', '社員数', '従業員', 'スタッフ数'],
+    contextBefore: 0,
+    contextAfter: 50,
+  },
+  phone: {
+    keywords: ['TEL', '電話', 'tel:', 'phone', '03-', '06-', '0120-'],
+    contextBefore: 0,
+    contextAfter: 30,
+  },
+  email: {
+    keywords: ['mail', 'info@', 'contact@', 'メール', 'E-mail'],
+    contextBefore: 0,
+    contextAfter: 50,
+  },
+  sns: {
+    keywords: ['twitter.com', 'x.com', 'instagram.com', 'facebook.com', 'youtube.com'],
+    contextBefore: 0,
+    contextAfter: 80,
+  },
+  hiring: {
+    keywords: ['採用情報', '採用', 'recruit', 'career', '求人'],
+    contextBefore: 0,
+    contextAfter: 30,
+  },
+  industry: {
+    keywords: ['業種', '業態', '取扱商品', '主要取引先'],
+    contextBefore: 0,
+    contextAfter: 50,
+  },
+};
+
+// 後方互換: extractByKeywords内で使う簡易マップ
+const KEYWORD_GROUPS: Record<string, string[]> = Object.fromEntries(
+  Object.entries(KEYWORD_GROUP_DEFS).map(([k, v]) => [k, v.keywords])
+);
+
+interface KeywordExtract {
+  group: string;
+  text: string;
+}
+
+/**
+ * HTMLからキーワード周辺のテキストを抽出する
+ * 設計書準拠: グループごとに異なる切り出し範囲 (contextBefore/contextAfter) を使用
+ * ナビ/フッター除去済みHTMLを推奨
+ */
+function extractByKeywords(html: string): KeywordExtract[] {
+  // HTMLからプレーンテキストを生成（ナビ/フッター除去済み）
+  let plainText = stripNavigationElements(html);
+  plainText = plainText.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+  plainText = plainText.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+  plainText = plainText.replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '');
+  plainText = plainText.replace(/<!--[\s\S]*?-->/g, '');
+  plainText = plainText.replace(/<[^>]+>/g, ' ');
+  plainText = plainText.replace(/\s+/g, ' ').trim();
+
+  const results: KeywordExtract[] = [];
+
+  for (const [group, def] of Object.entries(KEYWORD_GROUP_DEFS)) {
+    const { keywords, contextBefore, contextAfter, maxTotalChars } = def;
+    const ranges: { start: number; end: number }[] = [];
+    let totalChars = 0;
+
+    for (const keyword of keywords) {
+      const lowerText = plainText.toLowerCase();
+      const lowerKeyword = keyword.toLowerCase();
+      let searchFrom = 0;
+
+      while (searchFrom < lowerText.length) {
+        const idx = lowerText.indexOf(lowerKeyword, searchFrom);
+        if (idx === -1) break;
+
+        const start = Math.max(0, idx - contextBefore);
+        const end = Math.min(plainText.length, idx + keyword.length + contextAfter);
+
+        // Check if this range overlaps with existing ranges
+        let merged = false;
+        for (let i = 0; i < ranges.length; i++) {
+          if (start <= ranges[i].end && end >= ranges[i].start) {
+            ranges[i].start = Math.min(ranges[i].start, start);
+            ranges[i].end = Math.max(ranges[i].end, end);
+            merged = true;
+            break;
+          }
+        }
+        if (!merged) {
+          ranges.push({ start, end });
+        }
+
+        searchFrom = idx + keyword.length;
+        if (ranges.length >= 5) break;
+      }
+
+      if (ranges.length >= 5) break;
+    }
+
+    // Extract text for each range, respecting maxTotalChars
+    for (const range of ranges) {
+      const text = plainText.substring(range.start, range.end).trim();
+      if (text.length > 10) {
+        if (maxTotalChars && totalChars + text.length > maxTotalChars) {
+          const remaining = maxTotalChars - totalChars;
+          if (remaining > 20) {
+            results.push({ group, text: text.substring(0, remaining) });
+            totalChars += remaining;
+          }
+          break;
+        }
+        results.push({ group, text });
+        totalChars += text.length;
+      }
+    }
+  }
+
+  return results;
+}
+
+// ─── スマートコンテンツ統合 ───
+
+/**
+ * JSON-LD + キーワード抽出 + 従来のbodyTextを統合して5000文字以内のスマートコンテンツを生成
+ */
+function buildSmartContent(
+  jsonLdData: JsonLdData | null,
+  keywordExtracts: KeywordExtract[],
+  title: string,
+  description: string,
+  headings: string,
+  fallbackBodyText: string
+): string {
+  const MAX_LENGTH = 5000;
+  const parts: string[] = [];
+  let currentLength = 0;
+
+  // Priority 1: JSON-LD structured data
+  if (jsonLdData) {
+    const ldLines: string[] = ['【構造化データ】'];
+    if (jsonLdData.name) ldLines.push(`企業名: ${jsonLdData.name}`);
+    if (jsonLdData.address) ldLines.push(`住所: ${jsonLdData.address}`);
+    if (jsonLdData.telephone) ldLines.push(`電話: ${jsonLdData.telephone}`);
+    if (jsonLdData.email) ldLines.push(`メール: ${jsonLdData.email}`);
+    if (jsonLdData.founder) ldLines.push(`代表者: ${jsonLdData.founder}`);
+    if (jsonLdData.foundingDate) ldLines.push(`設立: ${jsonLdData.foundingDate}`);
+    if (jsonLdData.employeeCount) ldLines.push(`従業員数: ${jsonLdData.employeeCount}`);
+    if (jsonLdData.description) ldLines.push(`概要: ${jsonLdData.description}`);
+    if (jsonLdData.sameAs && jsonLdData.sameAs.length > 0) {
+      ldLines.push(`SNS: ${jsonLdData.sameAs.join(', ')}`);
+    }
+
+    const ldText = ldLines.join('\n');
+    if (currentLength + ldText.length <= MAX_LENGTH) {
+      parts.push(ldText);
+      currentLength += ldText.length;
+    }
+  }
+
+  // Priority 2: Keyword-based extractions
+  const groupLabels: Record<string, string> = {
+    address: '住所周辺',
+    representative: '代表者周辺',
+    capital: '資本金周辺',
+    founded: '設立年周辺',
+    employees: '従業員数周辺',
+    phone: '電話番号周辺',
+    email: 'メール周辺',
+    business: '事業内容周辺',
+    sns: 'SNS周辺',
+    hiring: '採用情報周辺',
+    industry: '業種周辺',
+  };
+
+  // Group extracts by group name
+  const grouped = new Map<string, string[]>();
+  for (const extract of keywordExtracts) {
+    if (!grouped.has(extract.group)) {
+      grouped.set(extract.group, []);
+    }
+    grouped.get(extract.group)!.push(extract.text);
+  }
+
+  const groupKeys = Array.from(grouped.keys());
+  for (const group of groupKeys) {
+    const texts = grouped.get(group)!;
+    const label = groupLabels[group] || group;
+    const sectionText = `【${label}】${texts.join(' ... ')}`;
+    if (currentLength + sectionText.length + 1 <= MAX_LENGTH) {
+      parts.push(sectionText);
+      currentLength += sectionText.length + 1;
+    } else {
+      // Truncate to fit remaining space
+      const remaining = MAX_LENGTH - currentLength - 1;
+      if (remaining > 50) {
+        parts.push(sectionText.substring(0, remaining));
+        currentLength = MAX_LENGTH;
+      }
+      break;
+    }
+  }
+
+  // Priority 3: Traditional content (title, description, headings, body text)
+  if (currentLength < MAX_LENGTH) {
+    const traditional: string[] = [];
+    if (title) traditional.push(`【タイトル】${title}`);
+    if (description) traditional.push(`【メタディスクリプション】${description}`);
+    if (headings) traditional.push(`【見出し】${headings}`);
+
+    for (const t of traditional) {
+      if (currentLength + t.length + 1 <= MAX_LENGTH) {
+        parts.push(t);
+        currentLength += t.length + 1;
+      }
+    }
+
+    // Fill remaining with body text
+    const remaining = MAX_LENGTH - currentLength;
+    if (remaining > 100 && fallbackBodyText) {
+      const bodyPart = `【本文テキスト】${fallbackBodyText.substring(0, remaining - 10)}`;
+      parts.push(bodyPart);
+    }
+  }
+
+  return parts.join('\n');
+}
+
 // ─── HTML解析 ───
 
 interface StructuredContent {
@@ -564,12 +1044,26 @@ interface StructuredContent {
   description: string;
   headings: string;
   bodyText: string;
+  /** JSON-LDから抽出した構造化データ */
+  jsonLdData: JsonLdData | null;
+  /** キーワードベース抽出結果 */
+  keywordExtracts: KeywordExtract[];
+  /** スマート統合テキスト（5000文字以内） */
+  smartContent: string;
+  /** パターンマッチ確定データ */
+  confirmedData: ConfirmedData;
+  /** ナビ/フッター除去済みプレーンテキスト */
+  cleanBodyText: string;
 }
 
 /**
  * HTMLから構造化コンテンツを抽出する
+ * JSON-LD → キーワードベース抽出 → 従来のテキスト抽出の3層で情報を収集
  */
 function extractStructuredContent(html: string): StructuredContent {
+  // Step 1: JSON-LD抽出（scriptタグ除去前に実行）
+  const jsonLdData = extractJsonLd(html);
+
   // title
   const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
   const title = titleMatch ? titleMatch[1].replace(/\s+/g, " ").trim() : "";
@@ -590,7 +1084,10 @@ function extractStructuredContent(html: string): StructuredContent {
     }
   }
 
-  // body text
+  // Step 2: キーワードベース抽出
+  const keywordExtracts = extractByKeywords(html);
+
+  // body text (従来方式: フォールバック用)
   let bodyHtml = html;
   bodyHtml = bodyHtml.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "");
   bodyHtml = bodyHtml.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "");
@@ -600,7 +1097,163 @@ function extractStructuredContent(html: string): StructuredContent {
   bodyHtml = bodyHtml.replace(/\s+/g, " ").trim();
   const bodyText = bodyHtml.length > 5000 ? bodyHtml.substring(0, 5000) : bodyHtml;
 
-  return { title, description, headings: headings.join("\n"), bodyText };
+  // Step 2.5: ナビ/フッター除去済みプレーンテキスト
+  let cleanHtml = stripNavigationElements(html);
+  cleanHtml = cleanHtml.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "");
+  cleanHtml = cleanHtml.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "");
+  cleanHtml = cleanHtml.replace(/<head[^>]*>[\s\S]*?<\/head>/gi, "");
+  cleanHtml = cleanHtml.replace(/<!--[\s\S]*?-->/g, "");
+  cleanHtml = cleanHtml.replace(/<[^>]+>/g, " ");
+  cleanHtml = cleanHtml.replace(/\s+/g, " ").trim();
+  const cleanBodyText = cleanHtml.length > 8000 ? cleanHtml.substring(0, 8000) : cleanHtml;
+
+  // Step 3: パターンマッチ確定（confirmed）
+  const confirmedData = extractConfirmed(cleanBodyText);
+
+  // Step 4: スマートコンテンツ統合
+  const headingsStr = headings.join("\n");
+  const smartContent = buildSmartContent(
+    jsonLdData,
+    keywordExtracts,
+    title,
+    description,
+    headingsStr,
+    bodyText
+  );
+
+  return { title, description, headings: headingsStr, bodyText, jsonLdData, keywordExtracts, smartContent, confirmedData, cleanBodyText };
+}
+
+// ─── パターンマッチ確定（confirmed） ───
+
+interface ConfirmedData {
+  foundingYear: number | null;
+  capitalManYen: number | null;
+  capitalRaw: string | null;
+  phone: string | null;
+  employeeCount: number | null;
+  employeeCountRaw: string | null;
+  email: string | null;
+}
+
+/** 和暦→西暦変換 */
+function warekiToSeireki(era: string, year: number): number {
+  const bases: Record<string, number> = {
+    '明治': 1867,
+    '大正': 1911,
+    '昭和': 1925,
+    '平成': 1988,
+    '令和': 2018,
+  };
+  return (bases[era] || 0) + year;
+}
+
+/**
+ * テキストから正規表現で確実に取れる項目を確定抽出する
+ * Geminiに投げずに済む項目を事前に確定してコスト・精度を改善
+ */
+function extractConfirmed(text: string): ConfirmedData {
+  const result: ConfirmedData = {
+    foundingYear: null,
+    capitalManYen: null,
+    capitalRaw: null,
+    phone: null,
+    employeeCount: null,
+    employeeCountRaw: null,
+    email: null,
+  };
+
+  // --- 設立年 ---
+  // 和暦パターン: (設立|創業|創立)...（明治|大正|昭和|平成|令和）XX年
+  const foundingWareki = text.match(/(設立|創業|創立)[\s:：]*?(明治|大正|昭和|平成|令和)(\d{1,2})\s*年/);
+  if (foundingWareki) {
+    const era = foundingWareki[2];
+    const yearNum = parseInt(foundingWareki[3], 10);
+    const seireki = warekiToSeireki(era, yearNum);
+    if (seireki >= 1868 && seireki <= new Date().getFullYear()) {
+      result.foundingYear = seireki;
+    }
+  }
+  // 西暦パターン: (設立|創業|創立)...XXXX年
+  if (!result.foundingYear) {
+    const foundingSeireki = text.match(/(設立|創業|創立)[\s:：]*?(\d{4})\s*年/);
+    if (foundingSeireki) {
+      const year = parseInt(foundingSeireki[2], 10);
+      if (year >= 1800 && year <= new Date().getFullYear()) {
+        result.foundingYear = year;
+      }
+    }
+  }
+
+  // --- 資本金 ---
+  const capitalMatch = text.match(/資本金[\s:：]*?([\d,]+)\s*(万円|百万円|億円|円)/);
+  if (capitalMatch) {
+    const numStr = capitalMatch[1].replace(/,/g, '');
+    const num = parseInt(numStr, 10);
+    const unit = capitalMatch[2];
+    result.capitalRaw = `${capitalMatch[1]}${unit}`;
+    if (unit === '万円') {
+      result.capitalManYen = num;
+    } else if (unit === '百万円') {
+      result.capitalManYen = num * 100;
+    } else if (unit === '億円') {
+      result.capitalManYen = num * 10000;
+    } else if (unit === '円') {
+      result.capitalManYen = Math.round(num / 10000);
+    }
+  }
+
+  // --- 電話番号 ---
+  const phoneMatch = text.match(/(TEL|電話|tel|Tel|phone|Phone|PHONE)[\s:：]*?(0\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{3,4})/);
+  if (phoneMatch) {
+    result.phone = phoneMatch[2].replace(/\s/g, '').trim();
+  }
+  // TELラベルなしでも電話番号パターン（03-XXXX-XXXX等）を拾う
+  if (!result.phone) {
+    const barePhone = text.match(/(?:^|[\s　])(\d{2,4}-\d{2,4}-\d{3,4})(?:[\s　]|$)/);
+    if (barePhone) {
+      result.phone = barePhone[1];
+    }
+  }
+
+  // --- 従業員数 ---
+  const empMatch = text.match(/(従業員|社員)[\s数:：]*?([\d,]+)\s*(名|人)/);
+  if (empMatch) {
+    result.employeeCountRaw = `${empMatch[2]}${empMatch[3]}`;
+    result.employeeCount = parseInt(empMatch[2].replace(/,/g, ''), 10);
+  }
+
+  // --- メールアドレス ---
+  const emailRegex = /[\w][\w.+\-]*@[\w][\w.\-]*\.\w{2,}/g;
+  const excludeEmail = /noreply|no-reply|no_reply|example\.com|sample\.|test\.|dummy\.|wixpress|sentry/i;
+  let emailMatch;
+  while ((emailMatch = emailRegex.exec(text)) !== null) {
+    if (!excludeEmail.test(emailMatch[0])) {
+      result.email = emailMatch[0];
+      break;
+    }
+  }
+
+  return result;
+}
+
+// ─── ナビ/フッター共通テキスト除去 ───
+
+/**
+ * HTMLからナビ・ヘッダー・フッター・サイドバー・パンくずリストを除去する
+ * 都度スクレイピングで1-2ページしかない場合の簡易版
+ */
+function stripNavigationElements(html: string): string {
+  let cleaned = html;
+  // <nav>, <header>, <footer>, <aside> タグ内を除去
+  cleaned = cleaned.replace(/<nav\b[^>]*>[\s\S]*?<\/nav>/gi, ' ');
+  cleaned = cleaned.replace(/<header\b[^>]*>[\s\S]*?<\/header>/gi, ' ');
+  cleaned = cleaned.replace(/<footer\b[^>]*>[\s\S]*?<\/footer>/gi, ' ');
+  cleaned = cleaned.replace(/<aside\b[^>]*>[\s\S]*?<\/aside>/gi, ' ');
+  // パンくずリスト（breadcrumb クラス・id・aria-label）
+  cleaned = cleaned.replace(/<(?:nav|ol|ul|div)\b[^>]*(?:class|id)=["'][^"']*breadcrumb[^"']*["'][^>]*>[\s\S]*?<\/(?:nav|ol|ul|div)>/gi, ' ');
+  cleaned = cleaned.replace(/<(?:nav|ol|ul|div)\b[^>]*aria-label=["'][^"']*breadcrumb[^"']*["'][^>]*>[\s\S]*?<\/(?:nav|ol|ul|div)>/gi, ' ');
+  return cleaned;
 }
 
 // ─── regex抽出 ───
@@ -805,10 +1458,85 @@ async function extractInfoWithGemini(
 - 依頼「飲食店」→ レストラン・居酒屋・カフェ = true、食品卸・飲食店向けシステム・飲食コンサル = false`
     : "";
 
-  const structuredText = `【タイトル】${content.title}
-【メタディスクリプション】${content.description}
-【見出し】${content.headings}
-【本文テキスト】${content.bodyText}`;
+  // confirmed項目はGeminiに渡さない（正規表現で確定済み）
+  // fragments + JSON-LDデータのみ渡す
+  const confirmed = content.confirmedData;
+
+  // フラグメントテキストを構築（キーワード抽出結果をグループごとにまとめる）
+  const fragmentGroups = new Map<string, string[]>();
+  for (const extract of content.keywordExtracts) {
+    if (!fragmentGroups.has(extract.group)) {
+      fragmentGroups.set(extract.group, []);
+    }
+    fragmentGroups.get(extract.group)!.push(extract.text);
+  }
+
+  const fragmentLines: string[] = [];
+  const fragmentLabels: Record<string, string> = {
+    company_name: '企業名周辺', representative: '代表者周辺', address: '住所周辺',
+    business: '事業内容周辺', officers: '役員周辺', capital: '資本金周辺',
+    founded: '設立年周辺', employees: '従業員数周辺', phone: '電話番号周辺',
+    email: 'メール周辺', sns: 'SNS周辺', hiring: '採用情報周辺', industry: '業種周辺',
+  };
+  for (const [group, texts] of Array.from(fragmentGroups.entries())) {
+    const label = fragmentLabels[group] || group;
+    fragmentLines.push(`【${label}】${texts.join(' ... ')}`);
+  }
+
+  // JSON-LDテキスト
+  const jsonLdLines: string[] = [];
+  if (content.jsonLdData) {
+    const ld = content.jsonLdData;
+    jsonLdLines.push('【構造化データ（JSON-LD）】');
+    if (ld.name) jsonLdLines.push(`企業名: ${ld.name}`);
+    if (ld.address) jsonLdLines.push(`住所: ${ld.address}`);
+    if (ld.telephone) jsonLdLines.push(`電話: ${ld.telephone}`);
+    if (ld.email) jsonLdLines.push(`メール: ${ld.email}`);
+    if (ld.founder) jsonLdLines.push(`代表者: ${ld.founder}`);
+    if (ld.foundingDate) jsonLdLines.push(`設立: ${ld.foundingDate}`);
+    if (ld.employeeCount) jsonLdLines.push(`従業員数: ${ld.employeeCount}`);
+    if (ld.description) jsonLdLines.push(`概要: ${ld.description}`);
+    if (ld.sameAs && ld.sameAs.length > 0) jsonLdLines.push(`SNS: ${ld.sameAs.join(', ')}`);
+  }
+
+  // タイトル・メタディスクリプション
+  const metaLines: string[] = [];
+  if (content.title) metaLines.push(`【タイトル】${content.title}`);
+  if (content.description) metaLines.push(`【メタディスクリプション】${content.description}`);
+  if (content.headings) metaLines.push(`【見出し】${content.headings}`);
+
+  // confirmed済み項目をGeminiに通知（重複抽出を避ける）
+  const confirmedNotice: string[] = [];
+  if (confirmed.foundingYear) confirmedNotice.push(`設立年: ${confirmed.foundingYear}（確定済み・抽出不要）`);
+  if (confirmed.capitalRaw) confirmedNotice.push(`資本金: ${confirmed.capitalRaw}（確定済み・抽出不要）`);
+  if (confirmed.phone) confirmedNotice.push(`電話番号: ${confirmed.phone}（確定済み・抽出不要）`);
+  if (confirmed.employeeCountRaw) confirmedNotice.push(`従業員数: ${confirmed.employeeCountRaw}（確定済み・抽出不要）`);
+  if (confirmed.email) confirmedNotice.push(`メール: ${confirmed.email}（確定済み・抽出不要）`);
+
+  const confirmedSection = confirmedNotice.length > 0
+    ? `\n【事前確定済み項目（抽出不要）】\n${confirmedNotice.join('\n')}\n`
+    : '';
+
+  // 入力テキスト構築（5000文字制限）
+  const allInputParts = [
+    ...jsonLdLines,
+    confirmedSection,
+    ...fragmentLines,
+    ...metaLines,
+  ].filter(Boolean);
+
+  let inputText = allInputParts.join('\n');
+  if (inputText.length > 5000) {
+    inputText = inputText.substring(0, 5000);
+  }
+
+  // JSON-LDデータがある場合の追加指示
+  const jsonLdInstruction = content.jsonLdData
+    ? `\n\n【構造化データについて】ページにはJSON-LD（schema.org）の構造化データが含まれています。構造化データの情報は信頼度が高いため、他のテキストと矛盾する場合は構造化データを優先してください。`
+    : '';
+
+  // 業種マスター
+  const industryMasterText = getIndustryMasterPromptText();
 
   const prompt = `このWebページが民間の法人・事業者の公式サイトかどうか判定し、企業情報を抽出してJSONで返してください。
 
@@ -819,27 +1547,26 @@ async function extractInfoWithGemini(
   - 官公庁・自治体・公共機関のサイト（例: 市役所・区役所・町村役場・県庁・都庁・省庁・府省・国の機関・公立学校・公立病院・公立図書館・公共施設・独立行政法人・地方公共団体・公営企業など）。ドメインが .go.jp / .lg.jp / .ed.jp の場合も該当
 
 isCompanySite: false の場合、他の項目は null で構いません。
-isCompanySite: true の場合、以下の情報を抽出してください（見つからない項目はnullにしてください）:
-- 会社名（法人格を必ず含める）
-- 業種
-- 所在地（番地・ビル名まで含むフル住所。例: 東京都港区六本木1-2-3 ABCビル5F）
-- 従業員数
-- 資本金
-- 電話番号
-- 代表者名
-- 設立年（西暦の数値のみ）
-- 事業内容（30文字以内の簡潔な説明）
-- industryMajor: 日本標準産業分類の大分類（例: 製造業, 情報通信業, 卸売業・小売業, 建設業, 医療・福祉, サービス業）
-- industryMinor: 小分類（例: 化粧品製造業, ソフトウェア業, 一般診療所, 美容業）
-- searchTags: 5-10個の検索用キーワード配列（事業内容から連想される実用的なタグ。例: ["化粧品","コスメ","スキンケア","D2C","通販"]）
-- officers: 役員一覧（会社概要ページに記載されている場合のみ。最大10名。見つからなければ空配列[]）。形式: [{"name": "田中太郎", "title": "代表取締役"}]
+isCompanySite: true の場合、以下の7項目を抽出してください（見つからない項目はnullにしてください）:
+1. companyName: 会社名（法人格を必ず含める）
+2. representativeName: 代表者名の整形
+3. location: 所在地（番地・ビル名まで含むフル住所。例: 東京都港区六本木1-2-3 ABCビル5F）
+4. businessDescription: 事業内容（50文字以内の簡潔な要約）
+5. industryMajor / industryMinor: 業種マスターから選択
+6. searchTags: 5-10個の検索用キーワード配列（事業内容から連想される実用的なタグ）
+7. officers: 役員一覧（最大10名。見つからなければ空配列[]）。形式: [{"name": "田中太郎", "title": "代表取締役"}]
 
-【会社名の重要ルール】法人格（株式会社・有限会社・合同会社・一般社団法人・医療法人等）を必ず含めること。ページ内に法人格が記載されている場合は必ず付与する。英語名の場合も Co., Ltd. や Inc. 等を含めること。例: ×「山田商事」→ ○「株式会社山田商事」${industryCheckInstruction}
+※ 設立年・資本金・電話番号・従業員数・メールは事前確定済みのため抽出不要です（nullで返してください）
 
-${structuredText}
+【業種マスター（20大分類・小分類）】
+${industryMasterText}
+
+【会社名の重要ルール】法人格（株式会社・有限会社・合同会社・一般社団法人・医療法人等）を必ず含めること。ページ内に法人格が記載されている場合は必ず付与する。英語名の場合も Co., Ltd. や Inc. 等を含めること。例: ×「山田商事」→ ○「株式会社山田商事」${industryCheckInstruction}${jsonLdInstruction}
+
+${inputText}
 
 JSONのみ返してください：
-{"isCompanySite": true, "isRelevantIndustry": true, "companyName": "", "industry": "", "location": "", "employeeCount": "", "capitalAmount": "", "phoneNumber": "", "representativeName": "", "establishedYear": null, "businessDescription": "", "industryMajor": "", "industryMinor": "", "searchTags": [], "officers": []}`;
+{"isCompanySite": true, "isRelevantIndustry": true, "companyName": "", "location": "", "representativeName": "", "businessDescription": "", "industryMajor": "", "industryMinor": "", "searchTags": [], "officers": []}`;
 
   try {
     const result = await model.generateContent(prompt);
@@ -1032,8 +1759,70 @@ export async function scrapeCompanyInfo(url: string, requestedIndustry?: string,
       return { hasForm: false };
     }
 
-    // 構造化コンテンツを抽出
-    const structuredContent = extractStructuredContent(htmlForExtraction);
+    // アクセスページ探索（住所が別ページにある場合の対策）
+    let accessPageHtml: string | null = null;
+    if (companyPageHtml) {
+      // サイトマップURLからアクセスページをパターンマッチ
+      const accessPatterns = [
+        /\/(?:company\/)?access\/?$/i,
+        /\/office\/?$/i,
+        /\/location\/?$/i,
+        /\/map\/?$/i,
+        /\/corporate\/access\/?$/i,
+        /\/company\/(?:office|map)\/?$/i,
+      ];
+      const allUrlSources = sitemapUrls || [];
+      // トップページリンクも追加
+      if (mainHtml) {
+        const pageLinks = extractLinksFromHtml(mainHtml, domain);
+        for (const link of pageLinks) {
+          if (!allUrlSources.includes(link.url)) {
+            allUrlSources.push(link.url);
+          }
+        }
+      }
+      // 会社概要ページリンクも追加
+      const companyLinks = extractLinksFromHtml(companyPageHtml, domain);
+      for (const link of companyLinks) {
+        if (!allUrlSources.includes(link.url)) {
+          allUrlSources.push(link.url);
+        }
+      }
+
+      for (const u of allUrlSources) {
+        try {
+          const parsed = new URL(u);
+          const path = parsed.pathname;
+          if (accessPatterns.some(p => p.test(path))) {
+            accessPageHtml = await fetchHtml(u);
+            if (accessPageHtml) {
+              console.log(`  -> Access page found: ${u}`);
+              break;
+            }
+          }
+        } catch { /* skip */ }
+      }
+
+      // パス推測フォールバック
+      if (!accessPageHtml) {
+        for (const path of ACCESS_PAGE_PATHS) {
+          const accessUrl = `${baseUrl}${path}`;
+          accessPageHtml = await fetchHtml(accessUrl);
+          if (accessPageHtml) {
+            console.log(`  -> Access page found via path guess: ${accessUrl}`);
+            break;
+          }
+        }
+      }
+    }
+
+    // 会社概要ページとアクセスページのHTMLを結合して抽出に使用
+    const combinedHtml = accessPageHtml
+      ? htmlForExtraction + '\n<!-- ACCESS PAGE -->\n' + accessPageHtml
+      : htmlForExtraction;
+
+    // 構造化コンテンツを抽出（結合HTMLから）
+    const structuredContent = extractStructuredContent(combinedHtml);
 
     // regex抽出（メインページと会社概要ページの両方から）
     const mainRegex = mainHtml ? extractFromHtmlRegex(mainHtml) : { hasRecruitPage: false } as RegexExtracted;
@@ -1095,24 +1884,11 @@ export async function scrapeCompanyInfo(url: string, requestedIndustry?: string,
       return { hasForm: false };
     }
 
-    // 地域不一致チェック: Geminiが判定した所在地が依頼地域と明らかに異なる場合はスキップ
-    // ただし所在地が不明（null）の場合はそのまま通す
+    // 地域不一致チェック: 依頼地域と取得住所を都道府県・市区町村レベルで構造的に比較
+    // 所在地が不明（null/空）の場合はそのまま通す（住所なしで除外すると有効な企業も失う）
     if (requestedLocation && extracted.location) {
-      const loc = extracted.location;
-      const req = requestedLocation;
-      // 依頼地域のキーワードが所在地に含まれていなければ不一致とみなす
-      // 都道府県レベル・市区町村レベルで判定
-      const locationKeywords = req
-        .replace(/[都道府県市区町村郡]/g, (m) => m + "|")
-        .split("|")
-        .map((s) => s.trim())
-        .filter((s) => s.length >= 2);
-      const hasLocationMatch =
-        locationKeywords.length === 0 ||
-        locationKeywords.some((keyword) => loc.includes(keyword)) ||
-        loc.includes(req);
-      if (!hasLocationMatch) {
-        console.log(`  -> location mismatch: requested="${req}", found="${loc}", skipped`);
+      if (!isLocationMatch(requestedLocation, extracted.location)) {
+        console.log(`  -> location mismatch: requested="${requestedLocation}", found="${extracted.location}", skipped`);
         return { hasForm: false };
       }
     }
@@ -1131,30 +1907,114 @@ export async function scrapeCompanyInfo(url: string, requestedIndustry?: string,
       console.log(`  -> Form detection timed out for ${domain}`);
     }
 
-    // 最終結果を組み立て: Gemini + regex + フォーム検出
+    // 最終結果を組み立て: confirmed > Gemini > JSON-LD の優先順位で統合
+    const confirmed = structuredContent.confirmedData;
+    const jsonLd = structuredContent.jsonLdData;
     const result: CompanyInfo = {
       hasForm: formResult.has_form,
     };
 
-    if (extracted.companyName) result.companyName = extracted.companyName;
+    // 会社名: Gemini > JSON-LD（confirmedには該当項目なし）
+    if (extracted.companyName) {
+      result.companyName = extracted.companyName;
+    } else if (jsonLd?.name) {
+      result.companyName = jsonLd.name;
+    }
+
+    // 業種: Gemini only
     if (extracted.industry) result.industry = extracted.industry;
-    if (extracted.location) result.location = extracted.location;
-    if (extracted.employeeCount) result.employeeCount = extracted.employeeCount;
-    if (extracted.capitalAmount) result.capitalAmount = extracted.capitalAmount;
-    if (extracted.phoneNumber) result.phoneNumber = extracted.phoneNumber;
-    if (extracted.representativeName) result.representativeName = extracted.representativeName;
-    if (extracted.establishedYear) result.establishedYear = extracted.establishedYear;
-    if (extracted.businessDescription) result.businessDescription = extracted.businessDescription;
+
+    // 所在地: Gemini > JSON-LD（confirmedには該当項目なし）
+    if (extracted.location) {
+      result.location = extracted.location;
+    } else if (jsonLd?.address) {
+      result.location = jsonLd.address;
+    }
+
+    // 従業員数: confirmed > Gemini > JSON-LD
+    if (confirmed.employeeCount != null) {
+      result.employeeCount = String(confirmed.employeeCount);
+    } else if (extracted.employeeCount) {
+      result.employeeCount = extracted.employeeCount;
+    } else if (jsonLd?.employeeCount) {
+      result.employeeCount = jsonLd.employeeCount;
+    }
+
+    // 資本金: confirmed > Gemini
+    if (confirmed.capitalRaw) {
+      result.capitalAmount = confirmed.capitalRaw;
+    } else if (extracted.capitalAmount) {
+      result.capitalAmount = extracted.capitalAmount;
+    }
+
+    // 電話番号: confirmed > Gemini > JSON-LD
+    if (confirmed.phone) {
+      result.phoneNumber = confirmed.phone;
+    } else if (extracted.phoneNumber) {
+      result.phoneNumber = extracted.phoneNumber;
+    } else if (jsonLd?.telephone) {
+      result.phoneNumber = jsonLd.telephone;
+    }
+
+    // 代表者名: Gemini > JSON-LD（confirmedには該当項目なし）
+    if (extracted.representativeName) {
+      result.representativeName = extracted.representativeName;
+    } else if (jsonLd?.founder) {
+      result.representativeName = jsonLd.founder;
+    }
+
+    // 設立年: confirmed > Gemini > JSON-LD
+    if (confirmed.foundingYear) {
+      result.establishedYear = confirmed.foundingYear;
+    } else if (extracted.establishedYear) {
+      result.establishedYear = extracted.establishedYear;
+    } else if (jsonLd?.foundingDate) {
+      const year = parseInt(jsonLd.foundingDate, 10);
+      if (!isNaN(year) && year >= 1800 && year <= new Date().getFullYear()) {
+        result.establishedYear = year;
+      }
+    }
+
+    // 事業内容: Gemini > JSON-LD
+    if (extracted.businessDescription) {
+      result.businessDescription = extracted.businessDescription;
+    } else if (jsonLd?.description) {
+      result.businessDescription = jsonLd.description.substring(0, 50);
+    }
+
+    // 業種マスター: Gemini only
     if (extracted.industryMajor) result.industryMajor = extracted.industryMajor;
     if (extracted.industryMinor) result.industryMinor = extracted.industryMinor;
     if (extracted.searchTags) result.searchTags = extracted.searchTags;
     if (formResult.form_url) result.formUrl = formResult.form_url;
 
-    // regex抽出データをマージ
-    if (regexData.email) result.email = regexData.email;
+    // メール: confirmed > regex > JSON-LD
+    if (confirmed.email) {
+      result.email = confirmed.email;
+    } else if (regexData.email) {
+      result.email = regexData.email;
+    } else if (jsonLd?.email) {
+      result.email = jsonLd.email;
+    }
+
+    // regex抽出データをマージ（email以外）
     if (regexData.snsLinks) result.snsLinks = regexData.snsLinks;
     if (regexData.hasRecruitPage) result.hasRecruitPage = regexData.hasRecruitPage;
     if (regexData.siteUpdatedAt) result.siteUpdatedAt = regexData.siteUpdatedAt;
+
+    // SNS: JSON-LD sameAs からも補完
+    if (jsonLd?.sameAs && jsonLd.sameAs.length > 0) {
+      const sns = result.snsLinks || {};
+      for (const link of jsonLd.sameAs) {
+        if (!sns.x && /(twitter\.com|x\.com)\/[a-zA-Z0-9_]/i.test(link)) sns.x = link;
+        if (!sns.instagram && /instagram\.com\/[a-zA-Z0-9_.]/i.test(link)) sns.instagram = link;
+        if (!sns.facebook && /facebook\.com\/[a-zA-Z0-9_.]/i.test(link)) sns.facebook = link;
+        if (!sns.youtube && /(youtube\.com|youtu\.be)\/[a-zA-Z0-9_@]/i.test(link)) sns.youtube = link;
+      }
+      if (sns.x || sns.instagram || sns.facebook || sns.youtube) {
+        result.snsLinks = sns;
+      }
+    }
 
     // 新規抽出データをマージ
     if (officerPageUrl) result.officerPageUrl = officerPageUrl;

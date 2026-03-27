@@ -14,7 +14,7 @@ function PaymentCallbackContent() {
 
   useEffect(() => {
     const status = searchParams.get('status') || 'success';
-    window.location.href = `/my-lists?payment=${status}`;
+    window.location.href = `/my-lists?tab=jobs&payment=${status}`;
   }, [searchParams]);
 
   return (

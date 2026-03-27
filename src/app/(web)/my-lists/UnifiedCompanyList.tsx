@@ -364,12 +364,12 @@ export default function UnifiedCompanyList() {
       {/* Filter Bar */}
       <div className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-[14px] px-5 py-4 mb-4 flex flex-col gap-3">
         {/* Row 1: Industry & Location */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <span className="text-[12px] font-semibold text-[#5a6a7a] min-w-[70px] whitespace-nowrap">業種</span>
+        <div className="flex items-center gap-3">
+          <span className="text-[12px] font-semibold text-[#5a6a7a] shrink-0 whitespace-nowrap">業種</span>
           <select
             value={industryFilter}
             onChange={(e) => setIndustryFilter(e.target.value)}
-            className="appearance-none bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-[6px] text-[#8fa3b8] text-[13px] py-[7px] pl-3 pr-8 font-[inherit] cursor-pointer min-h-[36px] transition-colors hover:border-[rgba(255,255,255,0.2)] focus-visible:outline-2 focus-visible:outline-[#06C755] focus-visible:outline-offset-1 bg-no-repeat bg-[right_10px_center] bg-[length:12px_12px]"
+            className="flex-1 min-w-0 appearance-none bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-[6px] text-[#8fa3b8] text-[13px] py-[7px] pl-3 pr-8 font-[inherit] cursor-pointer min-h-[36px] transition-colors hover:border-[rgba(255,255,255,0.2)] focus-visible:outline-2 focus-visible:outline-[#06C755] focus-visible:outline-offset-1 bg-no-repeat bg-[right_10px_center] bg-[length:12px_12px]"
             style={{
               backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238fa3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`
             }}
@@ -379,11 +379,11 @@ export default function UnifiedCompanyList() {
             {industries.map(i => <option key={i} value={i}>{i}</option>)}
           </select>
 
-          <span className="text-[12px] font-semibold text-[#5a6a7a] min-w-[70px] whitespace-nowrap">地域</span>
+          <span className="text-[12px] font-semibold text-[#5a6a7a] shrink-0 whitespace-nowrap">地域</span>
           <select
             value={locationFilter}
             onChange={(e) => setLocationFilter(e.target.value)}
-            className="appearance-none bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-[6px] text-[#8fa3b8] text-[13px] py-[7px] pl-3 pr-8 font-[inherit] cursor-pointer min-h-[36px] transition-colors hover:border-[rgba(255,255,255,0.2)] focus-visible:outline-2 focus-visible:outline-[#06C755] focus-visible:outline-offset-1 bg-no-repeat bg-[right_10px_center] bg-[length:12px_12px]"
+            className="flex-1 min-w-0 appearance-none bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-[6px] text-[#8fa3b8] text-[13px] py-[7px] pl-3 pr-8 font-[inherit] cursor-pointer min-h-[36px] transition-colors hover:border-[rgba(255,255,255,0.2)] focus-visible:outline-2 focus-visible:outline-[#06C755] focus-visible:outline-offset-1 bg-no-repeat bg-[right_10px_center] bg-[length:12px_12px]"
             style={{
               backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238fa3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`
             }}
@@ -393,11 +393,11 @@ export default function UnifiedCompanyList() {
             {locations.map(l => <option key={l} value={l}>{l}</option>)}
           </select>
 
-          <span className="text-[12px] font-semibold text-[#5a6a7a] min-w-[70px] whitespace-nowrap">依頼ジョブ</span>
+          <span className="text-[12px] font-semibold text-[#5a6a7a] shrink-0 whitespace-nowrap">依頼ジョブ</span>
           <select
             value={jobFilter}
             onChange={(e) => setJobFilter(e.target.value)}
-            className="appearance-none bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-[6px] text-[#8fa3b8] text-[13px] py-[7px] pl-3 pr-8 font-[inherit] cursor-pointer min-h-[36px] transition-colors hover:border-[rgba(255,255,255,0.2)] focus-visible:outline-2 focus-visible:outline-[#06C755] focus-visible:outline-offset-1 bg-no-repeat bg-[right_10px_center] bg-[length:12px_12px]"
+            className="flex-1 min-w-0 appearance-none bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-[6px] text-[#8fa3b8] text-[13px] py-[7px] pl-3 pr-8 font-[inherit] cursor-pointer min-h-[36px] transition-colors hover:border-[rgba(255,255,255,0.2)] focus-visible:outline-2 focus-visible:outline-[#06C755] focus-visible:outline-offset-1 bg-no-repeat bg-[right_10px_center] bg-[length:12px_12px]"
             style={{
               backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238fa3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`
             }}

@@ -156,13 +156,6 @@ function getStatusInfo(company: Company): { label: string; badgeClass: string; b
       borderClass: 'sent',
     }
   }
-  if (company.downloadedAt) {
-    return {
-      label: 'CSVダウンロード済',
-      badgeClass: 'bg-[rgba(59,130,246,0.12)] text-[#3b82f6] border-[rgba(59,130,246,0.25)]',
-      borderClass: 'dl',
-    }
-  }
   if (!company.hasForm) {
     return null
   }
@@ -282,9 +275,7 @@ export default function CompanyCard({
   // Left border color
   const borderLeftColor = statusInfo?.borderClass === 'sent'
     ? 'before:bg-[#06C755]'
-    : statusInfo?.borderClass === 'dl'
-      ? 'before:bg-[#3b82f6]'
-      : 'before:bg-[#4a5568]'
+    : 'before:bg-[#4a5568]'
 
   return (
     <div
@@ -353,6 +344,11 @@ export default function CompanyCard({
               {company.hasForm && (
                 <span className="inline-flex items-center gap-1 px-2 py-[2px] rounded-full text-[11px] font-semibold whitespace-nowrap border bg-[rgba(245,158,11,0.12)] text-[#f59e0b] border-[rgba(245,158,11,0.25)]">
                   フォームあり
+                </span>
+              )}
+              {company.downloadedAt && (
+                <span className="inline-flex items-center gap-1 px-2 py-[2px] rounded-full text-[11px] font-semibold whitespace-nowrap border bg-[rgba(59,130,246,0.12)] text-[#3b82f6] border-[rgba(59,130,246,0.25)]">
+                  CSVダウンロード済
                 </span>
               )}
               {hasMemo && (

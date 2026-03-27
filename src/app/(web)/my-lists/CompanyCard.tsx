@@ -146,7 +146,7 @@ const StarIcon = ({ filled }: { filled: boolean }) => (
 
 // -- Helpers --
 
-function getStatusInfo(company: Company): { label: string; badgeClass: string; borderClass: string } {
+function getStatusInfo(company: Company): { label: string; badgeClass: string; borderClass: string } | null {
   if (company.sentAt) {
     const d = new Date(company.sentAt)
     const label = `フォーム送信済み ${d.getMonth() + 1}/${d.getDate()}`
@@ -162,6 +162,9 @@ function getStatusInfo(company: Company): { label: string; badgeClass: string; b
       badgeClass: 'bg-[rgba(59,130,246,0.12)] text-[#3b82f6] border-[rgba(59,130,246,0.25)]',
       borderClass: 'dl',
     }
+  }
+  if (!company.hasForm) {
+    return null
   }
   return {
     label: 'フォーム未送信',
@@ -277,9 +280,9 @@ export default function CompanyCard({
   }, [])
 
   // Left border color
-  const borderLeftColor = statusInfo.borderClass === 'sent'
+  const borderLeftColor = statusInfo?.borderClass === 'sent'
     ? 'before:bg-[#06C755]'
-    : statusInfo.borderClass === 'dl'
+    : statusInfo?.borderClass === 'dl'
       ? 'before:bg-[#3b82f6]'
       : 'before:bg-[#4a5568]'
 
@@ -342,9 +345,11 @@ export default function CompanyCard({
               {company.companyName || company.domain}
             </span>
             <div className="flex gap-[5px] flex-wrap">
+              {statusInfo && (
               <span className={`inline-flex items-center gap-1 px-2 py-[2px] rounded-full text-[11px] font-semibold whitespace-nowrap border ${statusInfo.badgeClass}`}>
                 {statusInfo.label}
               </span>
+              )}
               {company.hasForm && (
                 <span className="inline-flex items-center gap-1 px-2 py-[2px] rounded-full text-[11px] font-semibold whitespace-nowrap border bg-[rgba(245,158,11,0.12)] text-[#f59e0b] border-[rgba(245,158,11,0.25)]">
                   フォームあり

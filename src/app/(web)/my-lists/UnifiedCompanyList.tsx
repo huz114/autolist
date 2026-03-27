@@ -376,6 +376,56 @@ export default function UnifiedCompanyList() {
   const noFormCount = selectedCompanies.filter(c => !c.hasForm || !c.formUrl).length
   const cooldownCount = selectedCompanies.filter(c => c.hasForm && c.formUrl && c.sentAt && (Date.now() - new Date(c.sentAt).getTime()) < cooldownMs).length
 
+  const handleCsvDownload = useCallback(async () => {
+    if (selectedCompanies.length === 0) return
+    const escapeField = (value: string) => {
+      if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+        return `"${value.replace(/"/g, '""')}"`
+      }
+      return value
+    }
+    const headers = ['企業名','業種','業種大分類','所在地','URL','電話番号','メールアドレス','代表者名','設立年','従業員数','資本金','事業内容','フォームURL','フォームあり']
+    const rows = selectedCompanies.map(c => [
+      c.companyName || c.domain,
+      c.industry ?? '',
+      c.industryMajor ?? '',
+      c.location ?? '',
+      c.url,
+      c.phoneNumber ?? '',
+      c.email ?? '',
+      c.representativeName ?? '',
+      c.establishedYear != null ? String(c.establishedYear) : '',
+      c.employeeCount ?? '',
+      c.capitalAmount ?? '',
+      c.businessDescription ?? '',
+      c.formUrl ?? '',
+      c.hasForm ? 'あり' : 'なし',
+    ].map(escapeField).join(','))
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    const date = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+    a.href = url
+    a.download = `autolist_${date}.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    // downloadedAtを記録
+    const ids = selectedCompanies.map(c => c.id)
+    try {
+      await fetch('/api/companies/download-mark', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids }),
+      })
+      setCompanies(prev => prev.map(c =>
+        ids.includes(c.id) ? { ...c, downloadedAt: new Date().toISOString() } : c
+      ))
+    } catch { /* ignore */ }
+  }, [selectedCompanies])
+
   // Loading state
   if (loading) {
     return (
@@ -584,6 +634,7 @@ export default function UnifiedCompanyList() {
             disabled={selectedCount === 0}
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-[6px] text-[13px] font-semibold bg-[rgba(255,255,255,0.06)] text-[#8fa3b8] border border-[rgba(255,255,255,0.07)] min-h-[38px] cursor-pointer hover:bg-[rgba(255,255,255,0.1)] hover:text-[#f0f4f8] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             aria-label="CSVダウンロード"
+            onClick={handleCsvDownload}
           >
             <DownloadIcon /> CSVダウンロード
           </button>

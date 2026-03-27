@@ -28,6 +28,13 @@ Thumbs.db
 .vscode/
 .idea/
 
+# Test scripts
+scripts/test-smart-extraction.ts
+scripts/update-db-afterafter.ts
+scripts/generate-afterafter-html.js
+scripts/afterafter-results.json
+test-scrape.ts
+
 # Prisma
 prisma/*.db
 prisma/*.db-journal

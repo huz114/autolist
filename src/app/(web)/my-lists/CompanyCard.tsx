@@ -149,7 +149,7 @@ const StarIcon = ({ filled }: { filled: boolean }) => (
 function getStatusInfo(company: Company): { label: string; badgeClass: string; borderClass: string } {
   if (company.sentAt) {
     const d = new Date(company.sentAt)
-    const label = `送信済み ${d.getMonth() + 1}/${d.getDate()}`
+    const label = `フォーム送信済み ${d.getMonth() + 1}/${d.getDate()}`
     return {
       label,
       badgeClass: 'bg-[rgba(6,199,85,0.12)] text-[#06C755] border-[rgba(6,199,85,0.25)]',
@@ -164,7 +164,7 @@ function getStatusInfo(company: Company): { label: string; badgeClass: string; b
     }
   }
   return {
-    label: '未連絡',
+    label: 'フォーム未送信',
     badgeClass: 'bg-[rgba(255,255,255,0.05)] text-[#8494a7] border-[rgba(255,255,255,0.1)]',
     borderClass: 'unsent',
   }

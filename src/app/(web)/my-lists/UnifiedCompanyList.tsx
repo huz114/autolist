@@ -420,7 +420,7 @@ export default function UnifiedCompanyList() {
         {([
           { key: 'all' as StatFilter, label: '全企業', value: stats.total },
           { key: 'hasForm' as StatFilter, label: 'フォームあり', value: stats.hasForm },
-          { key: 'sent' as StatFilter, label: '送信済み', value: stats.sent },
+          { key: 'sent' as StatFilter, label: 'フォーム送信済み', value: stats.sent },
           { key: 'downloaded' as StatFilter, label: 'DL済み', value: stats.downloaded },
         ]).map(({ key, label, value }) => (
           <button
@@ -497,8 +497,8 @@ export default function UnifiedCompanyList() {
           <div className="flex gap-1.5 flex-wrap">
             {([
               { key: 'all' as StatusFilter, label: '全て' },
-              { key: 'unsent' as StatusFilter, label: '未連絡' },
-              { key: 'sent' as StatusFilter, label: '送信済み' },
+              { key: 'unsent' as StatusFilter, label: 'フォーム未送信' },
+              { key: 'sent' as StatusFilter, label: 'フォーム送信済み' },
               { key: 'dl' as StatusFilter, label: 'DL済み' },
             ]).map(({ key, label }) => (
               <button

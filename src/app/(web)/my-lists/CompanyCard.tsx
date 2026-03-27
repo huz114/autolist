@@ -158,7 +158,7 @@ function getStatusInfo(company: Company): { label: string; badgeClass: string; b
   }
   if (company.downloadedAt) {
     return {
-      label: 'DL済み',
+      label: 'CSVダウンロード済',
       badgeClass: 'bg-[rgba(59,130,246,0.12)] text-[#3b82f6] border-[rgba(59,130,246,0.25)]',
       borderClass: 'dl',
     }

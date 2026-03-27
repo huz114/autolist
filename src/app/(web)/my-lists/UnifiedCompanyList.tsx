@@ -421,7 +421,7 @@ export default function UnifiedCompanyList() {
           { key: 'all' as StatFilter, label: '全企業', value: stats.total },
           { key: 'hasForm' as StatFilter, label: 'フォームあり', value: stats.hasForm },
           { key: 'sent' as StatFilter, label: 'フォーム送信済み', value: stats.sent },
-          { key: 'downloaded' as StatFilter, label: 'DL済み', value: stats.downloaded },
+          { key: 'downloaded' as StatFilter, label: 'CSVダウンロード済', value: stats.downloaded },
         ]).map(({ key, label, value }) => (
           <button
             key={key}
@@ -499,7 +499,7 @@ export default function UnifiedCompanyList() {
               { key: 'all' as StatusFilter, label: '全て' },
               { key: 'unsent' as StatusFilter, label: 'フォーム未送信' },
               { key: 'sent' as StatusFilter, label: 'フォーム送信済み' },
-              { key: 'dl' as StatusFilter, label: 'DL済み' },
+              { key: 'dl' as StatusFilter, label: 'CSVダウンロード済' },
             ]).map(({ key, label }) => (
               <button
                 key={key}

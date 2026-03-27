@@ -3,6 +3,13 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import CompanyCard, { type Company } from './CompanyCard'
+import { INDUSTRY_MAJOR_LIST } from '@/lib/industry-master'
+
+/** 住所文字列から都道府県を抽出 */
+function extractPrefecture(address: string): string | null {
+  const m = address.match(/(北海道|東京都|大阪府|京都府|.{2,3}県)/)
+  return m ? m[1] : null
+}
 
 // -- Types --
 
@@ -91,18 +98,39 @@ export default function UnifiedCompanyList() {
     fetchCompanies()
   }, [])
 
-  // Compute unique industries and locations for filters
-  const { industries, locations } = useMemo(() => {
-    const industrySet = new Set<string>()
-    const locationSet = new Set<string>()
+  // Compute unique industries (大分類) and prefectures for filters
+  const { industries, prefectures } = useMemo(() => {
+    // 業種: INDUSTRY_MAJOR_LIST のうち、実際にデータに存在する大分類のみ表示
+    const majorSet = new Set<string>()
     companies.forEach(c => {
-      if (c.industry) industrySet.add(c.industry)
-      if (c.location) locationSet.add(c.location)
+      if (c.industryMajor) majorSet.add(c.industryMajor)
     })
-    return {
-      industries: Array.from(industrySet).sort(),
-      locations: Array.from(locationSet).sort(),
-    }
+    const industries = INDUSTRY_MAJOR_LIST.filter(m => majorSet.has(m))
+
+    // 地域: locationから都道府県を抽出
+    const prefSet = new Set<string>()
+    companies.forEach(c => {
+      if (c.location) {
+        const pref = extractPrefecture(c.location)
+        if (pref) prefSet.add(pref)
+      }
+    })
+    // 都道府県順でソート（北海道〜沖縄）
+    const PREF_ORDER = [
+      '北海道','青森県','岩手県','宮城県','秋田県','山形県','福島県',
+      '茨城県','栃木県','群馬県','埼玉県','千葉県','東京都','神奈川県',
+      '新潟県','富山県','石川県','福井県','山梨県','長野県','岐阜県','静岡県','愛知県','三重県',
+      '滋賀県','京都府','大阪府','兵庫県','奈良県','和歌山県',
+      '鳥取県','島根県','岡山県','広島県','山口県',
+      '徳島県','香川県','愛媛県','高知県',
+      '福岡県','佐賀県','長崎県','熊本県','大分県','宮崎県','鹿児島県','沖縄県',
+    ]
+    const prefectures = PREF_ORDER.filter(p => prefSet.has(p))
+    // PREF_ORDERに含まれないものがあれば末尾に追加
+    const remaining = Array.from(prefSet).filter(p => !PREF_ORDER.includes(p)).sort()
+    prefectures.push(...remaining)
+
+    return { industries, prefectures }
   }, [companies])
 
   // Compute unique job options for filter
@@ -160,11 +188,14 @@ export default function UnifiedCompanyList() {
       // Memo filter
       if (memoFilter && !c.memo) return false
 
-      // Industry filter
-      if (industryFilter !== 'all' && c.industry !== industryFilter) return false
+      // Industry filter (大分類ベース)
+      if (industryFilter !== 'all' && c.industryMajor !== industryFilter) return false
 
-      // Location filter
-      if (locationFilter !== 'all' && c.location !== locationFilter) return false
+      // Location filter (都道府県ベース)
+      if (locationFilter !== 'all') {
+        const pref = c.location ? extractPrefecture(c.location) : null
+        if (pref !== locationFilter) return false
+      }
 
       // Job filter
       if (jobFilter !== 'all') {
@@ -390,7 +421,7 @@ export default function UnifiedCompanyList() {
             aria-label="地域フィルタ"
           >
             <option value="all">全て</option>
-            {locations.map(l => <option key={l} value={l}>{l}</option>)}
+            {prefectures.map(p => <option key={p} value={p}>{p}</option>)}
           </select>
 
           <span className="text-[12px] font-semibold text-[#5a6a7a] shrink-0 whitespace-nowrap">依頼ジョブ</span>

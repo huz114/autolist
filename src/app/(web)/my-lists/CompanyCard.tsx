@@ -10,6 +10,7 @@ export interface Company {
   domain: string
   companyName: string | null
   industry: string | null
+  industryMajor: string | null
   location: string | null
   employeeCount: string | null
   capitalAmount: string | null

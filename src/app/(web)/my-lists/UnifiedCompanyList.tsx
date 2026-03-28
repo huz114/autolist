@@ -224,7 +224,8 @@ export default function UnifiedCompanyList() {
   const filteredCompanies = useMemo(() => {
     let result = companies.filter(c => {
       // Archive filter
-      if (c.isArchived && !showArchived) return false
+      if (showArchived && !c.isArchived) return false
+      if (!showArchived && c.isArchived) return false
 
       // Stat filter (quick filter from stats bar)
       if (statFilter === 'hasForm' && !c.hasForm) return false

@@ -137,6 +137,7 @@ export default function UnifiedCompanyList() {
   /** 業種フィルター条件に合致するか */
   const matchesIndustry = useCallback((c: Company, filter: string) => {
     if (filter === 'all') return true
+    if (filter === '__unclassified__') return !c.industryMajor || c.industryMajor === ''
     return c.industryMajor === filter
   }, [])
 
@@ -162,8 +163,13 @@ export default function UnifiedCompanyList() {
       matchesLocation(c, locationFilter) && matchesJob(c, jobFilter)
     )
     const majorSet = new Set<string>()
-    industriesFiltered.forEach(c => { if (c.industryMajor) majorSet.add(c.industryMajor) })
+    let hasUnclassified = false
+    industriesFiltered.forEach(c => {
+      if (c.industryMajor) majorSet.add(c.industryMajor)
+      else hasUnclassified = true
+    })
     const industries = INDUSTRY_MAJOR_LIST.filter(m => majorSet.has(m))
+    if (hasUnclassified) industries.push('__unclassified__')
 
     // 地域の選択肢: 業種・依頼ジョブフィルター適用後の企業から生成
     const locationFiltered = companies.filter(c =>
@@ -237,7 +243,11 @@ export default function UnifiedCompanyList() {
       if (memoFilter && !c.memo) return false
 
       // Industry filter (大分類ベース)
-      if (industryFilter !== 'all' && c.industryMajor !== industryFilter) return false
+      if (industryFilter !== 'all') {
+        if (industryFilter === '__unclassified__') {
+          if (c.industryMajor && c.industryMajor !== '') return false
+        } else if (c.industryMajor !== industryFilter) return false
+      }
 
       // Location filter (都道府県ベース)
       if (locationFilter !== 'all') {
@@ -505,7 +515,7 @@ export default function UnifiedCompanyList() {
             aria-label="業種フィルタ"
           >
             <option value="all">全て</option>
-            {industries.map(i => <option key={i} value={i}>{i}</option>)}
+            {industries.map(i => <option key={i} value={i}>{i === '__unclassified__' ? '未分類' : i}</option>)}
           </select>
 
           <span className="text-[12px] font-semibold text-[#5a6a7a] shrink-0 whitespace-nowrap">地域</span>

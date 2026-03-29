@@ -980,7 +980,7 @@ summary:focus-visible,
     padding-bottom: 100px;
   }
 
-  .hero h1 { font-size: clamp(24px, 5vw, 64px); }
+  .hero h1 { font-size: clamp(32px, 8vw, 64px); }
   .hero-cta-group { justify-content: center; flex-direction: column; align-items: stretch; }
   .hero-cta-group .btn-primary { width: 100%; justify-content: center; min-height: 48px; }
   .btn-note { text-align: center; width: 100%; }

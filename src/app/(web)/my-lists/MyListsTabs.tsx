@@ -102,7 +102,7 @@ export default function MyListsTabs({ jobs, sendCount }: MyListsTabsProps) {
 
       {/* Tab Content */}
       {activeTab === 'companies' && (
-        <UnifiedCompanyList />
+        <UnifiedCompanyList initialJobs={jobs} />
       )}
 
       {activeTab === 'jobs' && (

@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import CompanyCard, { type Company } from './CompanyCard'
+import type { Job } from './JobList'
 import { INDUSTRY_MAJOR_LIST } from '@/lib/industry-master'
 
 /** 政令指定都市 → 都道府県マッピング (JSON.parseでSWC minifyの識別子化を防止) */
@@ -67,7 +68,11 @@ const ClockIcon = () => (
 
 // -- Component --
 
-export default function UnifiedCompanyList() {
+interface UnifiedCompanyListProps {
+  initialJobs?: Job[]
+}
+
+export default function UnifiedCompanyList({ initialJobs = [] }: UnifiedCompanyListProps) {
   const router = useRouter()
   const [companies, setCompanies] = useState<Company[]>([])
   const [loading, setLoading] = useState(true)
@@ -89,6 +94,35 @@ export default function UnifiedCompanyList() {
 
   // Ref for select all checkbox
   const selectAllRef = useRef<HTMLInputElement>(null)
+
+  // 進行中ジョブの追跡
+  const [runningJobs, setRunningJobs] = useState<Job[]>(
+    initialJobs.filter(j => ['pending', 'running', 'processing'].includes(j.status))
+  )
+
+  // 進行中ジョブのポーリング（5秒間隔）
+  useEffect(() => {
+    if (runningJobs.length === 0) return
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch('/api/jobs')
+        if (!res.ok) return
+        const data = await res.json()
+        const jobs: Job[] = data.jobs || []
+        const stillRunning = jobs.filter((j: Job) => ['pending', 'running', 'processing'].includes(j.status))
+        setRunningJobs(stillRunning)
+        // ジョブが完了したら企業リストを再取得
+        if (stillRunning.length < runningJobs.length) {
+          const compRes = await fetch('/api/companies')
+          if (compRes.ok) {
+            const compData = await compRes.json()
+            setCompanies(compData.companies || [])
+          }
+        }
+      } catch { /* ignore */ }
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [runningJobs.length])
 
   // Fetch companies
   useEffect(() => {
@@ -627,6 +661,31 @@ export default function UnifiedCompanyList() {
           </div>
         </div>
       </div>
+
+      {/* 進行中のジョブ */}
+      {runningJobs.length > 0 && (
+        <div className="mb-4 space-y-2">
+          {runningJobs.map(job => (
+            <div key={job.id} className="bg-[#111827] border border-[rgba(245,158,11,0.3)] rounded-[10px] px-4 py-3 flex items-center gap-3">
+              <svg className="w-5 h-5 text-[#f59e0b] animate-spin shrink-0" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] text-[#f0f4f8] font-medium truncate">
+                  {`「${job.keyword}」を収集中...`}
+                </p>
+                <p className="text-[11px] text-[#8fa3b8] tabular-nums">
+                  {job.totalFound}/{job.targetCount}件
+                </p>
+              </div>
+              <span className="text-[11px] text-[#f59e0b] font-medium bg-[rgba(245,158,11,0.1)] px-2 py-0.5 rounded-full shrink-0">
+                処理中
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* SP: PC案内バナー */}
       <div className="sm:hidden mb-4 bg-[#111827] border border-[rgba(6,199,85,0.2)] rounded-[10px] px-4 py-3 flex items-start gap-3">

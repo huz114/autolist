@@ -1189,9 +1189,9 @@ export default function Home() {
       </section>
 
       {/* MOBILE STICKY CTA */}
-      <div className="sticky-cta-mobile" aria-label="無料でお試し">
+      <div className="sticky-cta-mobile" aria-label="100件無料でお試し">
         <Link href="/register" className="btn-primary sticky-cta-btn">
-          無料でお試し
+          100件無料でお試し
         </Link>
       </div>
 

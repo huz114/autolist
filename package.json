@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3007",
-    "build": "prisma generate && prisma generate --schema=prisma/schema-shiryolog.prisma && next build && node scripts/escape-non-ascii.js",
+    "build": "prisma generate && prisma generate --schema=prisma/schema-shiryolog.prisma && next build && echo 'Post-build: escaping non-ASCII...' && node scripts/escape-non-ascii.js",
     "start": "next start -p ${PORT:-3007}",
     "lint": "next lint",
     "prisma:generate": "prisma generate",

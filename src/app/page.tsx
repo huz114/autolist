@@ -263,7 +263,7 @@ export default function Home() {
           <div>
             <div className="hero-badge">
               <span className="dot" />
-              企業詳細情報付きAI営業リスト × LINE・Web対応
+              AIが作る、すぐ使える営業リスト
             </div>
             <h1>
               移動中に頼んで、<br />

@@ -87,7 +87,7 @@ export default function MyListsTabs({ jobs, sendCount }: MyListsTabsProps) {
             <path d="M22 2 11 13"/>
             <path d="M22 2 15 22 11 13 2 9z"/>
           </svg>
-          送信履歴
+          フォーム送信履歴
           {typeof sendCount === 'number' && (
             <span className={`px-2 py-[2px] rounded-full text-[12px] font-semibold tabular-nums ${
               activeTab === 'send-history'

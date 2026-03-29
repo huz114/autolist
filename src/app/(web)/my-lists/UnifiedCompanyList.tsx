@@ -671,8 +671,15 @@ export default function UnifiedCompanyList() {
               <SendIcon /> フォーム送信{sendableCount > 0 && selectedCount !== sendableCount ? ` (${sendableCount}件)` : ''}
             </button>
             {selectedCount > 0 && sendableCount === 0 && (
-              <p className="absolute top-full left-0 mt-1 text-[11px] text-[#f59e0b] whitespace-nowrap">
+              <p className="absolute top-full right-0 mt-1 text-[11px] text-[#f59e0b] whitespace-nowrap text-right">
                 送信可能な企業がありません
+                {noFormCount > 0 && cooldownCount > 0
+                  ? `（フォームなし${noFormCount}件・送信後30日以内${cooldownCount}件）`
+                  : noFormCount > 0
+                  ? `（フォームが検出されていません）`
+                  : cooldownCount > 0
+                  ? `（前回送信から30日以内のため送信制限中）`
+                  : ''}
               </p>
             )}
           </div>

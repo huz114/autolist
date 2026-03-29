@@ -562,7 +562,6 @@ export default function UnifiedCompanyList() {
               { key: 'all' as StatusFilter, label: '全て' },
               { key: 'unsent' as StatusFilter, label: 'フォーム未送信' },
               { key: 'sent' as StatusFilter, label: 'フォーム送信済み' },
-              { key: 'dl' as StatusFilter, label: 'CSVダウンロード済' },
             ]).map(({ key, label }) => (
               <button
                 key={key}
@@ -584,7 +583,17 @@ export default function UnifiedCompanyList() {
                   : 'bg-[rgba(255,255,255,0.05)] text-[#8fa3b8] border-[rgba(255,255,255,0.1)] hover:border-[rgba(255,255,255,0.2)] hover:text-[#f0f4f8]'
               }`}
             >
-              電話あり
+              電話番号あり
+            </button>
+            <button
+              onClick={() => setStatusFilter(statusFilter === 'dl' ? 'all' : 'dl')}
+              className={`inline-flex items-center px-3.5 py-1.5 rounded-full text-[13px] font-medium border cursor-pointer transition-all min-h-[36px] select-none ${
+                statusFilter === 'dl'
+                  ? 'bg-[rgba(6,199,85,0.15)] text-[#06C755] border-[rgba(6,199,85,0.4)]'
+                  : 'bg-[rgba(255,255,255,0.05)] text-[#8fa3b8] border-[rgba(255,255,255,0.1)] hover:border-[rgba(255,255,255,0.2)] hover:text-[#f0f4f8]'
+              }`}
+            >
+              CSVダウンロード済
             </button>
           </div>
         </div>

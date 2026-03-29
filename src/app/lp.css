@@ -925,8 +925,13 @@ summary:focus-visible,
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
-  .lp-section { padding: 72px 20px; }
-  .hero { padding: 100px 20px 64px; }
+  .lp-section { padding: 48px 20px; }
+  .hero { padding: 80px 20px 40px; min-height: auto; }
+  .hero-two-col { gap: 20px; }
+  .hero h1 { margin-bottom: 16px; }
+  .hero-sub { margin-bottom: 0 !important; }
+  .hero-sample-btn-mobile { margin-top: 8px !important; }
+  .hero-stats { margin-top: 0; }
   .hero-stats { gap: 16px; flex-wrap: nowrap; justify-content: space-between; text-align: center; }
   .hero-stats > div { flex: 1; }
   .stat-num { font-size: 24px; }

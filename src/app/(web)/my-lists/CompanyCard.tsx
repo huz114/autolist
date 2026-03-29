@@ -593,9 +593,9 @@ export default function CompanyCard({
 
             <button
               onClick={handleArchive}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-[6px] text-[13px] font-medium bg-[rgba(255,255,255,0.04)] text-[#5a6a7a] border border-[rgba(255,255,255,0.07)] min-h-[38px] cursor-pointer hover:text-[#ef4444] hover:border-[rgba(239,68,68,0.3)] hover:bg-[rgba(239,68,68,0.06)] transition-all"
+              className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-[6px] text-[13px] font-medium bg-[rgba(255,255,255,0.04)] text-[#5a6a7a] border border-[rgba(255,255,255,0.07)] min-h-[38px] cursor-pointer transition-all ${company.isArchived ? 'hover:text-[#06C755] hover:border-[rgba(6,199,85,0.3)] hover:bg-[rgba(6,199,85,0.06)]' : 'hover:text-[#ef4444] hover:border-[rgba(239,68,68,0.3)] hover:bg-[rgba(239,68,68,0.06)]'}`}
             >
-              <ArchiveIcon /> アーカイブ
+              <ArchiveIcon /> {company.isArchived ? 'アーカイブ解除' : 'アーカイブ'}
             </button>
           </div>
         </div>

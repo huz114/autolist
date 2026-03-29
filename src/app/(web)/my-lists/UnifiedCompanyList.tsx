@@ -337,9 +337,11 @@ export default function UnifiedCompanyList() {
   }, [])
 
   const handleArchive = useCallback(async (id: string) => {
+    const target = companies.find(c => c.id === id)
+    const newArchived = !target?.isArchived
     // Optimistic update
     setCompanies(prev => prev.map(c =>
-      c.id === id ? { ...c, isArchived: true } : c
+      c.id === id ? { ...c, isArchived: newArchived } : c
     ))
     setSelectedIds(prev => {
       const next = new Set(prev)
@@ -351,10 +353,10 @@ export default function UnifiedCompanyList() {
     } catch {
       // Revert on error
       setCompanies(prev => prev.map(c =>
-        c.id === id ? { ...c, isArchived: false } : c
+        c.id === id ? { ...c, isArchived: !newArchived } : c
       ))
     }
-  }, [])
+  }, [companies])
 
   const handleMemoSave = useCallback(async (id: string, memo: string) => {
     // Optimistic update

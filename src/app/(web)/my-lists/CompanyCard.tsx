@@ -470,7 +470,7 @@ export default function CompanyCard({
                 </span>
               </div>
               <div className="flex gap-2 text-[13px]">
-                <span className="text-[#5a6a7a] min-w-[80px] flex-shrink-0">依頼元</span>
+                <span className="text-[#5a6a7a] min-w-[80px] flex-shrink-0">依頼ジョブ</span>
                 <span className="text-[#5a6a7a]">
                   {company.jobKeyword ? `"${company.jobKeyword}"` : '-'}
                   {company.jobCreatedAt && ` (${new Date(company.jobCreatedAt).toLocaleDateString('ja-JP')})`}

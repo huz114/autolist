@@ -868,6 +868,9 @@ summary:focus-visible,
 .sticky-cta-mobile {
   display: none;
 }
+.hero-sample-btn-mobile {
+  display: none !important;
+}
 
 /* ===== FOOTER ===== */
 .lp-footer {
@@ -948,9 +951,11 @@ summary:focus-visible,
   }
   .nav-right { gap: 0 !important; }
 
-  /* Hide hero CTA button and note on mobile (sticky CTA replaces it) */
+  /* Hide hero CTA button, note, and sample button on mobile (sticky CTA replaces it) */
   .hero-cta-btn { display: none !important; }
   .hero-btn-note { display: none !important; }
+  .hero-sample-btn { display: none !important; }
+  .hero-sample-btn-mobile { display: block !important; }
 
   /* Mobile sticky CTA */
   .sticky-cta-mobile {

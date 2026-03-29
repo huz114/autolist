@@ -282,6 +282,7 @@ export default function Home() {
                 </Link>
                 <a
                   href="#data-sample"
+                  className="hero-sample-btn"
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
@@ -495,6 +496,28 @@ export default function Home() {
               </div>
               </div>{/* end steps container */}
             </div>
+          </div>
+          {/* SP: サンプルデータボタン（デモ下・センタリング） */}
+          <div className="hero-sample-btn-mobile" style={{ gridColumn: "1 / -1", textAlign: "center", marginTop: 16 }}>
+            <a
+              href="#data-sample"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                color: "var(--text-secondary)",
+                fontSize: 14,
+                fontWeight: 600,
+                textDecoration: "none",
+                padding: "14px 24px",
+                border: "1px solid var(--border)",
+                borderRadius: 50,
+                transition: "border-color 0.3s, color 0.3s",
+                minHeight: 48,
+              }}
+            >
+              サンプルデータを見る
+            </a>
           </div>
           {/* 2カラム解除 → hero-inner内でフル幅中央配置 */}
           <div className="hero-stats" style={{ gridColumn: "1 / -1" }}>

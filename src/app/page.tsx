@@ -126,12 +126,12 @@ export default function Home() {
   // 時間帯別コピー
   const hour = new Date().getHours();
   const timeCopy = hour >= 6 && hour < 12
-    ? { heading: "今日の午後、100件のリストが", sub: "今すぐ依頼すれば、数時間後には企業詳細付きリストが届きます。", cta: "今すぐ依頼して、午後から営業開始" }
+    ? { heading: "今日の午後、100件のリストが", sub: "今すぐ依頼すれば、数時間後には企業詳細付きリストが届きます。", cta: "今すぐ依頼して" }
     : hour >= 12 && hour < 18
-    ? { heading: "明日の朝、100件のリストが", sub: "今すぐ依頼すれば、明日の朝には企業詳細付きリストが届きます。", cta: "今すぐ依頼して、明日から営業開始" }
+    ? { heading: "明日の朝、100件のリストが", sub: "今すぐ依頼すれば、明日の朝には企業詳細付きリストが届きます。", cta: "今すぐ依頼して" }
     : hour >= 18
-    ? { heading: "明日の朝、100件のリストが", sub: "今夜依頼すれば、明日の朝には企業詳細付きリストが届きます。", cta: "今夜依頼して、明日から営業開始" }
-    : { heading: "朝起きたら、100件のリストが", sub: "今すぐ依頼すれば、朝には企業詳細付きリストが届きます。", cta: "今すぐ依頼して、朝から営業開始" };
+    ? { heading: "明日の朝、100件のリストが", sub: "今夜依頼すれば、明日の朝には企業詳細付きリストが届きます。", cta: "今すぐ依頼して" }
+    : { heading: "朝起きたら、100件のリストが", sub: "今すぐ依頼すれば、朝には企業詳細付きリストが届きます。", cta: "今すぐ依頼して" };
 
   // Fetch completed list count for social proof
   useEffect(() => {
@@ -226,7 +226,7 @@ export default function Home() {
       a: "はい、マイリスト画面からいつでもキャンセルできます。収集済み分のみの課金で、未収集分のクレジットは消費されません。",
     },
     {
-      q: "LINE連携はできますか？",
+      q: "LINEからリスト収集依頼はできますか？",
       a: "はい。無料登録後にLINE友だち追加すれば、移動中にLINEからもリスト依頼ができます。依頼結果はWebから確認できます。",
     },
   ];
@@ -1066,11 +1066,11 @@ export default function Home() {
               </div>
             ))}
           </div>
-          <div className="reveal" ref={addRevealRef} style={{ marginTop: 40, background: "var(--bg-card)", border: "1px solid var(--border-accent)", borderRadius: 16, padding: "28px 32px", maxWidth: 640, marginLeft: "auto", marginRight: "auto" }}>
+          <div className="reveal cost-sim" ref={addRevealRef} style={{ marginTop: 40, background: "var(--bg-card)", border: "1px solid var(--border-accent)", borderRadius: 16, padding: "28px 32px", maxWidth: 640, marginLeft: "auto", marginRight: "auto" }}>
             <p style={{ fontSize: 15, fontWeight: 700, color: "var(--accent)", marginBottom: 16, textAlign: "center" }}>
               コスト比較シミュレーション
             </p>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 16, alignItems: "center" }}>
+            <div className="cost-sim-grid" style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 16, alignItems: "center" }}>
               <div style={{ textAlign: "center" }}>
                 <p style={{ fontSize: 12, color: "var(--red)", fontWeight: 700, marginBottom: 8, textTransform: "uppercase", letterSpacing: 1 }}>手作業の場合</p>
                 <p style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.8 }}>
@@ -1079,7 +1079,7 @@ export default function Home() {
                   <span style={{ fontSize: 28, fontWeight: 900, color: "#ff8090" }}>= 月5万円</span>
                 </p>
               </div>
-              <div style={{ fontSize: 24, color: "var(--text-muted)" }} aria-hidden="true">→</div>
+              <div className="cost-sim-arrow" style={{ fontSize: 24, color: "var(--text-muted)" }} aria-hidden="true">→</div>
               <div style={{ textAlign: "center" }}>
                 <p style={{ fontSize: 12, color: "var(--accent)", fontWeight: 700, marginBottom: 8, textTransform: "uppercase", letterSpacing: 1 }}>オートリストの場合</p>
                 <p style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.8 }}>
@@ -1197,8 +1197,8 @@ export default function Home() {
                 {timeCopy.cta}
               </Link>
             </div>
-            <p style={{ marginTop: 24, fontSize: 13, color: "var(--text-muted)" }}>
-              登録料無料 &middot; クレジットカード不要でお試し &middot; いつでも解約
+            <p style={{ marginTop: 24, fontSize: 12, color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+              登録料無料 · カード不要でお試し · いつでも解約
             </p>
             <p style={{ marginTop: 16, fontSize: 16, color: "var(--accent)", fontWeight: 700, letterSpacing: "0.02em" }}>
               <IconGift /> 無料登録で、最初の100件はプレゼント！

@@ -1009,14 +1009,19 @@ summary:focus-visible,
 }
 @media (max-width: 480px) {
   .comparison-header,
-  .comparison-row { grid-template-columns: 1.5fr 1fr 1fr; }
+  .comparison-row { grid-template-columns: 1.2fr 1fr 1fr; }
   .comparison-header div,
-  .comparison-row div { padding: 10px 8px; font-size: 11px; }
+  .comparison-row div { padding: 8px 6px; font-size: 10px; word-break: break-all; }
   .pricing-grid { grid-template-columns: 1fr; }
   .hero-stats { gap: 20px; }
   .faq-question { padding: 16px 18px; font-size: 14px; gap: 12px; }
   .faq-answer-open { padding: 0 18px 18px; }
   .faq-icon { width: 24px; height: 24px; font-size: 16px; }
+
+  /* Cost simulation: vertical layout on small screens */
+  .cost-sim { padding: 20px 16px !important; }
+  .cost-sim-grid { grid-template-columns: 1fr !important; gap: 8px !important; }
+  .cost-sim-arrow { transform: rotate(90deg); }
 
   /* ROI responsive small */
   .roi-header,
@@ -1044,7 +1049,7 @@ summary:focus-visible,
   }
   .comparison-header,
   .comparison-row {
-    min-width: 360px;
+    min-width: 0;
   }
   .roi-table {
     overflow-x: auto;

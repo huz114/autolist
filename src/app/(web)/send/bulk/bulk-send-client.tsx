@@ -314,7 +314,7 @@ export default function BulkSendClient({
         throw new Error(d.error || '送信の開始に失敗しました')
       }
 
-      const { fillEntries, urls } = await res.json()
+      const { fillEntries, urls, invalidCount } = await res.json()
 
       window.postMessage(
         { type: 'shiryolog-batch-fill-request', fillEntries, urls },
@@ -331,8 +331,11 @@ export default function BulkSendClient({
           setSentCompanyNames([])
           sentCompaniesRef.current = []
           setIsSendStarted(true)
+          const invalidMsg = invalidCount > 0
+            ? `（${invalidCount}件はフォームに接続できないため除外されました）`
+            : ''
           showToast(
-            'Chrome拡張機能にデータを送信しました。各タブでフォーム送信を確認してください。',
+            `${fillEntries.length}件の送信を開始しました。各タブでフォーム送信を確認してください。${invalidMsg}`,
             'success'
           )
         }
@@ -393,7 +396,7 @@ export default function BulkSendClient({
         throw new Error(d.error || '再送信の開始に失敗しました')
       }
 
-      const { fillEntries, urls } = await res.json()
+      const { fillEntries, urls, invalidCount: retryInvalidCount } = await res.json()
 
       window.postMessage(
         { type: 'shiryolog-batch-fill-request', fillEntries, urls },
@@ -406,9 +409,11 @@ export default function BulkSendClient({
         if (event.data?.type === 'shiryolog-fill-ready') {
           extensionResponded = true
           window.removeEventListener('message', handleExtensionResponse)
-          // カウンターをリセットせず、既存の送信済みに追加していく
+          const retryInvalidMsg = retryInvalidCount > 0
+            ? `（${retryInvalidCount}件は接続不可のため除外）`
+            : ''
           showToast(
-            `残り${remainingCompanies.length}件のフォーム送信を開始しました`,
+            `${fillEntries.length}件の再送信を開始しました${retryInvalidMsg}`,
             'success'
           )
         }

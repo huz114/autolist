@@ -151,6 +151,8 @@ export async function GET(req: NextRequest) {
       noteUpdatedAt: note?.updatedAt || null,
       sourceJob: jobInfo?.keyword || '',
       sourceDate: jobInfo?.date || '',
+      jobKeyword: jobInfo?.keyword || null,
+      jobCreatedAt: jobInfo?.date || null,
       richnessScore,
     }
   })

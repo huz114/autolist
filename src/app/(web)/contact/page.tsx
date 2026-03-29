@@ -1,9 +1,18 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useFocusTrap } from '@/lib/useFocusTrap'
 
 export default function ContactPage() {
+  return (
+    <Suspense fallback={null}>
+      <ContactPageInner />
+    </Suspense>
+  )
+}
+
+function ContactPageInner() {
   const [name, setName] = useState('')
   const [company, setCompany] = useState('')
   const [email, setEmail] = useState('')
@@ -16,6 +25,15 @@ export default function ContactPage() {
   const [messageTouched, setMessageTouched] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const confirmModalRef = useFocusTrap(showConfirm, () => setShowConfirm(false))
+  const searchParams = useSearchParams()
+  const isBulk = searchParams.get('bulk') === '1'
+
+  // 大口依頼テンプレート
+  useEffect(() => {
+    if (isBulk && !message) {
+      setMessage('【大口リスト依頼】\n\n■ 業種: \n■ 地域: \n■ 希望件数: \n■ その他ご要望: \n')
+    }
+  }, [isBulk])
 
   const emailError = emailTouched && email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
     ? 'メールアドレスの形式が正しくありません'
@@ -93,7 +111,9 @@ export default function ContactPage() {
         <div className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-2xl p-8">
           <h1 className="text-2xl font-bold text-[#f0f4f8] mb-2">お問い合わせ</h1>
           <p className="text-sm text-[#8fa3b8] mb-8">
-            ご質問・ご要望がございましたらお気軽にお問い合わせください
+            {isBulk
+              ? '業種・地域を指定した大規模リスト作成を承ります。以下にご要望をご記入ください。'
+              : 'ご質問・ご要望がございましたらお気軽にお問い合わせください'}
           </p>
 
           {error && (

@@ -638,6 +638,31 @@ export default function UnifiedCompanyList() {
         </p>
       </div>
 
+      {/* 大口リスト依頼バナー */}
+      <a
+        href="/contact?bulk=1"
+        className="block mb-4 bg-[#111827] border border-[rgba(255,255,255,0.07)] hover:border-[rgba(6,199,85,0.3)] rounded-[10px] px-4 py-3 transition-colors group"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full bg-[rgba(6,199,85,0.1)] flex items-center justify-center shrink-0">
+            <svg className="w-5 h-5 text-[#06C755]" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125v-3.75" />
+            </svg>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] text-[#f0f4f8] font-medium group-hover:text-[#06C755] transition-colors">
+              1万件以上の大口リストが必要ですか？
+            </p>
+            <p className="text-[11px] text-[#5a6a7a]">
+              業種・地域を指定した大規模リスト作成を承ります
+            </p>
+          </div>
+          <svg className="w-4 h-4 text-[#5a6a7a] group-hover:text-[#06C755] transition-colors shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </a>
+
       {/* Bulk Actions Bar */}
       <div className="flex items-center gap-3 px-4 py-3 bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-[10px] mb-4 sticky top-[56px] z-10 flex-wrap">
         <label className="flex items-center gap-2 min-h-[44px] cursor-pointer">

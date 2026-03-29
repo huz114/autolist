@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
     sendableCompanies.map(async (company) => {
       if (!company.formUrl) return { company, valid: false, reason: 'no_url' }
       const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 8000)
+      const timeout = setTimeout(() => controller.abort(), 5000)
       try {
         const res = await fetch(company.formUrl, {
           method: 'HEAD',
@@ -130,10 +130,11 @@ export async function POST(request: NextRequest) {
 
   const invalidCount = sendableCompanies.length - validCompanies.length
 
-  // 接続不可の企業はhasForm=falseに更新（次回以降除外される）
+  // 接続不可・タイムアウトの企業はhasForm=falseに更新（次回以降除外される）
   const invalidIds = urlValidationResults
     .filter((r): r is PromiseFulfilledResult<{ company: typeof sendableCompanies[0]; valid: boolean; reason: string }> =>
-      r.status === 'fulfilled' && !r.value.valid && r.value.reason === 'connection_error'
+      r.status === 'fulfilled' && !r.value.valid &&
+      (r.value.reason === 'connection_error' || r.value.reason === 'timeout')
     )
     .map(r => r.value.company.id)
 

@@ -6,7 +6,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const chunksDir = path.join(__dirname, '..', '.next', 'static', 'chunks');
+const staticDir = path.join(__dirname, '..', '.next', 'static');
+const serverDir = path.join(__dirname, '..', '.next', 'server');
 
 function escapeNonAscii(str) {
   return str.replace(/[^\x00-\x7F]/g, (ch) => {
@@ -40,9 +41,15 @@ function processDir(dir) {
   return count;
 }
 
-if (fs.existsSync(chunksDir)) {
-  const count = processDir(chunksDir);
-  console.log(`Escaped non-ASCII in ${count} JS files.`);
-} else {
-  console.log('No chunks directory found, skipping.');
+let total = 0;
+if (fs.existsSync(staticDir)) {
+  const count = processDir(staticDir);
+  console.log(`Escaped non-ASCII in ${count} static JS files.`);
+  total += count;
 }
+if (fs.existsSync(serverDir)) {
+  const count = processDir(serverDir);
+  console.log(`Escaped non-ASCII in ${count} server JS files.`);
+  total += count;
+}
+console.log(`Total: ${total} JS files escaped.`);

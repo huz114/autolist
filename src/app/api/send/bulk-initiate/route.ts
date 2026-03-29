@@ -97,23 +97,40 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  // formUrlの事前検証（SSL/接続エラーの企業を除外）
+  // formUrlの事前検証（GETでHTMLを取得し、<form>要素の有無を確認）
+  // HEADだけではサーバーが応答してもページが空のケースを検出できないため
   console.log(`[bulk-initiate] Starting URL validation for ${sendableCompanies.length} companies...`);
   const urlValidationResults = await Promise.allSettled(
     sendableCompanies.map(async (company) => {
       if (!company.formUrl) return { company, valid: false, reason: 'no_url' }
       const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 5000)
+      const timeout = setTimeout(() => controller.abort(), 8000)
       try {
         const res = await fetch(company.formUrl, {
-          method: 'HEAD',
+          method: 'GET',
           signal: controller.signal,
           redirect: 'follow',
-          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; AutolistBot/1.0)' },
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml',
+          },
         })
         clearTimeout(timeout)
         if (!res.ok && res.status >= 400) {
           return { company, valid: false, reason: `http_${res.status}` }
+        }
+        // HTMLを取得して<form>タグの有無をチェック
+        const contentType = res.headers.get('content-type') || ''
+        if (!contentType.includes('text/html') && !contentType.includes('xhtml')) {
+          return { company, valid: false, reason: 'not_html' }
+        }
+        const html = await res.text()
+        // ページが実質空（100文字未満）またはフォームなし
+        if (html.length < 100) {
+          return { company, valid: false, reason: 'empty_page' }
+        }
+        if (!html.includes('<form') && !html.includes('<FORM')) {
+          return { company, valid: false, reason: 'no_form_element' }
         }
         return { company, valid: true, reason: 'ok' }
       } catch (err: any) {

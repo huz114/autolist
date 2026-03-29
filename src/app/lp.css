@@ -948,6 +948,10 @@ summary:focus-visible,
   }
   .nav-right { gap: 0 !important; }
 
+  /* Hide hero CTA button and note on mobile (sticky CTA replaces it) */
+  .hero-cta-btn { display: none !important; }
+  .hero-btn-note { display: none !important; }
+
   /* Mobile sticky CTA */
   .sticky-cta-mobile {
     display: block;

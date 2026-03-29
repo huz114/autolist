@@ -277,7 +277,7 @@ export default function Home() {
             </p>
             <div style={{ marginTop: 28 }}>
               <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
-                <Link href="/register" className="btn-primary">
+                <Link href="/register" className="btn-primary hero-cta-btn">
                   100件無料でお試し
                 </Link>
                 <a
@@ -302,7 +302,7 @@ export default function Home() {
                   サンプルデータを見る
                 </a>
               </div>
-              <span className="btn-note" style={{ display: 'block', marginTop: 10 }}>登録料無料 · カード不要でお試し · いつでも解約</span>
+              <span className="btn-note hero-btn-note" style={{ display: 'block', marginTop: 10 }}>登録料無料 · カード不要でお試し · いつでも解約</span>
               {completedCount !== null && completedCount > 0 && (
                 <span style={{ display: 'block', marginTop: 8, fontSize: 12, color: 'var(--text-muted)' }}>
                   累計 {completedCount.toLocaleString()} 件のリスト生成実績
@@ -1193,6 +1193,7 @@ export default function Home() {
         <Link href="/register" className="btn-primary sticky-cta-btn">
           100件無料でお試し
         </Link>
+        <span style={{ display: 'block', textAlign: 'center', fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>登録料無料 · カード不要でお試し · いつでも解約</span>
       </div>
 
       {/* FOOTER */}

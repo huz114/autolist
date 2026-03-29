@@ -225,7 +225,7 @@ export default function UnifiedCompanyList() {
       if (statFilter === 'downloaded' && !c.downloadedAt) return false
 
       // Status filter
-      if (statusFilter === 'unsent' && (c.sentAt || c.downloadedAt)) return false
+      if (statusFilter === 'unsent' && (!c.hasForm || c.sentAt)) return false
       if (statusFilter === 'sent' && !c.sentAt) return false
       if (statusFilter === 'dl' && !c.downloadedAt) return false
 

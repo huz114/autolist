@@ -413,6 +413,13 @@ export async function collectUrls(jobId: string, userId?: string): Promise<numbe
       console.log(`Scraping: ${urlData.url} (${processed}/${totalCandidates})`);
       const companyInfo = await scrapeCompanyInfo(urlData.url, job.industry ?? undefined, job.location ?? undefined);
 
+      // サイトにアクセスできない企業はリストから除外（SSL/接続エラー）
+      // ユーザーが課金して得たリストに価値のないエントリを入れないため
+      if (companyInfo.siteAccessible === false) {
+        console.log(`  -> Skipped ${urlData.domain}: site not accessible`);
+        continue;
+      }
+
       // hasFormに関係なく全URLを保存（hasFormはフィールドとして記録）
       await prisma.collectedUrl.create({
         data: {
@@ -484,6 +491,12 @@ async function scrapeAndSave(
 ): Promise<boolean> {
   try {
     const companyInfo = await scrapeCompanyInfo(urlData.url, requestedIndustry, requestedLocation);
+
+    // サイトにアクセスできない企業はリストから除外
+    if (companyInfo.siteAccessible === false) {
+      console.log(`  -> not accessible, skipped: ${urlData.url}`);
+      return false;
+    }
 
     // 企業サイトでない / 業種不一致 / 地域不一致の場合はスキップ（companyNameもindustryもない = Geminiが弾いた）
     if (!companyInfo.companyName && !companyInfo.industry) {

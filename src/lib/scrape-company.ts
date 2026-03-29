@@ -8,6 +8,7 @@ import { logGeminiUsage } from "@/lib/gemini-usage-logger";
 import { getIndustryMasterPromptText } from "./industry-master";
 
 export interface CompanyInfo {
+  siteAccessible?: boolean;      // サイトにアクセス可能か（SSL/接続エラー時はfalse）
   companyName?: string;          // 会社名
   industry?: string;             // 業種
   location?: string;             // 所在地
@@ -1653,7 +1654,7 @@ export async function scrapeCompanyInfo(url: string, requestedIndustry?: string,
     const sslValid = await checkSslValid(domain);
     if (!sslValid) {
       console.log(`  -> Skipped ${domain}: invalid SSL certificate`);
-      return { hasForm: false };
+      return { siteAccessible: false, hasForm: false };
     }
 
     // トップページのHTMLを取得

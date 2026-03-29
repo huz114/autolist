@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3007",
-    "build": "prisma generate && prisma generate --schema=prisma/schema-shiryolog.prisma && next build",
+    "build": "prisma generate && prisma generate --schema=prisma/schema-shiryolog.prisma && next build && node scripts/escape-non-ascii.js",
     "start": "next start -p ${PORT:-3007}",
     "lint": "next lint",
     "prisma:generate": "prisma generate",
@@ -40,6 +40,7 @@
     "prisma": "^6.0.0",
     "puppeteer": "^24.39.1",
     "tailwindcss": "^3",
+    "terser-webpack-plugin": "^5.4.0",
     "typescript": "^5"
   }
 }

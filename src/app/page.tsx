@@ -653,7 +653,6 @@ export default function Home() {
                   { label: 'フォームあり', color: '#22c55e', bg: 'rgba(34,197,94,0.12)' },
                   { label: '電話あり', color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
                   { label: '採用中', color: '#a78bfa', bg: 'rgba(167,139,250,0.12)' },
-                  { label: '広告出稿中', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
                 ],
                 industry: 'Webマーケティング支援',
                 location: '東京都渋谷区',

@@ -928,13 +928,13 @@ export default function Home() {
                 {/* Chrome extension widget */}
                 <div style={{
                   position: 'absolute',
-                  top: 12,
+                  top: 6,
                   right: 12,
                   background: 'rgba(6,199,85,0.12)',
                   border: '1px solid rgba(6,199,85,0.3)',
                   borderRadius: 8,
-                  padding: '6px 10px',
-                  fontSize: 10,
+                  padding: '4px 8px',
+                  fontSize: 9,
                   color: '#06C755',
                   fontWeight: 600,
                   display: 'flex',
@@ -949,7 +949,7 @@ export default function Home() {
                 </div>
 
                 {/* Form area */}
-                <div style={{ padding: '16px 24px 24px' }}>
+                <div style={{ padding: '28px 24px 24px' }}>
                   <div style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 700, marginBottom: 4, textAlign: 'center' }}>
                     Chrome拡張でフォーム送信を半自動化
                   </div>
@@ -1005,7 +1005,7 @@ export default function Home() {
                         marginLeft: 20,
                         transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
                         opacity: formDemoStep >= 4 ? 1 : 0,
-                        bottom: formDemoStep === 4 ? 12 : -24,
+                        bottom: formDemoStep === 4 ? 4 : -24,
                         color: '#ffffff',
                         filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.8))',
                         pointerEvents: 'none',

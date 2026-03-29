@@ -98,6 +98,7 @@ export async function POST(request: NextRequest) {
   }
 
   // formUrlの事前検証（SSL/接続エラーの企業を除外）
+  console.log(`[bulk-initiate] Starting URL validation for ${sendableCompanies.length} companies...`);
   const urlValidationResults = await Promise.allSettled(
     sendableCompanies.map(async (company) => {
       if (!company.formUrl) return { company, valid: false, reason: 'no_url' }
@@ -129,6 +130,12 @@ export async function POST(request: NextRequest) {
     .map(r => r.value.company)
 
   const invalidCount = sendableCompanies.length - validCompanies.length
+  console.log(`[bulk-initiate] Validation complete: ${validCompanies.length} valid, ${invalidCount} invalid`);
+  urlValidationResults.forEach(r => {
+    if (r.status === 'fulfilled' && !r.value.valid) {
+      console.log(`[bulk-initiate] INVALID: ${r.value.company.domain} - ${r.value.reason}`);
+    }
+  });
 
   // 接続不可・タイムアウトの企業はhasForm=falseに更新（次回以降除外される）
   const invalidIds = urlValidationResults

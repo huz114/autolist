@@ -307,8 +307,9 @@ async function headCheck(url: string): Promise<boolean> {
 
 /**
  * GETリクエストでHTMLを取得（15秒タイムアウト）
+ * リダイレクト先URLも返す（リダイレクト検出用）
  */
-async function fetchHtml(url: string): Promise<string | null> {
+async function fetchHtml(url: string): Promise<{ html: string; finalUrl: string } | null> {
   try {
     const response = await fetch(url, {
       headers: {
@@ -348,7 +349,10 @@ async function fetchHtml(url: string): Promise<string | null> {
       return null;
     }
 
-    return html;
+    // リダイレクト先URLを取得
+    const finalUrl = response.url || url;
+
+    return { html, finalUrl };
   } catch (error) {
     if (isSslError(error)) {
       console.log(
@@ -360,6 +364,27 @@ async function fetchHtml(url: string): Promise<string | null> {
       );
     }
     return null;
+  }
+}
+
+/**
+ * リダイレクト先がトップページ（ルートパス）かどうかを判定
+ * contactページにアクセスしたのにトップに飛ばされるケースを検出
+ */
+function isRedirectedToTopPage(requestedUrl: string, finalUrl: string): boolean {
+  try {
+    const reqUrl = new URL(requestedUrl);
+    const finUrl = new URL(finalUrl);
+    const reqPath = reqUrl.pathname.replace(/\/+$/, '');
+    const finPath = finUrl.pathname.replace(/\/+$/, '');
+    // リクエストURLにパスがあるのにリダイレクト先がルートの場合
+    if (reqPath && reqPath !== '/' && (!finPath || finPath === '' || finPath === '/')) {
+      console.log(`[form-detector] Redirect to top: ${requestedUrl} → ${finalUrl}`);
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
   }
 }
 
@@ -441,16 +466,22 @@ export async function detectContactForm(
   // ステップ1: 概要ページHTML内のリンクから探す
   const linkedUrl = findContactLinkInHtml(overviewHtml, domain);
   if (linkedUrl) {
-    const html = await fetchHtml(linkedUrl);
-    if (html) {
-      const $ = cheerio.load(html);
-      // 厳密なフォーム判定（修正3: 条件A + 条件B）
-      if (hasValidContactForm($)) {
-        return {
-          has_form: true,
-          form_url: linkedUrl,
-          form_type: classifyFormType(html, linkedUrl),
-        };
+    const result = await fetchHtml(linkedUrl);
+    if (result) {
+      // リダイレクト先がトップページの場合はスキップ（東急不動産等のケース対策）
+      if (isRedirectedToTopPage(linkedUrl, result.finalUrl)) {
+        console.log(`[form-detector] Skipping ${linkedUrl} — redirected to top page`);
+      } else {
+        const $ = cheerio.load(result.html);
+        // 厳密なフォーム判定（修正3: 条件A + 条件B）
+        if (hasValidContactForm($)) {
+          // リダイレクト先の実URLをformUrlとして使用
+          return {
+            has_form: true,
+            form_url: result.finalUrl,
+            form_type: classifyFormType(result.html, result.finalUrl),
+          };
+        }
       }
     }
   }
@@ -460,20 +491,21 @@ export async function detectContactForm(
     const url = `${baseUrl}${path}`;
     const exists = await headCheck(url);
     if (exists) {
-      const html = await fetchHtml(url);
-      if (html) {
-        const $ = cheerio.load(html);
+      const result = await fetchHtml(url);
+      if (result) {
+        // リダイレクト先がトップページの場合はスキップ
+        if (isRedirectedToTopPage(url, result.finalUrl)) {
+          continue;
+        }
+        const $ = cheerio.load(result.html);
         // 厳密なフォーム判定（修正3: 条件A + 条件B）
         if (hasValidContactForm($)) {
           return {
             has_form: true,
-            form_url: url,
-            form_type: classifyFormType(html, url),
+            form_url: result.finalUrl,
+            form_type: classifyFormType(result.html, result.finalUrl),
           };
         }
-        // <form>タグがないページはフォームなしと判定
-        // （電話番号のみの問い合わせページ等の誤検出を防止）
-        // 次のパスを試すためにcontinue
         continue;
       }
     }

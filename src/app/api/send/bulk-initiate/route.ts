@@ -97,8 +97,62 @@ export async function POST(request: NextRequest) {
     )
   }
 
+  // formUrlの事前検証（SSL/接続エラーの企業を除外）
+  const urlValidationResults = await Promise.allSettled(
+    sendableCompanies.map(async (company) => {
+      if (!company.formUrl) return { company, valid: false, reason: 'no_url' }
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 8000)
+      try {
+        const res = await fetch(company.formUrl, {
+          method: 'HEAD',
+          signal: controller.signal,
+          redirect: 'follow',
+          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; AutolistBot/1.0)' },
+        })
+        clearTimeout(timeout)
+        if (!res.ok && res.status >= 400) {
+          return { company, valid: false, reason: `http_${res.status}` }
+        }
+        return { company, valid: true, reason: 'ok' }
+      } catch (err: any) {
+        clearTimeout(timeout)
+        return { company, valid: false, reason: err?.message?.includes('abort') ? 'timeout' : 'connection_error' }
+      }
+    })
+  )
+
+  const validCompanies = urlValidationResults
+    .filter((r): r is PromiseFulfilledResult<{ company: typeof sendableCompanies[0]; valid: boolean; reason: string }> =>
+      r.status === 'fulfilled' && r.value.valid
+    )
+    .map(r => r.value.company)
+
+  const invalidCount = sendableCompanies.length - validCompanies.length
+
+  // 接続不可の企業はhasForm=falseに更新（次回以降除外される）
+  const invalidIds = urlValidationResults
+    .filter((r): r is PromiseFulfilledResult<{ company: typeof sendableCompanies[0]; valid: boolean; reason: string }> =>
+      r.status === 'fulfilled' && !r.value.valid && r.value.reason === 'connection_error'
+    )
+    .map(r => r.value.company.id)
+
+  if (invalidIds.length > 0) {
+    await prisma.collectedUrl.updateMany({
+      where: { id: { in: invalidIds } },
+      data: { hasForm: false },
+    })
+  }
+
+  if (validCompanies.length === 0) {
+    return NextResponse.json(
+      { error: '全ての企業のフォームURLに接続できませんでした', skippedCount, invalidCount },
+      { status: 400 }
+    )
+  }
+
   // fillEntries を構築
-  const fillEntries = sendableCompanies.map((company) => ({
+  const fillEntries = validCompanies.map((company) => ({
     companyId: company.id,
     companyName: company.companyName || '',
     companyDomain: company.domain,
@@ -126,6 +180,7 @@ export async function POST(request: NextRequest) {
     fillEntries,
     urls,
     skippedCount,
-    sentCount: sendableCompanies.length,
+    invalidCount,
+    sentCount: validCompanies.length,
   })
 }

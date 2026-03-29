@@ -126,6 +126,7 @@ export async function GET(req: NextRequest) {
 
     return {
       id: url.id,
+      jobId: url.jobId,
       companyName: url.companyName,
       domain: url.domain,
       url: url.url,

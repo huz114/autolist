@@ -31,6 +31,7 @@ type Message = {
 
 type BulkCompany = {
   id: string
+  jobId: string
   companyName: string | null
   domain: string
   formUrl: string | null
@@ -236,7 +237,7 @@ export default function BulkSendClient({
 
     const handler = (event: MessageEvent) => {
       if (event.data?.type !== 'shiryolog-submission-completed') return
-      const { companyName: cn, formUrl } = event.data as {
+      const { companyName: cn, companyDomain, formUrl } = event.data as {
         companyId: string
         companyName: string
         companyDomain?: string
@@ -248,11 +249,32 @@ export default function BulkSendClient({
       sentCompaniesRef.current = [...sentCompaniesRef.current, formUrl]
       setSentCompanyNames((prev) => [...prev, label])
       setSentCount((prev) => prev + 1)
+
+      // autolist DB に送信記録を保存（formUrl or domainで該当企業のjobIdを逆引き）
+      const matchedCompany = companies.find(
+        (c) => (c.formUrl && c.formUrl === formUrl) || (c.domain && c.domain === companyDomain)
+      )
+      if (matchedCompany) {
+        fetch('/api/send/record', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            jobId: matchedCompany.jobId,
+            companyName: cn || matchedCompany.companyName || null,
+            companyDomain: companyDomain || matchedCompany.domain || null,
+            formUrl: formUrl || null,
+            subject,
+            messageBody,
+          }),
+        }).catch((err) => {
+          console.error('Failed to record send:', err)
+        })
+      }
     }
 
     window.addEventListener('message', handler)
     return () => window.removeEventListener('message', handler)
-  }, [isSendStarted])
+  }, [isSendStarted, companies, subject, messageBody])
 
   // 送信ハンドラ
   async function handleSend() {
@@ -326,6 +348,82 @@ export default function BulkSendClient({
     } catch (err) {
       showToast(
         err instanceof Error ? err.message : '送信の開始に失敗しました',
+        'error'
+      )
+    } finally {
+      setSending(false)
+    }
+  }
+
+  // 残りの未送信企業に再送信
+  async function handleRetrySend() {
+    // sentCompaniesRef.current に含まれるformUrlは送信済み → それ以外を再送信
+    const sentFormUrls = new Set(sentCompaniesRef.current)
+    const remainingCompanies = sendableCompanies.filter(
+      (c) => c.formUrl && !sentFormUrls.has(c.formUrl)
+    )
+    if (remainingCompanies.length === 0) {
+      showToast('再送信対象の企業がありません', 'error')
+      return
+    }
+    const ok = window.confirm(`残りの${remainingCompanies.length}件に再送信します。よろしいですか？`)
+    if (!ok) return
+
+    setSending(true)
+    try {
+      const res = await fetch('/api/send/bulk-initiate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          companyIds: remainingCompanies.map((c) => c.id),
+          subject,
+          body: messageBody,
+          senderInfo: {
+            name: personName,
+            furigana,
+            email: senderEmail,
+            phone,
+            companyName,
+          },
+        }),
+      })
+
+      if (!res.ok) {
+        const d = await res.json()
+        throw new Error(d.error || '再送信の開始に失敗しました')
+      }
+
+      const { fillEntries, urls } = await res.json()
+
+      window.postMessage(
+        { type: 'shiryolog-batch-fill-request', fillEntries, urls },
+        '*'
+      )
+
+      setExtensionNotFound(false)
+      let extensionResponded = false
+      const handleExtensionResponse = (event: MessageEvent) => {
+        if (event.data?.type === 'shiryolog-fill-ready') {
+          extensionResponded = true
+          window.removeEventListener('message', handleExtensionResponse)
+          // カウンターをリセットせず、既存の送信済みに追加していく
+          showToast(
+            `残り${remainingCompanies.length}件のフォーム送信を開始しました`,
+            'success'
+          )
+        }
+      }
+      window.addEventListener('message', handleExtensionResponse)
+
+      setTimeout(() => {
+        if (!extensionResponded) {
+          window.removeEventListener('message', handleExtensionResponse)
+          setExtensionNotFound(true)
+        }
+      }, 3000)
+    } catch (err) {
+      showToast(
+        err instanceof Error ? err.message : '再送信の開始に失敗しました',
         'error'
       )
     } finally {
@@ -844,10 +942,10 @@ export default function BulkSendClient({
                       </svg>
                       <div>
                         <p className="text-sm font-medium text-[#f59e0b] mb-1">
-                          {totalSendable - sentCount}件は自動送信できませんでした
+                          {totalSendable - sentCount}件は送信できませんでした
                         </p>
                         <p className="text-xs text-[#8fa3b8] leading-relaxed">
-                          フォームが見つからなかった、またはSSL証明書エラーが発生した企業です。電話やメールで直接アプローチできます。
+                          タブが閉じられた、フォームが見つからなかった、SSL証明書エラーなどの原因が考えられます。「再送信」ボタンから再試行するか、電話やメールで直接アプローチできます。
                         </p>
                       </div>
                     </div>
@@ -859,9 +957,19 @@ export default function BulkSendClient({
                   <div className="border-t border-[rgba(255,255,255,0.07)] pt-6">
                     <h4 className="text-sm font-semibold text-[#8fa3b8] mb-4">次のステップ</h4>
                     <div className="space-y-3">
+                      {/* 未送信企業がある場合: 再送信ボタンを最上位に表示 */}
+                      {sentCount < totalSendable && (
+                        <button
+                          onClick={handleRetrySend}
+                          disabled={sending}
+                          className="w-full text-center bg-[#f59e0b] hover:bg-[#d97706] disabled:opacity-50 text-white py-3 rounded-xl font-bold text-sm transition-colors"
+                        >
+                          {sending ? '送信準備中...' : `残り${totalSendable - sentCount}件に再送信する`}
+                        </button>
+                      )}
                       <Link
                         href="/send-history"
-                        className="block text-center bg-[#06C755] hover:bg-[#04a344] text-white py-3 rounded-xl font-bold text-sm transition-colors"
+                        className={`block text-center ${sentCount < totalSendable ? 'bg-[#0a0f1c] border border-[#06C755] text-[#06C755] hover:bg-[#06C755] hover:text-white' : 'bg-[#06C755] hover:bg-[#04a344] text-white'} py-3 rounded-xl font-bold text-sm transition-colors`}
                       >
                         送信履歴を確認する
                       </Link>

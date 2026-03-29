@@ -119,19 +119,8 @@ export async function POST(request: NextRequest) {
     .map((e) => e.formUrl)
     .filter((url): url is string => Boolean(url))
 
-  // SendRecordに記録
-  await prisma.sendRecord.createMany({
-    data: sendableCompanies.map((company) => ({
-      userId: session.user.id,
-      jobId: company.job.id,
-      companyName: company.companyName || null,
-      companyDomain: company.domain || null,
-      formUrl: company.formUrl || null,
-      subject: subject || null,
-      messageBody: messageBody || null,
-      status: 'sent',
-    })),
-  })
+  // SendRecordは送信完了時にクライアント側で個別作成する（bulk-send-client.tsx）
+  // 開始時に一括作成すると、未送信の企業も「フォーム送信済み」と表示されてしまうため
 
   return NextResponse.json({
     fillEntries,

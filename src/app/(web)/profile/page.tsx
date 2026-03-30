@@ -166,6 +166,7 @@ export default function ProfilePage() {
           </div>
 
           {/* 郵便番号 + 住所 */}
+          <p className="text-[11px] text-[#6b7280] -mb-2">フォーム送信時に住所の入力を求められることがあります。入力しておくと自動入力されます。</p>
           <div className="grid grid-cols-1 sm:grid-cols-[200px_1fr] gap-4">
             <div>
               <label className={labelClass}>郵便番号</label>

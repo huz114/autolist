@@ -170,6 +170,8 @@ export default function ProfileStep({
           </div>
         </div>
 
+        <p className="text-[11px] text-[#6b7280]">フォーム送信時に住所の入力を求められることがあります。入力しておくと自動入力されます。</p>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs text-[#8494a7] mb-1.5">会社URL</label>

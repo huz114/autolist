@@ -477,6 +477,16 @@ export default function NewRequestButton() {
                         </div>
                       </div>
 
+                      {/* SP: 明示的な送信ボタン */}
+                      {inputText.trim() && (
+                        <button
+                          onClick={handleAnalyze}
+                          className="sm:hidden w-full mt-3 bg-[#06C755] hover:bg-[#04a344] text-white font-bold py-3 rounded-xl transition-all text-sm cursor-pointer"
+                        >
+                          この条件で依頼する →
+                        </button>
+                      )}
+
                       {/* Error message - between input and examples */}
                       {error && (
                         <div className="bg-[rgba(255,71,87,0.08)] border border-[rgba(255,71,87,0.25)] rounded-xl px-4 py-3 mt-4">

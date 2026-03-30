@@ -274,8 +274,15 @@ function JobRow({ job }: { job: Job }) {
           <StatusBadge status={job.status} />
         </td>
         {/* 収集数 */}
-        <td className="py-3 pr-4 text-sm text-gray-200 text-right whitespace-nowrap">
+        <td className={`py-3 pr-4 text-sm text-right whitespace-nowrap ${
+          job.status === 'completed' && job.totalFound < job.targetCount
+            ? 'text-red-400 font-bold'
+            : 'text-gray-200'
+        }`}>
           {job.totalFound.toLocaleString()}
+          {job.status === 'completed' && job.totalFound < job.targetCount && (
+            <span className="block text-[10px] text-red-500">目標未達</span>
+          )}
         </td>
         {/* 完了日時 */}
         <td className="py-3 pr-4 text-sm text-gray-300 whitespace-nowrap">

@@ -49,7 +49,7 @@ function NavBarInner() {
 
   return (
     <>
-    <header className="border-b border-[rgba(255,255,255,0.07)] bg-[#0a0f1c]/92 backdrop-blur-xl sticky top-0 z-50">
+    <header className="border-b border-[rgba(255,255,255,0.07)] bg-[#0a0f1c] sticky top-0 z-50">
       <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
         <Link href={session ? "/my-lists" : "/"} className="flex items-center gap-2" onClick={closeMenu}>
           <span className="text-lg font-black text-[#f0f4f8]" style={{ letterSpacing: '-0.5px' }}>
@@ -150,7 +150,7 @@ function NavBarInner() {
           menuOpen ? 'max-h-80 opacity-100' : 'max-h-0 opacity-0'
         }`}
       >
-        <nav className="border-t border-[rgba(255,255,255,0.07)] px-4 py-4 flex flex-col gap-3 bg-[#0a0f1c]/95 backdrop-blur-xl">
+        <nav className="border-t border-[rgba(255,255,255,0.07)] px-4 py-4 flex flex-col gap-3 bg-[#0a0f1c]">
           {session ? (
             <>
               <Link

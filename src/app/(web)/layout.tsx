@@ -74,11 +74,11 @@ function NavBarInner() {
                 プロフィール
               </Link>
               {credits !== null ? (
-                <span className="text-sm text-[#8fa3b8] font-medium">
+                <Link href="/credits" className="text-sm text-[#8fa3b8] font-medium cursor-pointer hover:text-[#f0f4f8] transition-colors">
                   💳 {credits.toLocaleString()}件
-                </span>
+                </Link>
               ) : session ? (
-                <span className="text-sm text-[#8fa3b8]">💳 --件</span>
+                <Link href="/credits" className="text-sm text-[#8fa3b8] cursor-pointer hover:text-[#f0f4f8] transition-colors">💳 --件</Link>
               ) : null}
               <Link
                 href="/purchase"
@@ -168,13 +168,13 @@ function NavBarInner() {
                 プロフィール
               </Link>
               {credits !== null ? (
-                <div className="text-sm text-[#8fa3b8] py-2 border-b border-[rgba(255,255,255,0.07)]">
+                <Link href="/credits" onClick={closeMenu} className="text-sm text-[#8fa3b8] hover:text-[#f0f4f8] transition-colors py-2 border-b border-[rgba(255,255,255,0.07)] block">
                   💳 残クレジット: {credits.toLocaleString()}件
-                </div>
+                </Link>
               ) : session ? (
-                <div className="text-sm text-[#8fa3b8] py-2 border-b border-[rgba(255,255,255,0.07)]">
+                <Link href="/credits" onClick={closeMenu} className="text-sm text-[#8fa3b8] hover:text-[#f0f4f8] transition-colors py-2 border-b border-[rgba(255,255,255,0.07)] block">
                   💳 残クレジット: --件
-                </div>
+                </Link>
               ) : null}
               <Link
                 href="/purchase"

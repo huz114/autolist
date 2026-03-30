@@ -126,12 +126,12 @@ export default function Home() {
   // 時間帯別コピー
   const hour = new Date().getHours();
   const timeCopy = hour >= 6 && hour < 12
-    ? { heading: "今日の午後、100件のリストが", sub: "今すぐ依頼すれば、数時間後には企業詳細付きリストが届きます。", cta: "今すぐ依頼して" }
+    ? { heading: "今日の午後、100件のリストが", sub: "今すぐ依頼すれば、数時間後には企業詳細付きリストが届きます。", cta: "午後届くリストを依頼する" }
     : hour >= 12 && hour < 18
-    ? { heading: "明日の朝、100件のリストが", sub: "今すぐ依頼すれば、明日の朝には企業詳細付きリストが届きます。", cta: "今すぐ依頼して" }
+    ? { heading: "明日の朝、100件のリストが", sub: "今すぐ依頼すれば、明日の朝には企業詳細付きリストが届きます。", cta: "明日届くリストを依頼する" }
     : hour >= 18
-    ? { heading: "明日の朝、100件のリストが", sub: "今夜依頼すれば、明日の朝には企業詳細付きリストが届きます。", cta: "今すぐ依頼して" }
-    : { heading: "朝起きたら、100件のリストが", sub: "今すぐ依頼すれば、朝には企業詳細付きリストが届きます。", cta: "今すぐ依頼して" };
+    ? { heading: "明日の朝、100件のリストが", sub: "今夜依頼すれば、明日の朝には企業詳細付きリストが届きます。", cta: "寝ている間にリストを作る" }
+    : { heading: "朝起きたら、100件のリストが", sub: "今すぐ依頼すれば、朝には企業詳細付きリストが届きます。", cta: "朝届くリストを依頼する" };
 
   // Fetch completed list count for social proof
   useEffect(() => {
@@ -1196,7 +1196,7 @@ export default function Home() {
               <Link
                 href="/register"
                 className="btn-primary"
-                style={{ fontSize: 17, padding: "20px 40px" }}
+                style={{ fontSize: 20, padding: "24px 56px" }}
               >
                 {timeCopy.cta}
               </Link>

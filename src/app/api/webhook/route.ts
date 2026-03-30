@@ -580,13 +580,14 @@ async function handleEvents(events: LineEvent[]): Promise<void> {
 
       // --- チャージ待ち状態の処理 ---
       if (userState === 'awaiting_charge') {
-        // QuickReplyボタンのテキストマッチ（「100件」「300件」「700件」「1,500件」「1500件」）
+        // QuickReplyボタンのテキストマッチ（「300件」「600件」「1,200件」「3,000件」）
         const chargeTextMap: Record<string, number> = {
-          '100件': 0,
-          '300件': 1,
-          '700件': 2,
-          '1,500件': 3,
-          '1500件': 3,
+          '300件': 0,
+          '600件': 1,
+          '1,200件': 2,
+          '1200件': 2,
+          '3,000件': 3,
+          '3000件': 3,
         };
         const planIndex = chargeTextMap[messageText.trim()];
 

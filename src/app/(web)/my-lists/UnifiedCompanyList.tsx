@@ -532,9 +532,9 @@ export default function UnifiedCompanyList({ initialJobs = [] }: UnifiedCompanyL
       </div>
 
       {/* Filter Bar */}
-      <div className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-[14px] px-5 py-4 mb-4 flex flex-col gap-3">
+      <div className="bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-[14px] px-4 sm:px-5 py-4 mb-4 flex flex-col gap-3 overflow-hidden">
         {/* Row 1: Industry & Location */}
-        <div className="flex items-center gap-3">
+        <div className="grid grid-cols-[auto_1fr] sm:flex sm:items-center gap-2 sm:gap-3">
           <span className="text-[12px] font-semibold text-[#5a6a7a] shrink-0 whitespace-nowrap">業種</span>
           <select
             value={industryFilter}
@@ -583,8 +583,8 @@ export default function UnifiedCompanyList({ initialJobs = [] }: UnifiedCompanyL
         </div>
 
         {/* Row 2: Status pills */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <span className="text-[12px] font-semibold text-[#5a6a7a] min-w-[70px] whitespace-nowrap">ステータス</span>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+          <span className="text-[12px] font-semibold text-[#5a6a7a] shrink-0 whitespace-nowrap">ステータス</span>
           <div className="flex gap-1.5 flex-wrap">
             {/* 排他グループ: 全て / フォーム未送信 / フォーム送信済み */}
             {([

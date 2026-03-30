@@ -23,7 +23,7 @@ function extractPrefecture(address: string): string | null {
 
 // -- Types --
 
-type StatusFilter = 'all' | 'unsent' | 'sent' | 'dl' | 'hasPhone'
+type SendStatusFilter = 'all' | 'unsent' | 'sent'
 type StatFilter = 'all' | 'hasForm' | 'sent' | 'downloaded'
 
 // -- Icons --
@@ -80,8 +80,9 @@ export default function UnifiedCompanyList({ initialJobs = [] }: UnifiedCompanyL
 
   // Filter state
   const [statFilter, setStatFilter] = useState<StatFilter>('all')
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+  const [sendStatusFilter, setSendStatusFilter] = useState<SendStatusFilter>('all')
   const [hasPhoneFilter, setHasPhoneFilter] = useState(false)
+  const [dlFilter, setDlFilter] = useState(false)
   const [memoFilter, setMemoFilter] = useState(false)
   const [showArchived, setShowArchived] = useState(false)
   const [industryFilter, setIndustryFilter] = useState<string>('all')
@@ -258,13 +259,13 @@ export default function UnifiedCompanyList({ initialJobs = [] }: UnifiedCompanyL
       if (statFilter === 'sent' && !c.sentAt) return false
       if (statFilter === 'downloaded' && !c.downloadedAt) return false
 
-      // Status filter
-      if (statusFilter === 'unsent' && (!c.hasForm || c.sentAt)) return false
-      if (statusFilter === 'sent' && !c.sentAt) return false
-      if (statusFilter === 'dl' && !c.downloadedAt) return false
+      // Send status filter (排他)
+      if (sendStatusFilter === 'unsent' && (!c.hasForm || c.sentAt)) return false
+      if (sendStatusFilter === 'sent' && !c.sentAt) return false
 
-      // HasPhone filter
+      // Toggle filters (併用可能)
       if (hasPhoneFilter && (!c.phoneNumber || c.phoneNumber === '記載なし')) return false
+      if (dlFilter && !c.downloadedAt) return false
 
       // Memo filter
       if (memoFilter && !c.memo) return false
@@ -310,7 +311,7 @@ export default function UnifiedCompanyList({ initialJobs = [] }: UnifiedCompanyL
     })
 
     return result
-  }, [companies, statFilter, statusFilter, hasPhoneFilter, memoFilter, showArchived, industryFilter, locationFilter, jobFilter, searchQuery])
+  }, [companies, statFilter, sendStatusFilter, hasPhoneFilter, dlFilter, memoFilter, showArchived, industryFilter, locationFilter, jobFilter, searchQuery])
 
   // Update select all checkbox state
   useEffect(() => {
@@ -584,31 +585,48 @@ export default function UnifiedCompanyList({ initialJobs = [] }: UnifiedCompanyL
         <div className="flex items-center gap-3 flex-wrap">
           <span className="text-[12px] font-semibold text-[#5a6a7a] min-w-[70px] whitespace-nowrap">ステータス</span>
           <div className="flex gap-1.5 flex-wrap">
+            {/* 排他グループ: 全て / フォーム未送信 / フォーム送信済み */}
             {([
-              { key: 'all' as StatusFilter, label: '全て' },
-              { key: 'unsent' as StatusFilter, label: 'フォーム未送信' },
-              { key: 'sent' as StatusFilter, label: 'フォーム送信済み' },
-              { key: 'hasPhone' as StatusFilter, label: '電話番号あり' },
-              { key: 'dl' as StatusFilter, label: 'CSVダウンロード済' },
+              { key: 'all' as SendStatusFilter, label: '全て' },
+              { key: 'unsent' as SendStatusFilter, label: 'フォーム未送信' },
+              { key: 'sent' as SendStatusFilter, label: 'フォーム送信済み' },
             ]).map(({ key, label }) => (
               <button
                 key={key}
                 onClick={() => {
                   if (key === 'all') {
-                    setStatusFilter('all')
+                    setSendStatusFilter('all')
                     setHasPhoneFilter(false)
-                  } else if (key === 'hasPhone') {
-                    setHasPhoneFilter(prev => !prev)
-                    if (statusFilter === 'all') setStatusFilter('all')
+                    setDlFilter(false)
+                    setMemoFilter(false)
                   } else {
-                    setStatusFilter(statusFilter === key ? 'all' : key)
-                    setHasPhoneFilter(false)
+                    setSendStatusFilter(sendStatusFilter === key ? 'all' : key)
                   }
                 }}
                 className={`inline-flex items-center px-3.5 py-1.5 rounded-full text-[13px] font-medium border cursor-pointer transition-all min-h-[36px] select-none ${
-                  (key === 'all' && statusFilter === 'all' && !hasPhoneFilter)
-                    || (key === 'hasPhone' && hasPhoneFilter)
-                    || (key !== 'all' && key !== 'hasPhone' && statusFilter === key)
+                  key === 'all'
+                    ? (sendStatusFilter === 'all' && !hasPhoneFilter && !dlFilter && !memoFilter
+                      ? 'bg-[rgba(6,199,85,0.15)] text-[#06C755] border-[rgba(6,199,85,0.4)]'
+                      : 'bg-[rgba(255,255,255,0.05)] text-[#8fa3b8] border-[rgba(255,255,255,0.1)] hover:border-[rgba(255,255,255,0.2)] hover:text-[#f0f4f8]')
+                    : (sendStatusFilter === key
+                      ? 'bg-[rgba(6,199,85,0.15)] text-[#06C755] border-[rgba(6,199,85,0.4)]'
+                      : 'bg-[rgba(255,255,255,0.05)] text-[#8fa3b8] border-[rgba(255,255,255,0.1)] hover:border-[rgba(255,255,255,0.2)] hover:text-[#f0f4f8]')
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+            {/* トグル（併用可能）: 電話番号あり / CSVダウンロード済 */}
+            {([
+              { active: hasPhoneFilter, toggle: () => setHasPhoneFilter(p => !p), label: '電話番号あり' },
+              { active: dlFilter, toggle: () => setDlFilter(p => !p), label: 'CSVダウンロード済' },
+              { active: memoFilter, toggle: () => setMemoFilter(p => !p), label: 'メモあり' },
+            ]).map(({ active, toggle, label }) => (
+              <button
+                key={label}
+                onClick={toggle}
+                className={`inline-flex items-center px-3.5 py-1.5 rounded-full text-[13px] font-medium border cursor-pointer transition-all min-h-[36px] select-none ${
+                  active
                     ? 'bg-[rgba(6,199,85,0.15)] text-[#06C755] border-[rgba(6,199,85,0.4)]'
                     : 'bg-[rgba(255,255,255,0.05)] text-[#8fa3b8] border-[rgba(255,255,255,0.1)] hover:border-[rgba(255,255,255,0.2)] hover:text-[#f0f4f8]'
                 }`}
@@ -619,19 +637,9 @@ export default function UnifiedCompanyList({ initialJobs = [] }: UnifiedCompanyL
           </div>
         </div>
 
-        {/* Row 3: Misc filters + Search */}
+        {/* Row 3: アーカイブ + Search */}
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex gap-1.5 flex-wrap">
-            <button
-              onClick={() => setMemoFilter(prev => !prev)}
-              className={`inline-flex items-center px-3.5 py-1.5 rounded-full text-[13px] font-medium border cursor-pointer transition-all min-h-[36px] select-none ${
-                memoFilter
-                  ? 'bg-[rgba(6,199,85,0.15)] text-[#06C755] border-[rgba(6,199,85,0.4)]'
-                  : 'bg-[rgba(255,255,255,0.05)] text-[#8fa3b8] border-[rgba(255,255,255,0.1)] hover:border-[rgba(255,255,255,0.2)] hover:text-[#f0f4f8]'
-              }`}
-            >
-              メモあり
-            </button>
             <button
               onClick={() => setShowArchived(prev => !prev)}
               className={`inline-flex items-center px-3.5 py-1.5 rounded-full text-[13px] font-medium border cursor-pointer transition-all min-h-[36px] select-none ${

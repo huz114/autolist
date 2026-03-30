@@ -30,6 +30,16 @@ export default function MyListsTabs({ jobs, sendCount }: MyListsTabsProps) {
 
   return (
     <>
+      {/* SP: PC案内バナー */}
+      <div className="sm:hidden mb-4 bg-[#111827] border border-[rgba(6,199,85,0.2)] rounded-[10px] px-4 py-3 flex items-start gap-3">
+        <svg className="w-5 h-5 text-[#06C755] shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+        <p className="text-[12px] text-[#8fa3b8] leading-relaxed">
+          <span className="text-[#f0f4f8] font-medium">フォーム一括送信はPCから</span>ご利用いただけます。リストの確認・CSVダウンロードはスマホでも可能です。
+        </p>
+      </div>
+
       {/* Tabs */}
       <div className="flex gap-[2px] border-b border-[rgba(255,255,255,0.07)] mb-5 overflow-x-auto">
         <button

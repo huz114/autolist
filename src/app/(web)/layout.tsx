@@ -1,15 +1,42 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { signOut, useSession } from 'next-auth/react'
 import { SessionProvider } from 'next-auth/react'
 
-function NavBar() {
+function NavBarInner() {
   const { data: session } = useSession()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [credits, setCredits] = useState<number | null>(null)
+  const [showPaymentToast, setShowPaymentToast] = useState(false)
   const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  // クレジット残高取得
+  useEffect(() => {
+    if (!session) return
+    fetch('/api/user/credits')
+      .then(r => r.json())
+      .then(data => { if (data.credits !== undefined) setCredits(data.credits) })
+      .catch(() => {})
+  }, [session])
+
+  // 購入完了トースト
+  useEffect(() => {
+    if (searchParams.get('payment') === 'success') {
+      setShowPaymentToast(true)
+      // クレジット再取得
+      fetch('/api/user/credits')
+        .then(r => r.json())
+        .then(data => { if (data.credits !== undefined) setCredits(data.credits) })
+        .catch(() => {})
+      // URLクリーン
+      window.history.replaceState({}, '', pathname)
+      setTimeout(() => setShowPaymentToast(false), 4000)
+    }
+  }, [searchParams, pathname])
 
   const isActive = (href: string) => {
     if (href === '/my-lists') {
@@ -21,6 +48,7 @@ function NavBar() {
   const closeMenu = () => setMenuOpen(false)
 
   return (
+    <>
     <header className="border-b border-[rgba(255,255,255,0.07)] bg-[#0a0f1c]/92 backdrop-blur-xl sticky top-0 z-50">
       <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
         <Link href={session ? "/my-lists" : "/"} className="flex items-center gap-2" onClick={closeMenu}>
@@ -45,6 +73,13 @@ function NavBar() {
               >
                 プロフィール
               </Link>
+              {credits !== null ? (
+                <span className="text-sm text-[#8fa3b8] font-medium">
+                  💳 {credits.toLocaleString()}件
+                </span>
+              ) : session ? (
+                <span className="text-sm text-[#8fa3b8]">💳 --件</span>
+              ) : null}
               <Link
                 href="/purchase"
                 className="text-sm bg-[#06C755] hover:bg-[#04a344] text-white px-4 py-1.5 rounded-full font-bold transition-all hover:shadow-[0_0_20px_rgba(6,199,85,0.5)]"
@@ -132,6 +167,15 @@ function NavBar() {
               >
                 プロフィール
               </Link>
+              {credits !== null ? (
+                <div className="text-sm text-[#8fa3b8] py-2 border-b border-[rgba(255,255,255,0.07)]">
+                  💳 残クレジット: {credits.toLocaleString()}件
+                </div>
+              ) : session ? (
+                <div className="text-sm text-[#8fa3b8] py-2 border-b border-[rgba(255,255,255,0.07)]">
+                  💳 残クレジット: --件
+                </div>
+              ) : null}
               <Link
                 href="/purchase"
                 onClick={closeMenu}
@@ -170,6 +214,20 @@ function NavBar() {
         </nav>
       </div>
     </header>
+    {showPaymentToast && (
+      <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[60] bg-[rgba(6,199,85,0.15)] border border-[rgba(6,199,85,0.4)] text-[#06C755] px-6 py-3 rounded-xl text-sm font-bold shadow-lg animate-pulse">
+        ✅ クレジットが追加されました！
+      </div>
+    )}
+    </>
+  )
+}
+
+function NavBar() {
+  return (
+    <Suspense fallback={null}>
+      <NavBarInner />
+    </Suspense>
   )
 }
 

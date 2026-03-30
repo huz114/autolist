@@ -1087,13 +1087,13 @@ export default function Home() {
               <div style={{ textAlign: "center" }}>
                 <p style={{ fontSize: 12, color: "var(--accent)", fontWeight: 700, marginBottom: 8, textTransform: "uppercase", letterSpacing: 1 }}>オートリストの場合</p>
                 <p style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.8 }}>
-                  1,000件プラン<br />
-                  <span style={{ fontSize: 28, fontWeight: 900, color: "#4ddb8a" }}>= 月6,980円</span>
+                  1,200件プラン<br />
+                  <span style={{ fontSize: 28, fontWeight: 900, color: "#4ddb8a" }}>= 月8,980円</span>
                 </p>
               </div>
             </div>
             <p style={{ marginTop: 16, textAlign: "center", fontSize: 16, fontWeight: 800, color: "var(--text-primary)" }}>
-              人件費の<span style={{ color: "var(--accent)", fontSize: 20 }}>約1/7</span>のコストで、営業リスト作成をゼロに
+              人件費の<span style={{ color: "var(--accent)", fontSize: 20 }}>約1/6</span>のコストで、営業リスト作成をゼロに
             </p>
           </div>
           <p className="roi-note">
@@ -1120,9 +1120,9 @@ export default function Home() {
           </p>
           <div className="pricing-grid" style={{ marginTop: 56 }}>
             {[
-              { volume: "200件", price: "1,980", per: "\u00A59.9 / 件", feature: <>まず試してみたい方に</>, featured: false },
-              { volume: "500件", price: "3,980", per: "\u00A58.0 / 件", feature: <>週1回の定期収集にちょうどいい</>, featured: false },
-              { volume: "1,000件", price: "6,980", per: "\u00A57.0 / 件", feature: <>本格的に営業を<br />スケールさせるなら</>, featured: true },
+              { volume: "300件", price: "2,980", per: "\u00A59.9 / 件", feature: <>まず試してみたい方に</>, featured: false },
+              { volume: "600件", price: "4,980", per: "\u00A58.3 / 件", feature: <>週1回の定期収集にちょうどいい</>, featured: false },
+              { volume: "1,200件", price: "8,980", per: "\u00A57.5 / 件", feature: <>本格的に営業を<br />スケールさせるなら</>, featured: true },
               { volume: "3,000件", price: "19,200", per: "\u00A56.4 / 件", feature: <>大量開拓に最適<br />最もお得</>, featured: false },
             ].map((plan, i) => (
               <div

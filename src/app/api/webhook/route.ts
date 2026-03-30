@@ -48,15 +48,15 @@ const CHARGE_QUICK_REPLY = {
   items: [
     {
       type: 'action' as const,
-      action: { type: 'message' as const, label: '200件', text: '200件' },
+      action: { type: 'message' as const, label: '300件', text: '300件' },
     },
     {
       type: 'action' as const,
-      action: { type: 'message' as const, label: '500件', text: '500件' },
+      action: { type: 'message' as const, label: '600件', text: '600件' },
     },
     {
       type: 'action' as const,
-      action: { type: 'message' as const, label: '1,000件', text: '1,000件' },
+      action: { type: 'message' as const, label: '1,200件', text: '1,200件' },
     },
     {
       type: 'action' as const,
@@ -67,9 +67,9 @@ const CHARGE_QUICK_REPLY = {
 
 const CHARGE_PRICING_TEXT = `チャージするプランを選んでください：
 
-1️⃣ ¥1,980 → 200件（9.9円/件）
-2️⃣ ¥3,980 → 500件（8.0円/件）
-3️⃣ ¥6,980 → 1,000件（7.0円/件）★人気
+1️⃣ ¥2,980 → 300件（9.9円/件）
+2️⃣ ¥4,980 → 600件（8.3円/件）
+3️⃣ ¥8,980 → 1,200件（7.5円/件）★人気
 4️⃣ ¥19,200 → 3,000件（6.4円/件）`;
 
 const CHARGE_MESSAGE = {
@@ -79,9 +79,9 @@ const CHARGE_MESSAGE = {
 };
 
 const CHARGE_PLANS = [
-  { amount: 1980, credits: 200, label: '¥1,980 → 200件' },
-  { amount: 3980, credits: 500, label: '¥3,980 → 500件' },
-  { amount: 6980, credits: 1000, label: '¥6,980 → 1,000件' },
+  { amount: 2980, credits: 300, label: '¥2,980 → 300件' },
+  { amount: 4980, credits: 600, label: '¥4,980 → 600件' },
+  { amount: 8980, credits: 1200, label: '¥8,980 → 1,200件' },
   { amount: 19200, credits: 3000, label: '¥19,200 → 3,000件' },
 ];
 

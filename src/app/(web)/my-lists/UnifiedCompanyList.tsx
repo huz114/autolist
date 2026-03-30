@@ -740,6 +740,12 @@ export default function UnifiedCompanyList({ initialJobs = [] }: UnifiedCompanyL
           >
             <DownloadIcon /> CSVダウンロード
           </button>
+          <button
+            className="sm:hidden inline-flex items-center gap-1.5 px-4 py-2 rounded-[6px] text-[13px] font-semibold bg-[rgba(255,255,255,0.03)] text-[#5a6a7a] border border-[rgba(255,255,255,0.05)] min-h-[38px] cursor-pointer"
+            onClick={() => alert('フォーム一括送信はPCからご利用いただけます。')}
+          >
+            <SendIcon /> フォーム送信
+          </button>
           <div className="relative group hidden sm:block">
             <button
               disabled={selectedCount === 0 || sendableCount === 0}

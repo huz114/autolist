@@ -750,7 +750,7 @@ export default function UnifiedCompanyList({ initialJobs = [] }: UnifiedCompanyL
           >
             <DownloadIcon /> CSVダウンロード
           </button>
-          <div className="relative">
+          <div className="relative group">
             <button
               disabled={selectedCount === 0 || sendableCount === 0}
               onClick={() => {
@@ -768,17 +768,21 @@ export default function UnifiedCompanyList({ initialJobs = [] }: UnifiedCompanyL
             >
               <SendIcon /> フォーム送信{sendableCount > 0 && selectedCount !== sendableCount ? ` (${sendableCount}件)` : ''}
             </button>
-            {selectedCount > 0 && sendableCount === 0 && (
-              <p className="absolute top-full right-0 mt-1 text-[11px] text-[#f59e0b] whitespace-nowrap text-right">
-                送信可能な企業がありません
-                {noFormCount > 0 && cooldownCount > 0
-                  ? `（フォームなし${noFormCount}件・送信後30日以内${cooldownCount}件）`
-                  : noFormCount > 0
-                  ? `（フォームが検出されていません）`
-                  : cooldownCount > 0
-                  ? `（前回送信から30日以内のため送信制限中）`
-                  : ''}
-              </p>
+            {selectedCount > 0 && selectedCount !== sendableCount && (
+              <div className="absolute bottom-full right-0 mb-2 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-20">
+                <div className="bg-[#1a2233] border border-[rgba(255,255,255,0.12)] rounded-lg px-3 py-2 shadow-xl text-right whitespace-nowrap">
+                  <p className="text-[11px] text-[#f0f4f8] font-medium mb-1">
+                    {selectedCount}件中 {sendableCount}件が送信可能
+                  </p>
+                  {noFormCount > 0 && (
+                    <p className="text-[11px] text-[#8fa3b8]">フォームなし: {noFormCount}件</p>
+                  )}
+                  {cooldownCount > 0 && (
+                    <p className="text-[11px] text-[#8fa3b8]">クールダウン中: {cooldownCount}件</p>
+                  )}
+                  <div className="absolute bottom-0 right-4 translate-y-full w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[5px] border-t-[rgba(255,255,255,0.12)]" />
+                </div>
+              </div>
             )}
           </div>
         </div>

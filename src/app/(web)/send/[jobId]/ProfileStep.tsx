@@ -18,6 +18,8 @@ type Props = {
   setCompanyUrl: (v: string) => void
   title: string
   setTitle: (v: string) => void
+  address: string
+  setAddress: (v: string) => void
   savingProfile: boolean
   onSaveProfile: () => void
   initialFurigana: string
@@ -39,6 +41,8 @@ export default function ProfileStep({
   setCompanyUrl,
   title,
   setTitle,
+  address,
+  setAddress,
   savingProfile,
   onSaveProfile,
   initialFurigana,
@@ -162,15 +166,27 @@ export default function ProfileStep({
           </div>
         </div>
 
-        <div>
-          <label className="block text-xs text-[#8494a7] mb-1.5">会社URL</label>
-          <input
-            type="url"
-            value={companyUrl}
-            onChange={(e) => setCompanyUrl(e.target.value)}
-            placeholder="https://example.co.jp"
-            className={inputClass}
-          />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs text-[#8494a7] mb-1.5">会社URL</label>
+            <input
+              type="url"
+              value={companyUrl}
+              onChange={(e) => setCompanyUrl(e.target.value)}
+              placeholder="https://example.co.jp"
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-[#8494a7] mb-1.5">住所</label>
+            <input
+              type="text"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="東京都渋谷区..."
+              className={inputClass}
+            />
+          </div>
         </div>
 
         <button

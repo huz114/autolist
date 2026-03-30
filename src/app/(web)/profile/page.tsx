@@ -11,6 +11,7 @@ export default function ProfilePage() {
     companyUrl: '',
     title: '',
     senderEmail: '',
+    address: '',
   })
   const [email, setEmail] = useState('')
   const [saving, setSaving] = useState(false)
@@ -30,6 +31,7 @@ export default function ProfilePage() {
             companyUrl: data.user.companyUrl || '',
             title: data.user.senderTitle || '',
             senderEmail: data.user.senderEmail || '',
+            address: data.user.senderAddress || '',
           })
           setEmail(data.user.email || '')
         }
@@ -159,6 +161,18 @@ export default function ProfilePage() {
                 placeholder="https://example.co.jp"
               />
             </div>
+          </div>
+
+          {/* 住所 */}
+          <div>
+            <label className={labelClass}>住所</label>
+            <input
+              type="text"
+              className={inputClass}
+              value={form.address}
+              onChange={e => update('address', e.target.value)}
+              placeholder="東京都渋谷区..."
+            />
           </div>
 
           {/* 送信元メール */}

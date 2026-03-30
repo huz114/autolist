@@ -33,6 +33,7 @@ model User {
   senderEmail       String?  // 送信用メールアドレス（ログイン用とは別）
   senderFurigana    String?  // 送信者フリガナ
   senderTitle       String?  // 役職・部署
+  senderAddress     String?  // 送信者住所
 
   // オートリスト: 前回メッセージ
   lastSubject       String?  // 前回件名

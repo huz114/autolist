@@ -14,6 +14,7 @@ export type Profile = {
   phone: string
   companyUrl: string
   title: string
+  address: string
 }
 
 export type Message = {

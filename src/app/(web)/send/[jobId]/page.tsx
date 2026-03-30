@@ -70,6 +70,7 @@ export default async function SendPage({ params }: { params: { jobId: string } }
       senderEmail: true,
       senderFurigana: true,
       senderTitle: true,
+      senderAddress: true,
       lastSubject: true,
       lastBody: true,
     },
@@ -94,6 +95,7 @@ export default async function SendPage({ params }: { params: { jobId: string } }
         phone: user?.phone ?? '',
         companyUrl: user?.companyUrl ?? '',
         title: user?.senderTitle ?? '',
+        address: user?.senderAddress ?? '',
       }}
       initialMessage={{
         subject: user?.lastSubject ?? '',

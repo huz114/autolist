@@ -22,6 +22,7 @@ export async function POST(
       email: string
       phone: string
       companyName: string
+      address?: string
     }
   }
 
@@ -89,6 +90,7 @@ export async function POST(
       phone: senderInfo.phone,
       furigana: senderInfo.furigana || '',
       companyName: senderInfo.companyName,
+      address: senderInfo.address || '',
     },
     timestamp: Date.now(),
   }))

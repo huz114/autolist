@@ -31,6 +31,7 @@ interface Job {
   createdAt: string
   updatedAt: string
   completedAt: string | null
+  source: string | null
   user: LineUser
   _count: { urls: number }
 }
@@ -189,7 +190,14 @@ function JobRow({ job }: { job: Job }) {
       <tr className="border-b border-white/10 hover:bg-white/[0.03] transition-colors">
         {/* 依頼日時 */}
         <td className="py-3 pr-4 text-sm text-gray-300 whitespace-nowrap">
-          {formatJst(job.createdAt)}
+          <div>{formatJst(job.createdAt)}</div>
+          <div className="mt-0.5">
+            {job.source === 'line' ? (
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-900/40 text-blue-300">LINE</span>
+            ) : (
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-400">Web</span>
+            )}
+          </div>
         </td>
         {/* 依頼者 */}
         <td className="py-3 pr-4 text-sm text-gray-200 max-w-[180px]">
@@ -198,6 +206,11 @@ function JobRow({ job }: { job: Job }) {
               <span className="inline-block text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-green-900/40 text-green-400 mb-0.5">
                 ✓ シリョログ登録済
               </span>
+              {job.user.lineUserId && (
+                <span className="inline-block text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-blue-900/40 text-blue-400 mb-0.5 ml-1">
+                  LINE連携済
+                </span>
+              )}
               <p className="truncate text-gray-200">{job.user.displayName ?? job.user.lineUserId ?? '(不明)'}</p>
               {job.user.shiryologUser.name && (
                 <p className="text-xs text-gray-400 truncate">{job.user.shiryologUser.name}</p>
@@ -217,6 +230,11 @@ function JobRow({ job }: { job: Job }) {
               <span className="inline-block text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-gray-800 text-gray-400 mb-0.5">
                 未登録
               </span>
+              {job.user.lineUserId && (
+                <span className="inline-block text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-blue-900/40 text-blue-400 mb-0.5 ml-1">
+                  LINE連携済
+                </span>
+              )}
               <p className="truncate text-gray-200">{job.user.displayName ?? job.user.lineUserId ?? '(不明)'}</p>
             </div>
           )}

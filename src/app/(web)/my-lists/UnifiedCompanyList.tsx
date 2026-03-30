@@ -588,12 +588,27 @@ export default function UnifiedCompanyList({ initialJobs = [] }: UnifiedCompanyL
               { key: 'all' as StatusFilter, label: '全て' },
               { key: 'unsent' as StatusFilter, label: 'フォーム未送信' },
               { key: 'sent' as StatusFilter, label: 'フォーム送信済み' },
+              { key: 'hasPhone' as StatusFilter, label: '電話番号あり' },
+              { key: 'dl' as StatusFilter, label: 'CSVダウンロード済' },
             ]).map(({ key, label }) => (
               <button
                 key={key}
-                onClick={() => setStatusFilter(key)}
+                onClick={() => {
+                  if (key === 'all') {
+                    setStatusFilter('all')
+                    setHasPhoneFilter(false)
+                  } else if (key === 'hasPhone') {
+                    setHasPhoneFilter(prev => !prev)
+                    if (statusFilter === 'all') setStatusFilter('all')
+                  } else {
+                    setStatusFilter(statusFilter === key ? 'all' : key)
+                    setHasPhoneFilter(false)
+                  }
+                }}
                 className={`inline-flex items-center px-3.5 py-1.5 rounded-full text-[13px] font-medium border cursor-pointer transition-all min-h-[36px] select-none ${
-                  statusFilter === key
+                  (key === 'all' && statusFilter === 'all' && !hasPhoneFilter)
+                    || (key === 'hasPhone' && hasPhoneFilter)
+                    || (key !== 'all' && key !== 'hasPhone' && statusFilter === key)
                     ? 'bg-[rgba(6,199,85,0.15)] text-[#06C755] border-[rgba(6,199,85,0.4)]'
                     : 'bg-[rgba(255,255,255,0.05)] text-[#8fa3b8] border-[rgba(255,255,255,0.1)] hover:border-[rgba(255,255,255,0.2)] hover:text-[#f0f4f8]'
                 }`}
@@ -601,26 +616,6 @@ export default function UnifiedCompanyList({ initialJobs = [] }: UnifiedCompanyL
                 {label}
               </button>
             ))}
-            <button
-              onClick={() => setHasPhoneFilter(prev => !prev)}
-              className={`inline-flex items-center px-3.5 py-1.5 rounded-full text-[13px] font-medium border cursor-pointer transition-all min-h-[36px] select-none ${
-                hasPhoneFilter
-                  ? 'bg-[rgba(6,199,85,0.15)] text-[#06C755] border-[rgba(6,199,85,0.4)]'
-                  : 'bg-[rgba(255,255,255,0.05)] text-[#8fa3b8] border-[rgba(255,255,255,0.1)] hover:border-[rgba(255,255,255,0.2)] hover:text-[#f0f4f8]'
-              }`}
-            >
-              電話番号あり
-            </button>
-            <button
-              onClick={() => setStatusFilter(statusFilter === 'dl' ? 'all' : 'dl')}
-              className={`inline-flex items-center px-3.5 py-1.5 rounded-full text-[13px] font-medium border cursor-pointer transition-all min-h-[36px] select-none ${
-                statusFilter === 'dl'
-                  ? 'bg-[rgba(6,199,85,0.15)] text-[#06C755] border-[rgba(6,199,85,0.4)]'
-                  : 'bg-[rgba(255,255,255,0.05)] text-[#8fa3b8] border-[rgba(255,255,255,0.1)] hover:border-[rgba(255,255,255,0.2)] hover:text-[#f0f4f8]'
-              }`}
-            >
-              CSVダウンロード済
-            </button>
           </div>
         </div>
 

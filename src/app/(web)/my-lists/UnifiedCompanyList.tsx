@@ -717,7 +717,7 @@ export default function UnifiedCompanyList({ initialJobs = [] }: UnifiedCompanyL
       </a>
 
       {/* Bulk Actions Bar */}
-      <div className="flex items-center gap-3 px-4 py-3 bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-[10px] mb-4 sticky top-[56px] z-10 flex-wrap">
+      <div className="flex items-center gap-3 px-4 py-3 bg-[#111827] border border-[rgba(255,255,255,0.07)] rounded-[10px] mb-4 sticky top-[56px] z-10 flex-wrap shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
         <label className="flex items-center gap-2 min-h-[44px] cursor-pointer">
           <input
             ref={selectAllRef}
@@ -740,7 +740,7 @@ export default function UnifiedCompanyList({ initialJobs = [] }: UnifiedCompanyL
           >
             <DownloadIcon /> CSVダウンロード
           </button>
-          <div className="relative group">
+          <div className="relative group hidden sm:block">
             <button
               disabled={selectedCount === 0 || sendableCount === 0}
               onClick={() => {

@@ -183,6 +183,13 @@ function NavBarInner() {
               >
                 クレジット購入
               </Link>
+              <Link
+                href="/contact"
+                onClick={closeMenu}
+                className="text-sm text-[#8fa3b8] hover:text-[#c8d6e5] transition-colors py-2 border-b border-[rgba(255,255,255,0.07)]"
+              >
+                お問い合わせ
+              </Link>
               <button
                 onClick={() => {
                   closeMenu()

@@ -269,7 +269,7 @@ export default function NewRequestButton() {
     <>
       <button
         onClick={handleOpen}
-        className="bg-[#06C755] hover:bg-[#04a344] text-white font-bold px-5 py-2.5 rounded-full transition-all text-sm hover:shadow-[0_0_20px_rgba(6,199,85,0.3)]"
+        className="bg-[#06C755] hover:bg-[#04a344] text-white font-bold px-3 py-2 sm:px-5 sm:py-2.5 rounded-full transition-all text-xs sm:text-sm hover:shadow-[0_0_20px_rgba(6,199,85,0.3)] whitespace-nowrap"
       >
         + 新規依頼
       </button>

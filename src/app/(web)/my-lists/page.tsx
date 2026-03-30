@@ -55,12 +55,14 @@ export default async function MyListsPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-10">
-      <div className="mb-4 flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[#f0f4f8] mb-1">マイリスト</h1>
-          <p className="text-sm text-[#8fa3b8]">作成した営業リストの一覧です</p>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold text-[#f0f4f8] mb-0.5">マイリスト</h1>
+          <p className="text-sm text-[#8fa3b8] whitespace-nowrap">作成した営業リストの一覧です</p>
         </div>
-        <NewRequestButton />
+        <div className="shrink-0">
+          <NewRequestButton />
+        </div>
       </div>
       <div className="mb-8">
         <LineLinkButton />

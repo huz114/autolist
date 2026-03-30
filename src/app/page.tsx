@@ -1123,7 +1123,7 @@ export default function Home() {
               { volume: "200件", price: "1,980", per: "\u00A59.9 / 件", feature: <>まず試してみたい方に</>, featured: false },
               { volume: "500件", price: "3,980", per: "\u00A58.0 / 件", feature: <>週1回の定期収集にちょうどいい</>, featured: false },
               { volume: "1,000件", price: "6,980", per: "\u00A57.0 / 件", feature: <>本格的に営業を<br />スケールさせるなら</>, featured: true },
-              { volume: "2,000件", price: "12,800", per: "\u00A56.4 / 件", feature: <>大量開拓に最適<br />最もお得</>, featured: false },
+              { volume: "3,000件", price: "19,200", per: "\u00A56.4 / 件", feature: <>大量開拓に最適<br />最もお得</>, featured: false },
             ].map((plan, i) => (
               <div
                 key={i}

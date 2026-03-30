@@ -7,7 +7,7 @@ const PLANS = [
   { id: 'plan_200', price: 1980, credits: 200, unitPrice: '9.9' },
   { id: 'plan_500', price: 3980, credits: 500, unitPrice: '8.0' },
   { id: 'plan_1000', price: 6980, credits: 1000, unitPrice: '7.0', popular: true },
-  { id: 'plan_2000', price: 12800, credits: 2000, unitPrice: '6.4' },
+  { id: 'plan_3000', price: 19200, credits: 3000, unitPrice: '6.4' },
 ]
 
 interface AnalyzeResult {

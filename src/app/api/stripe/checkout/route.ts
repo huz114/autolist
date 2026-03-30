@@ -11,7 +11,7 @@ const PLANS = [
   { id: 'plan_200', amount: 1980, credits: 200, label: '200件' },
   { id: 'plan_500', amount: 3980, credits: 500, label: '500件' },
   { id: 'plan_1000', amount: 6980, credits: 1000, label: '1,000件' },
-  { id: 'plan_2000', amount: 12800, credits: 2000, label: '2,000件' },
+  { id: 'plan_3000', amount: 19200, credits: 3000, label: '3,000件' },
 ];
 
 /**

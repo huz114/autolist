@@ -60,7 +60,7 @@ const CHARGE_QUICK_REPLY = {
     },
     {
       type: 'action' as const,
-      action: { type: 'message' as const, label: '2,000件', text: '2,000件' },
+      action: { type: 'message' as const, label: '3,000件', text: '3,000件' },
     },
   ],
 };
@@ -70,7 +70,7 @@ const CHARGE_PRICING_TEXT = `チャージするプランを選んでください
 1️⃣ ¥1,980 → 200件（9.9円/件）
 2️⃣ ¥3,980 → 500件（8.0円/件）
 3️⃣ ¥6,980 → 1,000件（7.0円/件）★人気
-4️⃣ ¥12,800 → 2,000件（6.4円/件）`;
+4️⃣ ¥19,200 → 3,000件（6.4円/件）`;
 
 const CHARGE_MESSAGE = {
   type: 'text',
@@ -82,7 +82,7 @@ const CHARGE_PLANS = [
   { amount: 1980, credits: 200, label: '¥1,980 → 200件' },
   { amount: 3980, credits: 500, label: '¥3,980 → 500件' },
   { amount: 6980, credits: 1000, label: '¥6,980 → 1,000件' },
-  { amount: 12800, credits: 2000, label: '¥12,800 → 2,000件' },
+  { amount: 19200, credits: 3000, label: '¥19,200 → 3,000件' },
 ];
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {

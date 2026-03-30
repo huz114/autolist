@@ -154,8 +154,8 @@ async function handleStuckJobs() {
     try {
       const autolistUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3007';
       const loginUrl = lineUserId
-        ? `${autolistUrl}/login?lineUserId=${lineUserId}&callbackUrl=/my-lists`
-        : `${autolistUrl}/my-lists`;
+        ? `${autolistUrl}/login?lineUserId=${lineUserId}&callbackUrl=/my-lists&openExternalBrowser=1`
+        : `${autolistUrl}/my-lists?openExternalBrowser=1`;
 
       if (collectedCount === 0) {
         // ── 収集済み0件のケース ──

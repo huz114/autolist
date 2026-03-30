@@ -154,8 +154,8 @@ export async function processNextJob(): Promise<{ processed: boolean; jobId?: st
     const autolistUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3007';
     const targetCount = job.targetCount;
     const loginUrl = lineUserId
-      ? `${autolistUrl}/login?lineUserId=${lineUserId}&callbackUrl=/my-lists`
-      : `${autolistUrl}/my-lists`;
+      ? `${autolistUrl}/login?lineUserId=${lineUserId}&callbackUrl=/my-lists&openExternalBrowser=1`
+      : `${autolistUrl}/my-lists?openExternalBrowser=1`;
 
     if (finalJob?.status === 'cancelled') {
       // キャンセル：仮押さえ分から実績分を引いた差額を返却

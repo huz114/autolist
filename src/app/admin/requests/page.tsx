@@ -211,9 +211,9 @@ function JobRow({ job }: { job: Job }) {
                   LINE連携済
                 </span>
               )}
-              <p className="truncate text-gray-200">{job.user.displayName ?? job.user.lineUserId ?? '(不明)'}</p>
-              {job.user.shiryologUser.name && (
-                <p className="text-xs text-gray-400 truncate">{job.user.shiryologUser.name}</p>
+              <p className="truncate text-gray-200">{job.user.shiryologUser.name || job.user.displayName || '(不明)'}</p>
+              {job.user.displayName && job.user.shiryologUser.name && job.user.displayName !== job.user.shiryologUser.name && (
+                <p className="text-xs text-gray-400 truncate">LINE: {job.user.displayName}</p>
               )}
               {job.user.shiryologUser.companyName && (
                 <p className="text-xs text-gray-500 truncate">{job.user.shiryologUser.companyName}</p>

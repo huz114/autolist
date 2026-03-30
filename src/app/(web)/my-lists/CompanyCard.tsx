@@ -238,6 +238,7 @@ export default function CompanyCard({
     if (c.employeeCount) lines.push(`従業員数: ${c.employeeCount}`)
     if (c.capitalAmount) lines.push(`資本金: ${c.capitalAmount}`)
     if (c.businessDescription) lines.push(`事業内容: ${c.businessDescription}`)
+    if (c.jobKeyword) lines.push(`依頼ジョブ: ${c.jobKeyword}${c.jobCreatedAt ? ` (${new Date(c.jobCreatedAt).toLocaleDateString('ja-JP')})` : ''}`)
     if (c.memo) lines.push(`メモ: ${c.memo}`)
     const text = lines.join('\n')
 

@@ -424,7 +424,7 @@ export default function UnifiedCompanyList({ initialJobs = [] }: UnifiedCompanyL
       }
       return value
     }
-    const headers = ['企業名','業種','業種大分類','所在地','URL','電話番号','メールアドレス','代表者名','設立年','従業員数','資本金','事業内容','フォームURL','フォームあり']
+    const headers = ['企業名','業種','業種大分類','所在地','URL','電話番号','メールアドレス','代表者名','設立年','従業員数','資本金','事業内容','フォームURL','フォームあり','依頼ジョブ']
     const rows = selectedCompanies.map(c => [
       c.companyName || c.domain,
       c.industry ?? '',
@@ -440,6 +440,7 @@ export default function UnifiedCompanyList({ initialJobs = [] }: UnifiedCompanyL
       c.businessDescription ?? '',
       c.formUrl ?? '',
       c.hasForm ? 'あり' : 'なし',
+      c.jobKeyword ? `${c.jobKeyword}${c.jobCreatedAt ? ` (${new Date(c.jobCreatedAt).toLocaleDateString('ja-JP')})` : ''}` : '',
     ].map(escapeField).join(','))
     const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\n')
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })

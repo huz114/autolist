@@ -188,6 +188,8 @@ export default function WebLayout({ children }: { children: React.ReactNode }) {
             <Link href="/legal/terms" className="hover:text-[#06C755] transition-colors">利用規約</Link>
             <span>|</span>
             <Link href="/legal/company" className="hover:text-[#06C755] transition-colors">運営者情報</Link>
+            <span>|</span>
+            <Link href="/contact" className="hover:text-[#06C755] transition-colors">お問い合わせ</Link>
           </div>
           <div className="text-sm text-[#8494a7]">
             &copy; 2026 オートリスト — powered by{' '}

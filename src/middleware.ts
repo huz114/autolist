@@ -1,6 +1,8 @@
 import { auth } from '@/auth'
 import { NextResponse } from 'next/server'
 
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? '').split(',').map(e => e.trim()).filter(Boolean)
+
 export default auth((req) => {
   const isLoggedIn = !!req.auth
   const isAuthPage = req.nextUrl.pathname.startsWith('/login') ||
@@ -14,6 +16,16 @@ export default auth((req) => {
                        req.nextUrl.pathname.startsWith('/verify') ||
                        req.nextUrl.pathname.startsWith('/contact') ||
                        req.nextUrl.pathname.startsWith('/payment-callback')
+  const isAdminPage = req.nextUrl.pathname.startsWith('/admin')
+
+  // Admin pages: 管理者以外は404（ページの存在自体を隠す）
+  if (isAdminPage) {
+    const email = req.auth?.user?.email ?? ''
+    if (!isLoggedIn || !ADMIN_EMAILS.includes(email)) {
+      return NextResponse.rewrite(new URL('/not-found', req.url), { status: 404 })
+    }
+    return NextResponse.next()
+  }
 
   // Redirect logged-in users away from auth pages (login/register)
   if (isLoggedIn && isAuthPage) {

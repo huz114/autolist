@@ -48,29 +48,29 @@ const CHARGE_QUICK_REPLY = {
   items: [
     {
       type: 'action' as const,
-      action: { type: 'message' as const, label: '100件', text: '100件' },
+      action: { type: 'message' as const, label: '200件', text: '200件' },
     },
     {
       type: 'action' as const,
-      action: { type: 'message' as const, label: '300件', text: '300件' },
+      action: { type: 'message' as const, label: '500件', text: '500件' },
     },
     {
       type: 'action' as const,
-      action: { type: 'message' as const, label: '700件', text: '700件' },
+      action: { type: 'message' as const, label: '1,000件', text: '1,000件' },
     },
     {
       type: 'action' as const,
-      action: { type: 'message' as const, label: '1,500件', text: '1,500件' },
+      action: { type: 'message' as const, label: '2,000件', text: '2,000件' },
     },
   ],
 };
 
 const CHARGE_PRICING_TEXT = `チャージするプランを選んでください：
 
-1️⃣ ¥2,000 → 100件（20円/件）
-2️⃣ ¥5,000 → 300件（17円/件）
-3️⃣ ¥10,000 → 700件（14円/件）★人気
-4️⃣ ¥15,000 → 1,500件（10円/件）`;
+1️⃣ ¥1,980 → 200件（9.9円/件）
+2️⃣ ¥3,980 → 500件（8.0円/件）
+3️⃣ ¥6,980 → 1,000件（7.0円/件）★人気
+4️⃣ ¥12,800 → 2,000件（6.4円/件）`;
 
 const CHARGE_MESSAGE = {
   type: 'text',
@@ -79,10 +79,10 @@ const CHARGE_MESSAGE = {
 };
 
 const CHARGE_PLANS = [
-  { amount: 2000, credits: 100, label: '¥2,000 → 100件' },
-  { amount: 5000, credits: 300, label: '¥5,000 → 300件' },
-  { amount: 10000, credits: 700, label: '¥10,000 → 700件' },
-  { amount: 15000, credits: 1500, label: '¥15,000 → 1,500件' },
+  { amount: 1980, credits: 200, label: '¥1,980 → 200件' },
+  { amount: 3980, credits: 500, label: '¥3,980 → 500件' },
+  { amount: 6980, credits: 1000, label: '¥6,980 → 1,000件' },
+  { amount: 12800, credits: 2000, label: '¥12,800 → 2,000件' },
 ];
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {

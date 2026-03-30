@@ -8,10 +8,10 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
 });
 
 const PLANS = [
-  { id: 'plan_100', amount: 2000, credits: 100, label: '100件' },
-  { id: 'plan_300', amount: 5000, credits: 300, label: '300件' },
-  { id: 'plan_700', amount: 10000, credits: 700, label: '700件' },
-  { id: 'plan_1500', amount: 15000, credits: 1500, label: '1,500件' },
+  { id: 'plan_200', amount: 1980, credits: 200, label: '200件' },
+  { id: 'plan_500', amount: 3980, credits: 500, label: '500件' },
+  { id: 'plan_1000', amount: 6980, credits: 1000, label: '1,000件' },
+  { id: 'plan_2000', amount: 12800, credits: 2000, label: '2,000件' },
 ];
 
 /**

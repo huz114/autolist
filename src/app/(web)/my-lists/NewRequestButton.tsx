@@ -4,10 +4,10 @@ import { useRouter } from 'next/navigation'
 import { useState, useEffect, useCallback, useRef } from 'react'
 
 const PLANS = [
-  { id: 'plan_100', price: 2000, credits: 100, unitPrice: '20' },
-  { id: 'plan_300', price: 5000, credits: 300, unitPrice: '16.7' },
-  { id: 'plan_700', price: 10000, credits: 700, unitPrice: '14.3', popular: true },
-  { id: 'plan_1500', price: 15000, credits: 1500, unitPrice: '10' },
+  { id: 'plan_200', price: 1980, credits: 200, unitPrice: '9.9' },
+  { id: 'plan_500', price: 3980, credits: 500, unitPrice: '8.0' },
+  { id: 'plan_1000', price: 6980, credits: 1000, unitPrice: '7.0', popular: true },
+  { id: 'plan_2000', price: 12800, credits: 2000, unitPrice: '6.4' },
 ]
 
 interface AnalyzeResult {

@@ -22,7 +22,9 @@ type Profile = {
   phone: string
   companyUrl: string
   title: string
-  address: string
+  prefecture: string
+  city: string
+  building: string
   postalCode: string
 }
 
@@ -76,7 +78,9 @@ export default function BulkSendClient({
   const [phone, setPhone] = useState(initialProfile.phone)
   const [companyUrl, setCompanyUrl] = useState(initialProfile.companyUrl)
   const [title, setTitle] = useState(initialProfile.title)
-  const [address, setAddress] = useState(initialProfile.address)
+  const [prefecture, setPrefecture] = useState(initialProfile.prefecture)
+  const [city, setCity] = useState(initialProfile.city)
+  const [building, setBuilding] = useState(initialProfile.building)
   const [postalCode, setPostalCode] = useState(initialProfile.postalCode)
   const [savingProfile, setSavingProfile] = useState(false)
 
@@ -147,7 +151,7 @@ export default function BulkSendClient({
       const res = await fetch('/api/user/profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ companyName, personName, furigana, phone, companyUrl, title, senderEmail, address, postalCode }),
+        body: JSON.stringify({ companyName, personName, furigana, phone, companyUrl, title, senderEmail, prefecture, city, building, postalCode }),
       })
       if (!res.ok) {
         const d = await res.json()
@@ -309,7 +313,9 @@ export default function BulkSendClient({
             email: senderEmail,
             phone,
             companyName,
-            address,
+            prefecture,
+            city,
+            building,
             postalCode,
           },
         }),
@@ -393,7 +399,10 @@ export default function BulkSendClient({
             email: senderEmail,
             phone,
             companyName,
-            address,
+            prefecture,
+            city,
+            building,
+            postalCode,
           },
         }),
       })
@@ -704,8 +713,12 @@ export default function BulkSendClient({
             setCompanyUrl={setCompanyUrl}
             title={title}
             setTitle={setTitle}
-            address={address}
-            setAddress={setAddress}
+            prefecture={prefecture}
+            setPrefecture={setPrefecture}
+            city={city}
+            setCity={setCity}
+            building={building}
+            setBuilding={setBuilding}
             postalCode={postalCode}
             setPostalCode={setPostalCode}
             savingProfile={savingProfile}

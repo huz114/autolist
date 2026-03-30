@@ -70,7 +70,9 @@ export default async function SendPage({ params }: { params: { jobId: string } }
       senderEmail: true,
       senderFurigana: true,
       senderTitle: true,
-      senderAddress: true,
+      senderPrefecture: true,
+      senderCity: true,
+      senderBuilding: true,
       senderPostalCode: true,
       lastSubject: true,
       lastBody: true,
@@ -96,7 +98,9 @@ export default async function SendPage({ params }: { params: { jobId: string } }
         phone: user?.phone ?? '',
         companyUrl: user?.companyUrl ?? '',
         title: user?.senderTitle ?? '',
-        address: user?.senderAddress ?? '',
+        prefecture: user?.senderPrefecture ?? '',
+        city: user?.senderCity ?? '',
+        building: user?.senderBuilding ?? '',
         postalCode: user?.senderPostalCode ?? '',
       }}
       initialMessage={{

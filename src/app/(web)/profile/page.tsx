@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 
+const PREFECTURES: string[] = JSON.parse('["北海道","青森県","岩手県","宮城県","秋田県","山形県","福島県","茨城県","栃木県","群馬県","埼玉県","千葉県","東京都","神奈川県","新潟県","富山県","石川県","福井県","山梨県","長野県","岐阜県","静岡県","愛知県","三重県","滋賀県","京都府","大阪府","兵庫県","奈良県","和歌山県","鳥取県","島根県","岡山県","広島県","山口県","徳島県","香川県","愛媛県","高知県","福岡県","佐賀県","長崎県","熊本県","大分県","宮崎県","鹿児島県","沖縄県"]')
+
 export default function ProfilePage() {
   const [form, setForm] = useState({
     companyName: '',
@@ -11,7 +13,9 @@ export default function ProfilePage() {
     companyUrl: '',
     title: '',
     senderEmail: '',
-    address: '',
+    prefecture: '',
+    city: '',
+    building: '',
     postalCode: '',
   })
   const [email, setEmail] = useState('')
@@ -32,7 +36,9 @@ export default function ProfilePage() {
             companyUrl: data.user.companyUrl || '',
             title: data.user.senderTitle || '',
             senderEmail: data.user.senderEmail || '',
-            address: data.user.senderAddress || '',
+            prefecture: data.user.senderPrefecture || '',
+            city: data.user.senderCity || '',
+            building: data.user.senderBuilding || '',
             postalCode: data.user.senderPostalCode || '',
           })
           setEmail(data.user.email || '')
@@ -165,7 +171,7 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* 郵便番号 + 住所 */}
+          {/* 郵便番号 + 都道府県 + 市区町村 + 建物名 */}
           <p className="text-[11px] text-[#6b7280] -mb-2">フォーム送信時に住所の入力を求められることがあります。入力しておくと自動入力されます。</p>
           <div className="grid grid-cols-1 sm:grid-cols-[200px_1fr] gap-4">
             <div>
@@ -179,15 +185,38 @@ export default function ProfilePage() {
               />
             </div>
             <div>
-              <label className={labelClass}>住所</label>
-              <input
-                type="text"
+              <label className={labelClass}>都道府県</label>
+              <select
                 className={inputClass}
-                value={form.address}
-                onChange={e => update('address', e.target.value)}
-                placeholder="東京都渋谷区..."
-              />
+                value={form.prefecture}
+                onChange={e => update('prefecture', e.target.value)}
+              >
+                <option value="">選択してください</option>
+                {PREFECTURES.map((pref: string) => (
+                  <option key={pref} value={pref}>{pref}</option>
+                ))}
+              </select>
             </div>
+          </div>
+          <div>
+            <label className={labelClass}>市区町村以下</label>
+            <input
+              type="text"
+              className={inputClass}
+              value={form.city}
+              onChange={e => update('city', e.target.value)}
+              placeholder="渋谷区神宮前1-2-3"
+            />
+          </div>
+          <div>
+            <label className={labelClass}>建物名等</label>
+            <input
+              type="text"
+              className={inputClass}
+              value={form.building}
+              onChange={e => update('building', e.target.value)}
+              placeholder="〇〇ビル 5F"
+            />
           </div>
 
           {/* 送信元メール */}

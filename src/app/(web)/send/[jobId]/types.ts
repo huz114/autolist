@@ -14,7 +14,9 @@ export type Profile = {
   phone: string
   companyUrl: string
   title: string
-  address: string
+  prefecture: string
+  city: string
+  building: string
   postalCode: string
 }
 

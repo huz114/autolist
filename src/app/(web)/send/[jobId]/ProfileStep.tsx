@@ -3,6 +3,8 @@
 import { useRef, useEffect } from 'react'
 import { toKatakana } from './utils'
 
+const PREFECTURES: string[] = JSON.parse('["北海道","青森県","岩手県","宮城県","秋田県","山形県","福島県","茨城県","栃木県","群馬県","埼玉県","千葉県","東京都","神奈川県","新潟県","富山県","石川県","福井県","山梨県","長野県","岐阜県","静岡県","愛知県","三重県","滋賀県","京都府","大阪府","兵庫県","奈良県","和歌山県","鳥取県","島根県","岡山県","広島県","山口県","徳島県","香川県","愛媛県","高知県","福岡県","佐賀県","長崎県","熊本県","大分県","宮崎県","鹿児島県","沖縄県"]')
+
 type Props = {
   companyName: string
   setCompanyName: (v: string) => void
@@ -18,8 +20,12 @@ type Props = {
   setCompanyUrl: (v: string) => void
   title: string
   setTitle: (v: string) => void
-  address: string
-  setAddress: (v: string) => void
+  prefecture: string
+  setPrefecture: (v: string) => void
+  city: string
+  setCity: (v: string) => void
+  building: string
+  setBuilding: (v: string) => void
   postalCode: string
   setPostalCode: (v: string) => void
   savingProfile: boolean
@@ -43,8 +49,12 @@ export default function ProfileStep({
   setCompanyUrl,
   title,
   setTitle,
-  address,
-  setAddress,
+  prefecture,
+  setPrefecture,
+  city,
+  setCity,
+  building,
+  setBuilding,
   postalCode,
   setPostalCode,
   savingProfile,
@@ -183,6 +193,9 @@ export default function ProfileStep({
               className={inputClass}
             />
           </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-[200px_1fr] gap-4">
           <div>
             <label className="block text-xs text-[#8494a7] mb-1.5">郵便番号</label>
             <input
@@ -193,15 +206,39 @@ export default function ProfileStep({
               className={inputClass}
             />
           </div>
+          <div>
+            <label className="block text-xs text-[#8494a7] mb-1.5">都道府県</label>
+            <select
+              value={prefecture}
+              onChange={(e) => setPrefecture(e.target.value)}
+              className={inputClass}
+            >
+              <option value="">選択してください</option>
+              {PREFECTURES.map((pref: string) => (
+                <option key={pref} value={pref}>{pref}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div>
-          <label className="block text-xs text-[#8494a7] mb-1.5">住所</label>
+          <label className="block text-xs text-[#8494a7] mb-1.5">市区町村以下</label>
           <input
             type="text"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            placeholder="東京都渋谷区..."
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            placeholder="渋谷区神宮前1-2-3"
+            className={inputClass}
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs text-[#8494a7] mb-1.5">建物名等</label>
+          <input
+            type="text"
+            value={building}
+            onChange={(e) => setBuilding(e.target.value)}
+            placeholder="〇〇ビル 5F"
             className={inputClass}
           />
         </div>

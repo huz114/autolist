@@ -22,7 +22,9 @@ export async function POST(
       email: string
       phone: string
       companyName: string
-      address?: string
+      prefecture?: string
+      city?: string
+      building?: string
       postalCode?: string
     }
   }
@@ -91,7 +93,9 @@ export async function POST(
       phone: senderInfo.phone,
       furigana: senderInfo.furigana || '',
       companyName: senderInfo.companyName,
-      address: senderInfo.address || '',
+      prefecture: senderInfo.prefecture || '',
+      city: senderInfo.city || '',
+      building: senderInfo.building || '',
       postalCode: senderInfo.postalCode || '',
     },
     timestamp: Date.now(),

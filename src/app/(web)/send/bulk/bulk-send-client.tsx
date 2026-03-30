@@ -23,6 +23,7 @@ type Profile = {
   companyUrl: string
   title: string
   address: string
+  postalCode: string
 }
 
 type Message = {
@@ -76,6 +77,7 @@ export default function BulkSendClient({
   const [companyUrl, setCompanyUrl] = useState(initialProfile.companyUrl)
   const [title, setTitle] = useState(initialProfile.title)
   const [address, setAddress] = useState(initialProfile.address)
+  const [postalCode, setPostalCode] = useState(initialProfile.postalCode)
   const [savingProfile, setSavingProfile] = useState(false)
 
   // メッセージ
@@ -145,7 +147,7 @@ export default function BulkSendClient({
       const res = await fetch('/api/user/profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ companyName, personName, furigana, phone, companyUrl, title, senderEmail, address }),
+        body: JSON.stringify({ companyName, personName, furigana, phone, companyUrl, title, senderEmail, address, postalCode }),
       })
       if (!res.ok) {
         const d = await res.json()
@@ -308,6 +310,7 @@ export default function BulkSendClient({
             phone,
             companyName,
             address,
+            postalCode,
           },
         }),
       })
@@ -703,6 +706,8 @@ export default function BulkSendClient({
             setTitle={setTitle}
             address={address}
             setAddress={setAddress}
+            postalCode={postalCode}
+            setPostalCode={setPostalCode}
             savingProfile={savingProfile}
             onSaveProfile={handleSaveProfile}
             initialFurigana={initialProfile.furigana}

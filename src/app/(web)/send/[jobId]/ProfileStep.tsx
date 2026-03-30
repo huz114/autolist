@@ -20,6 +20,8 @@ type Props = {
   setTitle: (v: string) => void
   address: string
   setAddress: (v: string) => void
+  postalCode: string
+  setPostalCode: (v: string) => void
   savingProfile: boolean
   onSaveProfile: () => void
   initialFurigana: string
@@ -43,6 +45,8 @@ export default function ProfileStep({
   setTitle,
   address,
   setAddress,
+  postalCode,
+  setPostalCode,
   savingProfile,
   onSaveProfile,
   initialFurigana,
@@ -178,15 +182,26 @@ export default function ProfileStep({
             />
           </div>
           <div>
-            <label className="block text-xs text-[#8494a7] mb-1.5">住所</label>
+            <label className="block text-xs text-[#8494a7] mb-1.5">郵便番号</label>
             <input
               type="text"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="東京都渋谷区..."
+              value={postalCode}
+              onChange={(e) => setPostalCode(e.target.value)}
+              placeholder="150-0001"
               className={inputClass}
             />
           </div>
+        </div>
+
+        <div>
+          <label className="block text-xs text-[#8494a7] mb-1.5">住所</label>
+          <input
+            type="text"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            placeholder="東京都渋谷区..."
+            className={inputClass}
+          />
         </div>
 
         <button

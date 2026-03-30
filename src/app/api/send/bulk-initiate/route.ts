@@ -19,6 +19,7 @@ export async function POST(request: NextRequest) {
       phone: string
       companyName: string
       address?: string
+      postalCode?: string
     }
   }
 
@@ -191,6 +192,7 @@ export async function POST(request: NextRequest) {
       furigana: senderInfo.furigana || '',
       companyName: senderInfo.companyName,
       address: senderInfo.address || '',
+      postalCode: senderInfo.postalCode || '',
     },
     timestamp: Date.now(),
   }))

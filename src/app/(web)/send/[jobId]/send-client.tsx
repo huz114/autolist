@@ -35,6 +35,7 @@ export default function SendClient({
   const [companyUrl, setCompanyUrl] = useState(initialProfile.companyUrl)
   const [title, setTitle] = useState(initialProfile.title)
   const [address, setAddress] = useState(initialProfile.address)
+  const [postalCode, setPostalCode] = useState(initialProfile.postalCode)
   const [savingProfile, setSavingProfile] = useState(false)
 
   // メッセージ
@@ -71,7 +72,7 @@ export default function SendClient({
       const res = await fetch('/api/user/profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ companyName, personName, furigana, phone, companyUrl, title, senderEmail, address }),
+        body: JSON.stringify({ companyName, personName, furigana, phone, companyUrl, title, senderEmail, address, postalCode }),
       })
       if (!res.ok) {
         const d = await res.json()
@@ -228,6 +229,7 @@ export default function SendClient({
             phone,
             companyName,
             address,
+            postalCode,
           },
         }),
       })
@@ -546,6 +548,8 @@ export default function SendClient({
             setTitle={setTitle}
             address={address}
             setAddress={setAddress}
+            postalCode={postalCode}
+            setPostalCode={setPostalCode}
             savingProfile={savingProfile}
             onSaveProfile={handleSaveProfile}
             initialFurigana={initialProfile.furigana}

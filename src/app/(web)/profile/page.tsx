@@ -12,6 +12,7 @@ export default function ProfilePage() {
     title: '',
     senderEmail: '',
     address: '',
+    postalCode: '',
   })
   const [email, setEmail] = useState('')
   const [saving, setSaving] = useState(false)
@@ -32,6 +33,7 @@ export default function ProfilePage() {
             title: data.user.senderTitle || '',
             senderEmail: data.user.senderEmail || '',
             address: data.user.senderAddress || '',
+            postalCode: data.user.senderPostalCode || '',
           })
           setEmail(data.user.email || '')
         }
@@ -163,16 +165,28 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* 住所 */}
-          <div>
-            <label className={labelClass}>住所</label>
-            <input
-              type="text"
-              className={inputClass}
-              value={form.address}
-              onChange={e => update('address', e.target.value)}
-              placeholder="東京都渋谷区..."
-            />
+          {/* 郵便番号 + 住所 */}
+          <div className="grid grid-cols-1 sm:grid-cols-[200px_1fr] gap-4">
+            <div>
+              <label className={labelClass}>郵便番号</label>
+              <input
+                type="text"
+                className={inputClass}
+                value={form.postalCode}
+                onChange={e => update('postalCode', e.target.value)}
+                placeholder="150-0001"
+              />
+            </div>
+            <div>
+              <label className={labelClass}>住所</label>
+              <input
+                type="text"
+                className={inputClass}
+                value={form.address}
+                onChange={e => update('address', e.target.value)}
+                placeholder="東京都渋谷区..."
+              />
+            </div>
           </div>
 
           {/* 送信元メール */}

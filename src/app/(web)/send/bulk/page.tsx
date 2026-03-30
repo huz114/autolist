@@ -32,6 +32,7 @@ export default async function BulkSendPage({
       senderFurigana: true,
       senderTitle: true,
       senderAddress: true,
+      senderPostalCode: true,
       lastSubject: true,
       lastBody: true,
     },
@@ -49,6 +50,7 @@ export default async function BulkSendPage({
         companyUrl: user?.companyUrl ?? '',
         title: user?.senderTitle ?? '',
         address: user?.senderAddress ?? '',
+        postalCode: user?.senderPostalCode ?? '',
       }}
       initialMessage={{
         subject: user?.lastSubject ?? '',

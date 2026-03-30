@@ -23,6 +23,7 @@ export async function POST(
       phone: string
       companyName: string
       address?: string
+      postalCode?: string
     }
   }
 
@@ -91,6 +92,7 @@ export async function POST(
       furigana: senderInfo.furigana || '',
       companyName: senderInfo.companyName,
       address: senderInfo.address || '',
+      postalCode: senderInfo.postalCode || '',
     },
     timestamp: Date.now(),
   }))

@@ -28,6 +28,25 @@ export default function MyListsTabs({ jobs, sendCount }: MyListsTabsProps) {
     else if (tabParam === 'send-history') setActiveTab('send-history')
   }, [tabParam])
 
+  // 進行中ジョブの追跡（常時ポーリング）
+  const [runningJobs, setRunningJobs] = useState<Array<{ id: string; keyword: string; targetCount: number; totalFound: number; status: string }>>([])
+
+  useEffect(() => {
+    const fetchRunning = async () => {
+      try {
+        const res = await fetch('/api/jobs')
+        if (!res.ok) return
+        const data = await res.json()
+        const allJobs = data.jobs || []
+        setRunningJobs(allJobs.filter((j: any) => ['pending', 'running', 'processing'].includes(j.status)))
+      } catch {}
+    }
+    fetchRunning()
+
+    const interval = setInterval(fetchRunning, 5000)
+    return () => clearInterval(interval)
+  }, [])
+
   return (
     <>
       {/* SP: PC案内バナー */}
@@ -39,6 +58,28 @@ export default function MyListsTabs({ jobs, sendCount }: MyListsTabsProps) {
           <span className="text-[#f0f4f8] font-medium">フォーム一括送信はPCから</span>ご利用いただけます。リストの確認・CSVダウンロードはスマホでも可能です。
         </p>
       </div>
+
+      {/* 進行中のジョブ */}
+      {runningJobs.length > 0 && (
+        <div className="mb-4 space-y-2">
+          {runningJobs.map(job => (
+            <div key={job.id} className="bg-[#111827] border border-[rgba(245,158,11,0.3)] rounded-[10px] px-4 py-3 flex items-center gap-3">
+              <svg className="w-5 h-5 text-[#f59e0b] animate-spin shrink-0" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.4 0 0 5.4 0 12h4z" />
+              </svg>
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] text-[#f0f4f8] font-medium truncate">
+                  {`「${job.keyword}」を収集中...`}
+                </p>
+                <p className="text-[11px] text-[#8fa3b8] tabular-nums">
+                  {job.totalFound}/{job.targetCount}件
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-[2px] border-b border-[rgba(255,255,255,0.07)] mb-5 overflow-x-auto">

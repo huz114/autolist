@@ -666,31 +666,6 @@ export default function UnifiedCompanyList({ initialJobs = [] }: UnifiedCompanyL
         </div>
       </div>
 
-      {/* 進行中のジョブ */}
-      {runningJobs.length > 0 && (
-        <div className="mb-4 space-y-2">
-          {runningJobs.map(job => (
-            <div key={job.id} className="bg-[#111827] border border-[rgba(245,158,11,0.3)] rounded-[10px] px-4 py-3 flex items-center gap-3">
-              <svg className="w-5 h-5 text-[#f59e0b] animate-spin shrink-0" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
-              <div className="flex-1 min-w-0">
-                <p className="text-[13px] text-[#f0f4f8] font-medium truncate">
-                  {`「${job.keyword}」を収集中...`}
-                </p>
-                <p className="text-[11px] text-[#8fa3b8] tabular-nums">
-                  {job.totalFound}/{job.targetCount}件
-                </p>
-              </div>
-              <span className="text-[11px] text-[#f59e0b] font-medium bg-[rgba(245,158,11,0.1)] px-2 py-0.5 rounded-full shrink-0">
-                処理中
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
-
       {/* 大口リスト依頼バナー */}
       <a
         href="/contact?bulk=1"

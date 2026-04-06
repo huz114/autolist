@@ -563,7 +563,7 @@ export default function BulkSendClient({
                   <li>確認ダイアログで「拡張機能を追加」を選択</li>
                 </ol>
                 <a
-                  href="#"
+                  href="https://chromewebstore.google.com/detail/cjicgdhdlahloboafbpofbipnepkncjf"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 bg-[#06C755] hover:bg-[#04a344] text-white text-sm font-semibold rounded-xl transition-all hover:shadow-[0_0_20px_rgba(6,199,85,0.3)]"
